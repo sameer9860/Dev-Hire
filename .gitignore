@@ -1,2 +1,7 @@
 devhire-plan.md
 .env
+__pycache__
+venv
+venv/
+__pycache__/
+*.pyc
