@@ -3,6 +3,14 @@ devhire-plan.md
 __pycache__
 venv
 venv/
-__pycache__/
+/__pycache__/
 *.pyc
 /.env*
+
+backend/.env
+frontend/.env
+frontend/node_modules
+backend/core/__pycache__/
+backend/__pycache__/*
+backend/core/__pycache__/
+backend/__pycache__/*
