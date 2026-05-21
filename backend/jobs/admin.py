@@ -1,3 +1,6 @@
+# pyrefly: ignore [missing-import]
 from django.contrib import admin
+# pyrefly: ignore [missing-import]
+from .models import Job
 
-# Register your models here.
+admin.site.register(Job)
