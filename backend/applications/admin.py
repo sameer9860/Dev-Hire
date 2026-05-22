@@ -5,7 +5,7 @@ from .models import Application
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
     list_display = ['developer', 'job', 'status', 'applied_at']
-    list_filter = ['status', 'job__category', 'job__location']
+    list_filter = ['status', 'job__job_type', 'job__location']
     search_fields = ['developer__username', 'developer__email', 'job__title']
     readonly_fields = ['applied_at', 'updated_at']
     fieldsets = (
