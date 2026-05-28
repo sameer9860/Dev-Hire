@@ -10,7 +10,7 @@ export function useMe() {
       const { data } = await api.get('/auth/me/');
       return data;
     },
-    enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
+    staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
   });
 }
