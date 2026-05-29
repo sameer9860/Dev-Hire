@@ -14,6 +14,7 @@ export function DashboardStats({ applications }: DashboardStatsProps) {
     (a) => a.status === 'shortlisted'
   ).length;
   const accepted = applications.filter((a) => a.status === 'accepted').length;
+  const rejected = applications.filter((a) => a.status === 'rejected').length;
 
   const stats = [
     {
@@ -39,6 +40,12 @@ export function DashboardStats({ applications }: DashboardStatsProps) {
       value: accepted,
       bgColor: 'bg-green-50',
       textColor: 'text-green-700',
+    },
+    {
+      label: 'Rejected',
+      value: rejected,
+      bgColor: 'bg-red-50',
+      textColor: 'text-red-700',
     },
   ];
 
