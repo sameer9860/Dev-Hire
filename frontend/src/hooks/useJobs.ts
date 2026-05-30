@@ -31,6 +31,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
        },
        onSuccess: () => {
          queryClient.invalidateQueries({ queryKey: ['jobs'] });
+         queryClient.invalidateQueries({ queryKey: ['my-jobs'] });
        },
+     });
+   }
+
+   export function useMyJobs() {
+     return useQuery<PaginatedResponse<Job>>({
+       queryKey: ['my-jobs'],
+       queryFn: async () => {
+         const { data } = await api.get('/jobs/my_jobs/');
+         return data;
+       },
+       enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
      });
    }
