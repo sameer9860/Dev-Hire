@@ -1,5 +1,9 @@
 # pyrefly: ignore [missing-import]
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+# pyrefly: ignore [missing-import]
+from rest_framework.decorators import action
+# pyrefly: ignore [missing-import]
+from rest_framework.response import Response
    # pyrefly: ignore [missing-import]
 from .models import Job
 from .serializers import JobSerializer, JobCreateSerializer
@@ -30,3 +34,18 @@ class JobViewSet(viewsets.ModelViewSet):
 
        def perform_create(self, serializer):
            serializer.save(company=self.request.user)
+
+       @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+       def my_jobs(self, request):
+           if request.user.role != 'company':
+               return Response(
+                   {"detail": "Only company accounts can access company jobs."},
+                   status=status.HTTP_403_FORBIDDEN
+               )
+           jobs = Job.objects.filter(company=request.user).select_related('company')
+           page = self.paginate_queryset(jobs)
+           if page is not None:
+               serializer = JobSerializer(page, many=True)
+               return self.get_paginated_response(serializer.data)
+           serializer = JobSerializer(jobs, many=True)
+           return Response(serializer.data)
