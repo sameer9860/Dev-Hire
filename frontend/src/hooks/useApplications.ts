@@ -40,3 +40,15 @@ export function useUpdateApplicationStatus() {
     },
   });
 }
+
+export function useCompanyApplications() {
+  return useQuery<PaginatedResponse<Application>>({
+    queryKey: ['company-applications'],
+    queryFn: async () => {
+      const { data } = await api.get('/applications/');
+      return data;
+    },
+    enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
+    retry: false,
+  });
+}
