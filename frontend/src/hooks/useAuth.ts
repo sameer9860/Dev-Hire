@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { User, LoginRequest, LoginResponse, RegisterRequest } from '@/types/api';
 import { useRouter } from 'next/navigation';
+import { setCookie } from '@/lib/cookies';
 
 export function useMe() {
   return useQuery<User>({
@@ -25,6 +26,12 @@ export function useLogin() {
     onSuccess: (data) => {
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
+      
+      // Store in cookies for server-side Next.js middleware (30 days)
+      const MAX_AGE = 30 * 24 * 60 * 60;
+      setCookie('access_token', data.access, MAX_AGE);
+      setCookie('refresh_token', data.refresh, MAX_AGE);
+      
       router.push('/jobs');
     },
   });
