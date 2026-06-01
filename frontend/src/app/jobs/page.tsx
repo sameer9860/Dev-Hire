@@ -1,36 +1,126 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
-import type { JobFilters } from '@/types/api';
+import { Pagination } from '@/components/jobs/Pagination';
+import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
 import { Search, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-export default function JobsPage() {
-  const [filters, setFilters] = useState<JobFilters>({
-    search: '',
-    job_type: undefined,
-    experience_level: undefined,
-    is_remote: undefined,
-  });
+function JobsContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const { data, isLoading, isError, refetch, isFetching } = useJobs(filters);
+  // Extract query parameters from the URL
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const search = searchParams.get('search') || '';
+  const job_type = (searchParams.get('job_type') as JobType) || undefined;
+  const experience_level = (searchParams.get('experience_level') as ExperienceLevel) || undefined;
+  const is_remote_param = searchParams.get('is_remote');
+  const is_remote = is_remote_param === 'true' ? true : is_remote_param === 'false' ? false : undefined;
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters((prev) => ({ ...prev, search: e.target.value }));
+  // Build the unified filters object for the backend query
+  const filters: JobFilters = {
+    page,
+    search,
+    job_type,
+    experience_level,
+    is_remote,
   };
 
+  // Local state for the search input to ensure it is highly responsive
+  const [searchInput, setSearchInput] = useState(search);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep local search input value synced with URL updates (e.g. on clear filters, or back button navigation)
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
+
+  // Clean up timeouts on component unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Fetch data using the useJobs query hook
+  const { data, isLoading, isError, refetch, isFetching } = useJobs(filters);
+
+  // Debounced search updates URL query parameters
+  const debouncedUpdateSearch = useCallback((value: string) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (value) {
+        params.set('search', value);
+      } else {
+        params.delete('search');
+      }
+      // Always reset to page 1 on new searches
+      params.delete('page');
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    }, 400);
+  }, [pathname, router]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    debouncedUpdateSearch(value);
+  };
+
+  // Select filters update URL parameters immediately (resets page to 1)
+  const handleFilterChange = (newFilters: JobFilters) => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (newFilters.job_type) {
+      params.set('job_type', newFilters.job_type);
+    } else {
+      params.delete('job_type');
+    }
+
+    if (newFilters.experience_level) {
+      params.set('experience_level', newFilters.experience_level);
+    } else {
+      params.delete('experience_level');
+    }
+
+    if (newFilters.is_remote !== undefined) {
+      params.set('is_remote', String(newFilters.is_remote));
+    } else {
+      params.delete('is_remote');
+    }
+
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  // Page index update helper
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(window.location.search);
+    if (newPage > 1) {
+      params.set('page', String(newPage));
+    } else {
+      params.delete('page');
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  // Resets all parameters
   const clearFilters = () => {
-    setFilters({
-      search: '',
-      job_type: undefined,
-      experience_level: undefined,
-      is_remote: undefined,
-    });
+    setSearchInput('');
+    router.push(pathname, { scroll: false });
   };
 
   const jobs = data?.results ?? [];
@@ -56,16 +146,17 @@ export default function JobsPage() {
               <Search className="absolute left-3 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
-                placeholder="Search jobs by title or keywords..."
-                value={filters.search || ''}
+                placeholder="Search jobs by title, description or keywords..."
+                value={searchInput}
                 onChange={handleSearchChange}
-                className="pl-10 border-gray-200"
+                className="pl-10 border-gray-200 focus-visible:ring-blue-500 focus-visible:border-blue-500"
               />
             </div>
-            <button 
-              onClick={() => refetch()} 
+            <button
+              onClick={() => refetch()}
               disabled={isFetching}
               className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition disabled:opacity-50"
+              aria-label="Refresh job listings"
             >
               <RefreshCw className={`h-5 w-5 ${isFetching ? 'animate-spin' : ''}`} />
             </button>
@@ -84,22 +175,22 @@ export default function JobsPage() {
                   <SlidersHorizontal className="h-4 w-4 text-gray-600" />
                   Filters
                 </h2>
-                {(filters.job_type || filters.experience_level || filters.is_remote !== undefined || filters.search) && (
+                {(job_type || experience_level || is_remote !== undefined || search) && (
                   <button
                     onClick={clearFilters}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-700"
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                   >
                     Clear
                   </button>
                 )}
               </div>
-              <JobFiltersPanel filters={filters} onChange={setFilters} />
+              <JobFiltersPanel filters={filters} onChange={handleFilterChange} />
             </div>
           </div>
 
           {/* Job Listings */}
           <div className="lg:col-span-3">
-            <div className="mb-6">
+            <div className="mb-6 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isLoading ? 'Searching...' : `${data?.count ?? 0} Job${data?.count === 1 ? '' : 's'}`}
               </h2>
@@ -120,10 +211,10 @@ export default function JobsPage() {
             {isLoading && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse space-y-3">
-                    <div className="h-5 bg-gray-200 rounded w-3/4" />
-                    <div className="h-4 bg-gray-200 rounded w-1/2" />
-                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                  <div key={i} className="bg-gray-100 border border-gray-200 rounded-lg p-5 animate-pulse space-y-3 animate-infinite animate-duration-1000">
+                    <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse" />
+                    <div className="h-4 bg-gray-250 rounded w-1/2 animate-pulse" />
+                    <div className="h-4 bg-gray-250 rounded w-2/3 animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -133,7 +224,7 @@ export default function JobsPage() {
             {!isLoading && !isError && jobs.length === 0 && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
                 <p className="text-gray-600 font-medium mb-3">No jobs found</p>
-                <p className="text-gray-500 text-sm mb-6">Try adjusting your filters</p>
+                <p className="text-gray-500 text-sm mb-6">Try adjusting your search query or filters</p>
                 <Button onClick={clearFilters} className="bg-blue-600 hover:bg-blue-700 text-white">
                   Clear Filters
                 </Button>
@@ -142,17 +233,42 @@ export default function JobsPage() {
 
             {/* Jobs Grid */}
             {!isLoading && !isError && jobs.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {jobs.map((job, index) => (
-                  <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-105 transition-transform">
-                    <JobCard job={job} index={index} />
-                  </Link>
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {jobs.map((job, index) => (
+                    <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-[1.01] transition-transform duration-200">
+                      <JobCard job={job} index={index} />
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                <Pagination
+                  currentPage={page}
+                  totalCount={data?.count ?? 0}
+                  pageSize={10}
+                  onPageChange={handlePageChange}
+                />
+              </>
             )}
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col items-center justify-center bg-white space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <p className="text-gray-500 text-sm font-medium">Loading search interface...</p>
+        </div>
+      }
+    >
+      <JobsContent />
+    </Suspense>
   );
 }
