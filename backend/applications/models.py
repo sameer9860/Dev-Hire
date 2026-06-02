@@ -15,7 +15,7 @@ class Application(models.Model):
                                      related_name='applications')
        job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE, related_name='applications')
        cover_letter = models.TextField(blank=True)
-       resume_url = models.URLField(blank=True)
+       resume_url = models.URLField(max_length=500, blank=True)
        status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
        applied_at = models.DateTimeField(auto_now_add=True)
        updated_at = models.DateTimeField(auto_now=True)
