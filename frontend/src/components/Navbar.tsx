@@ -15,7 +15,8 @@ import {
   ChevronDown, 
   PlusCircle, 
   LayoutDashboard,
-  FileText
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -174,9 +175,25 @@ export default function Navbar() {
                       </span>
                     </div>
 
+                    <Link
+                      href="/profile"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer font-medium text-left"
+                    >
+                      <User className="w-4 h-4 text-zinc-500" />
+                      My Profile
+                    </Link>
+
+                    <Link
+                      href={`/profile/${user.username}`}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer font-medium text-left"
+                    >
+                      <ExternalLink className="w-4 h-4 text-zinc-500" />
+                      Public Profile
+                    </Link>
+
                     <button
                       onClick={handleLogout}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50/50 rounded-lg transition-colors cursor-pointer font-medium text-left"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50/50 rounded-lg transition-colors cursor-pointer font-medium text-left border-t border-zinc-100 mt-1 pt-2"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign out
@@ -236,6 +253,24 @@ export default function Navbar() {
                       </span>
                     </div>
                   </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <Link
+                      href="/profile"
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-150 rounded-xl transition-all font-semibold text-xs cursor-pointer"
+                    >
+                      <User className="w-3.5 h-3.5" />
+                      Edit Profile
+                    </Link>
+                    <Link
+                      href={`/profile/${user.username}`}
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-150 rounded-xl transition-all font-semibold text-xs cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Public Profile
+                    </Link>
+                  </div>
+
                   <button
                     onClick={handleLogout}
                     className="flex w-full items-center justify-center gap-2 py-2.5 px-4 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl transition-all font-semibold text-sm cursor-pointer"
