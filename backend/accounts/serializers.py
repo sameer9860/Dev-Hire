@@ -31,6 +31,41 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role', 'bio', 'avatar_url',
-                  'company_name', 'company_website', 'resume_url', 'skills',
-                  'github_url', 'portfolio_url']
+                  'company_name', 'company_website', 'company_size',
+                  'resume_url', 'skills', 'github_url', 'portfolio_url']
         read_only_fields = ['id']
+
+
+class DeveloperProfileSerializer(serializers.ModelSerializer):
+    """Serializer for developer profile updates — only developer-relevant fields."""
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'role', 'bio', 'avatar_url',
+            'skills', 'github_url', 'portfolio_url', 'resume_url',
+        ]
+        read_only_fields = ['id', 'username', 'email', 'role']
+
+
+class CompanyProfileSerializer(serializers.ModelSerializer):
+    """Serializer for company profile updates — only company-relevant fields."""
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'role', 'bio', 'avatar_url',
+            'company_name', 'company_website', 'company_size',
+        ]
+        read_only_fields = ['id', 'username', 'email', 'role']
+
+
+class PublicProfileSerializer(serializers.ModelSerializer):
+    """Read-only serializer for public profile view — no sensitive fields."""
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'role', 'bio', 'avatar_url',
+            # Developer fields
+            'skills', 'github_url', 'portfolio_url',
+            # Company fields
+            'company_name', 'company_website', 'company_size',
+        ]
