@@ -358,11 +358,21 @@ export function CompanyDashboard() {
                               {dev.username?.substring(0, 2).toUpperCase() || 'DV'}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-bold text-sm">{dev.username}</h4>
+                              <h4 className="font-bold text-sm">
+                                <Link href={`/profile/${dev.username}`} className="hover:underline hover:text-blue-600 transition-colors">
+                                  {dev.username}
+                                </Link>
+                              </h4>
                               <div className="flex flex-wrap items-center gap-2 mt-1">
                                 <span className="text-xs text-gray-600 flex items-center gap-1">
                                   <Mail className="h-3 w-3" /> {dev.email}
                                 </span>
+                                <Link
+                                  href={`/profile/${dev.username}`}
+                                  className="text-xs text-indigo-600 hover:underline font-bold flex items-center gap-1"
+                                >
+                                  <Users className="h-3 w-3" /> View Public Profile
+                                </Link>
                                 {dev.github_url && (
                                   <a
                                     href={dev.github_url}
