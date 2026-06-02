@@ -122,3 +122,23 @@ export type UserRole = 'developer' | 'company' | 'guest';
      company_name?: string;
      company_website?: string;
    }
+
+   // ─── Profile ──────────────────────────────────────────────────────
+   export interface DeveloperProfileUpdate {
+     bio: string;
+     avatar_url: string;
+     skills: string[];
+     github_url: string;
+     portfolio_url: string;
+     resume_url: string;
+   }
+
+   export interface CompanyProfileUpdate {
+     bio: string;
+     avatar_url: string;
+     company_name: string;
+     company_website: string;
+     company_size: string;
+   }
+
+   export type ProfileUpdate = DeveloperProfileUpdate | CompanyProfileUpdate;
