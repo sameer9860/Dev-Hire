@@ -129,7 +129,9 @@ export default function JobDetailPage() {
               </h1>
 
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-3 text-xs md:text-sm text-slate-500 font-medium">
-                <span className="text-slate-800 font-semibold">{job.company.company_name}</span>
+                <Link href={`/profile/${job.company.username}`} className="text-slate-850 font-bold hover:underline hover:text-slate-900 transition-colors">
+                  {job.company.company_name}
+                </Link>
                 <span className="text-slate-300">•</span>
                 <span>{job.location}</span>
                 <span className="text-slate-300">•</span>
@@ -259,22 +261,34 @@ export default function JobDetailPage() {
                   {(job.company.company_name || 'C')[0].toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-bold text-slate-800 text-sm">{job.company.company_name}</p>
+                  <p className="font-bold text-slate-800 text-sm">
+                    <Link href={`/profile/${job.company.username}`} className="hover:underline hover:text-slate-900 transition-colors">
+                      {job.company.company_name}
+                    </Link>
+                  </p>
                   {job.company.company_size && (
                     <p className="text-xs text-slate-400 font-medium">{job.company.company_size} employees</p>
                   )}
                 </div>
               </div>
-              {job.company.company_website && (
-                <a
-                  href={job.company.company_website}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <div className="flex flex-col gap-2">
+                <Link
+                  href={`/profile/${job.company.username}`}
                   className="inline-flex items-center text-xs text-rose-700 hover:text-rose-900 font-bold tracking-wide transition-colors"
                 >
-                  Visit Website →
-                </a>
-              )}
+                  View Public Profile →
+                </Link>
+                {job.company.company_website && (
+                  <a
+                    href={job.company.company_website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs text-slate-500 hover:text-slate-700 font-medium tracking-wide transition-colors"
+                  >
+                    Visit Website ↗
+                  </a>
+                )}
+              </div>
             </div>
 
             {/* Apply CTA Card - Indigo Theme */}
