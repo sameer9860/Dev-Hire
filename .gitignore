@@ -14,7 +14,7 @@ backend/core/__pycache__/
 backend/__pycache__/*
 backend/core/__pycache__/
 backend/__pycache__/*
-
+backend/.pytest_cache/*
 
 backend/accounts/migrations/*
 backend/core/migrations/*
