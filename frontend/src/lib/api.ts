@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { setCookie, deleteCookie } from '@/lib/cookies';
+import { toast } from 'sonner';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
@@ -40,7 +41,11 @@ api.interceptors.response.use(
         localStorage.removeItem('refresh_token');
         deleteCookie('access_token');
         deleteCookie('refresh_token');
-        window.location.href = '/login';
+        
+        toast.error("Your session has expired. Redirecting to login page...");
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
       }
     }
     return Promise.reject(error);
