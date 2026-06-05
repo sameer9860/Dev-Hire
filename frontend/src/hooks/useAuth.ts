@@ -3,6 +3,7 @@ import api from '@/lib/api';
 import type { User, LoginRequest, LoginResponse, RegisterRequest } from '@/types/api';
 import { useRouter } from 'next/navigation';
 import { setCookie } from '@/lib/cookies';
+import { toast } from 'sonner';
 
 export function useMe() {
   return useQuery<User>({
@@ -32,8 +33,13 @@ export function useLogin() {
       setCookie('access_token', data.access, MAX_AGE);
       setCookie('refresh_token', data.refresh, MAX_AGE);
       
+      toast.success("Welcome back! Signed in successfully.");
       router.push('/jobs');
     },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.response?.data?.non_field_errors?.[0] || error.message || "Failed to sign in.";
+      toast.error(errMsg);
+    }
   });
 }
 
@@ -44,6 +50,29 @@ export function useRegister() {
       const { data } = await api.post('/auth/register/', userData);
       return data;
     },
-    onSuccess: () => router.push('/login'),
+    onSuccess: (data) => {
+      toast.success(`Account for ${data.username} created successfully!`);
+      router.push('/login');
+    },
+    onError: (error: any) => {
+      const data = error.response?.data;
+      let errMsg = "Registration failed.";
+      if (data) {
+        if (typeof data === 'string') {
+          errMsg = data;
+        } else if (data.username) {
+          errMsg = `Username error: ${data.username.join(' ')}`;
+        } else if (data.email) {
+          errMsg = `Email error: ${data.email.join(' ')}`;
+        } else if (data.detail) {
+          errMsg = data.detail;
+        } else {
+          errMsg = Object.values(data).flat().join(' ');
+        }
+      } else {
+        errMsg = error.message;
+      }
+      toast.error(errMsg);
+    }
   });
 }

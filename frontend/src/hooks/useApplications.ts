@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { Application, ApplicationStatus, PaginatedResponse } from '@/types/api';
+import { toast } from 'sonner';
 
 export function useMyApplications() {
   return useQuery<PaginatedResponse<Application>>({
@@ -24,7 +25,12 @@ export function useApply() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success("Application submitted successfully!");
     },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to submit application.";
+      toast.error(errMsg);
+    }
   });
 }
 
@@ -35,9 +41,14 @@ export function useUpdateApplicationStatus() {
       const { data } = await api.patch(`/applications/${id}/status/`, body);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['company-applications'] });
+      toast.success(`Application status updated to "${data.status}"`);
     },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to update application status.";
+      toast.error(errMsg);
+    }
   });
 }
 
