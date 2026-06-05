@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
+import { JobCardSkeleton } from '@/components/jobs/JobCardSkeleton';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
 import { Pagination } from '@/components/jobs/Pagination';
 import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
@@ -211,11 +212,7 @@ function JobsContent() {
             {isLoading && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-gray-100 border border-gray-200 rounded-lg p-5 animate-pulse space-y-3 animate-infinite animate-duration-1000">
-                    <div className="h-5 bg-gray-200 rounded w-3/4 animate-pulse" />
-                    <div className="h-4 bg-gray-250 rounded w-1/2 animate-pulse" />
-                    <div className="h-4 bg-gray-250 rounded w-2/3 animate-pulse" />
-                  </div>
+                  <JobCardSkeleton key={i} />
                 ))}
               </div>
             )}
