@@ -15,7 +15,6 @@ import {
   ChevronDown, 
   PlusCircle, 
   LayoutDashboard,
-  FileText,
   ExternalLink
 } from 'lucide-react';
 
@@ -94,16 +93,10 @@ export default function Navbar() {
         )}
         
         {user && user.role === 'developer' && (
-          <>
-            <Link href="/dashboard/developer" className={getLinkStyle('/dashboard/developer')}>
-              <LayoutDashboard className="w-4 h-4" />
-              Dashboard
-            </Link>
-            <Link href="/dashboard/developer" className={getLinkStyle('/dashboard/developer')}>
-              <FileText className="w-4 h-4" />
-              My Applications
-            </Link>
-          </>
+          <Link href="/dashboard/developer" className={getLinkStyle('/dashboard/developer')}>
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </Link>
         )}
 
         {user && user.role === 'company' && (

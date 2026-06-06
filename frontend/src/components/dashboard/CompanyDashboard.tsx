@@ -181,13 +181,13 @@ export function CompanyDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Manage Candidates</h1>
           <p className="text-gray-600 mt-1">Review applications and update candidate status</p>
         </div>
         <Link href="/jobs/post">
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" /> Post Job
           </Button>
         </Link>
@@ -285,7 +285,7 @@ export function CompanyDashboard() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-bold text-indigo-900">{selectedJob.title}</h2>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-indigo-700">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-indigo-700">
                         <span className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" /> {selectedJob.location}
                         </span>
@@ -463,7 +463,7 @@ export function CompanyDashboard() {
                                     e.target.value as ApplicationStatus
                                   )
                                 }
-                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full min-w-0 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                               >
                                 <option value="pending">Pending</option>
                                 <option value="reviewing">Reviewing</option>
