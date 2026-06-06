@@ -20,7 +20,7 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
 
   return (
     <Card className="p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-900 mb-1">
             {application.job.title}
@@ -28,7 +28,7 @@ export function ApplicationCard({ application }: ApplicationCardProps) {
           <p className="text-sm text-gray-600 mb-3">
             {application.job.company.company_name}
           </p>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
             <span>{application.job.location}</span>
             <span className="capitalize">
               {application.job.job_type.replace('-', ' ')}
