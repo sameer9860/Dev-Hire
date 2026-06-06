@@ -64,7 +64,7 @@ export default function PostJobPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-sm border p-8">
+        <div className="bg-white rounded-xl shadow-sm border p-6 sm:p-8">
           <h1 className="text-3xl font-bold mb-2">Post a New Job</h1>
           <p className="text-gray-600 mb-8">Fill out the form below to post a job listing for your company.</p>
 
@@ -131,7 +131,7 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Location */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Location *</label>
@@ -160,7 +160,7 @@ export default function PostJobPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Experience Level */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Experience Level *</label>
@@ -195,7 +195,7 @@ export default function PostJobPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {/* Salary Min */}
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-1">Minimum Salary</label>

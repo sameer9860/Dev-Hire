@@ -9,7 +9,7 @@ import { JobCardSkeleton } from '@/components/jobs/JobCardSkeleton';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
 import { Pagination } from '@/components/jobs/Pagination';
 import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
-import { Search, SlidersHorizontal, RefreshCw } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -38,6 +38,8 @@ function JobsContent() {
   // Local state for the search input to ensure it is highly responsive
   const [searchInput, setSearchInput] = useState(search);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Mobile filter drawer state
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Keep local search input value synced with URL updates (e.g. on clear filters, or back button navigation)
   useEffect(() => {
@@ -142,7 +144,7 @@ function JobsContent() {
           </div>
 
           {/* Search Bar */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mt-4">
             <div className="flex-1 relative flex items-center">
               <Search className="absolute left-3 h-4 w-4 text-gray-400" />
               <Input
@@ -153,6 +155,18 @@ function JobsContent() {
                 className="pl-10 border-gray-200 focus-visible:ring-blue-500 focus-visible:border-blue-500"
               />
             </div>
+            {/* Mobile filter button — only visible below lg */}
+            <button
+              onClick={() => setShowMobileFilters(true)}
+              className="lg:hidden relative flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              aria-label="Open filters"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              <span className="hidden sm:inline">Filters</span>
+              {(job_type || experience_level || is_remote !== undefined) && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-600 border-2 border-white" />
+              )}
+            </button>
             <button
               onClick={() => refetch()}
               disabled={isFetching}
@@ -168,8 +182,8 @@ function JobsContent() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Filters Sidebar — Desktop only */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow sticky top-6">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
                 <h2 className="font-bold text-gray-900 flex items-center gap-2">
@@ -189,8 +203,8 @@ function JobsContent() {
             </div>
           </div>
 
-          {/* Job Listings */}
-          <div className="lg:col-span-3">
+          {/* Job Listings — full width on mobile, 3/4 on lg */}
+          <div className="col-span-1 lg:col-span-3">
             <div className="mb-6 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
                 {isLoading ? 'Searching...' : `${data?.count ?? 0} Job${data?.count === 1 ? '' : 's'}`}
@@ -210,7 +224,7 @@ function JobsContent() {
 
             {/* Loading */}
             {isLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
                   <JobCardSkeleton key={i} />
                 ))}
@@ -231,7 +245,7 @@ function JobsContent() {
             {/* Jobs Grid */}
             {!isLoading && !isError && jobs.length > 0 && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {jobs.map((job, index) => (
                     <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-[1.01] transition-transform duration-200">
                       <JobCard job={job} index={index} />
@@ -251,6 +265,54 @@ function JobsContent() {
           </div>
         </div>
       </main>
+
+      {/* Mobile Filter Drawer */}
+      {showMobileFilters && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowMobileFilters(false)}
+          />
+          {/* Slide-up panel */}
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-200">
+            <div className="sticky top-0 bg-white rounded-t-2xl px-6 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4" />
+                Filters
+              </h2>
+              <div className="flex items-center gap-4">
+                {(job_type || experience_level || is_remote !== undefined || search) && (
+                  <button
+                    onClick={() => { clearFilters(); setShowMobileFilters(false); }}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  >
+                    Clear all
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowMobileFilters(false)}
+                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="Close filters"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-5">
+              <JobFiltersPanel filters={filters} onChange={(f) => { handleFilterChange(f); }} />
+            </div>
+            <div className="sticky bottom-0 bg-white px-6 pb-6 pt-3 border-t border-gray-100">
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                Show {data?.count ?? 0} Result{data?.count === 1 ? '' : 's'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

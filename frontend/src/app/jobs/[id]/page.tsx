@@ -213,8 +213,8 @@ export default function JobDetailPage() {
 
               <div className="space-y-3.5 text-xs md:text-sm">
                 <div className="flex justify-between items-center gap-4 py-1.5 border-b border-amber-200/20 last:border-0">
-                  <span className="text-[10px] text-amber-850/60 font-bold uppercase tracking-wider">Salary</span>
-                  <span className="font-semibold text-slate-850 text-right">{salaryDisplay}</span>
+                  <span className="text-[10px] text-amber-850/60 font-bold uppercase tracking-wider flex-shrink-0">Salary</span>
+                  <span className="font-semibold text-slate-850 text-right min-w-0 break-words">{salaryDisplay}</span>
                 </div>
 
                 <div className="flex justify-between items-center gap-4 py-1.5 border-b border-amber-200/20 last:border-0">
