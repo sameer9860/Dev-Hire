@@ -20,12 +20,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/jobs', request.url));
   }
 
+  // 3. If a logged-in user visits the root, redirect to jobs
+  if (pathname === '/' && token) {
+    return NextResponse.redirect(new URL('/jobs', request.url));
+  }
+
   return NextResponse.next();
 }
 
 // Config to specify exactly which routes this middleware applies to
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*',
     '/jobs/post',
     '/profile',
