@@ -1,51 +1,32 @@
-'use client';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import { Toaster, toast } from 'sonner';
+import { Metadata } from 'next';
+import Providers from '@/components/Providers';
 import './globals.css';
 
+export const metadata: Metadata = {
+  title: {
+    default: 'DevHire',
+    template: '%s | DevHire',
+  },
+  description: 'Apply to curated software engineering, design, and product roles at top companies.',
+  keywords: ['software developer jobs', 'remote dev roles', 'django nextjs job board', 'tech hiring'],
+  authors: [{ name: 'Samir Khatiwada' }],
+  creator: 'Samir Khatiwada',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: '/',
+    siteName: 'DevHire',
+    title: 'DevHire — Vetted Tech Jobs for Developers',
+    description: 'Apply to curated software engineering, design, and product roles at top companies.',
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: { staleTime: 1000 * 60 * 5 }, // 5 minutes
-    },
-  }));
-
-  const isAuthRoute = pathname === '/login' || pathname === '/register';
-
-  useEffect(() => {
-    const handleOnline = () => {
-      toast.dismiss('network-status');
-      toast.success("You are back online!");
-    };
-    const handleOffline = () => {
-      toast.error("Internet connection lost. Working offline.", {
-        duration: Infinity,
-        id: "network-status",
-      });
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
   return (
     <html lang="en">
       <body>
-        <QueryClientProvider client={queryClient}>
-          {!isAuthRoute && <Navbar />}
-          {children}
-          <Toaster richColors closeButton position="top-right" />
-        </QueryClientProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
