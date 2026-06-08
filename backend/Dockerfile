@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the backend files
 COPY . .
 
-# Collect static files (whitenoise serves them at runtime)
-RUN python manage.py collectstatic --noinput || true
+# Note: Static files are collected during the release phase in Procfile
+# This is done to avoid database connectivity issues during Docker build
 
 # Expose port (Railway injects $PORT at runtime)
 EXPOSE 8000
