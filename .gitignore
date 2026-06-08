@@ -20,3 +20,6 @@ backend/accounts/migrations/*
 backend/core/migrations/*
 backend/jobs/migrations/*
 backend/applications/migrations/*
+
+bakend/core/__pycache__/*
+backend/accounts/__pycache__/*

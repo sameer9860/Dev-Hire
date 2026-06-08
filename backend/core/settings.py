@@ -29,16 +29,16 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
 
-# ALLOWED_HOSTS with fallback and environment support
+# ALLOWED_HOSTS - supports both local dev and Railway production
+# LOCAL: ALLOWED_HOSTS=localhost,127.0.0.1
+# RAILWAY: Set to your-service.up.railway.app in Variables tab
 _allowed_hosts = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
-ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts]
+ALLOWED_HOSTS = [host.strip() for host in _allowed_hosts if host.strip()]
 
-# In production on Railway, also allow all *.up.railway.app domains
+# In production, also allow wildcard subdomains for Railway
 if not DEBUG:
-    ALLOWED_HOSTS.extend([
-        '*.up.railway.app',
-        '.up.railway.app',
-    ])
+    if '*.up.railway.app' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('*.up.railway.app')
 
 
 # Application definition
