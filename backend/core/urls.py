@@ -17,10 +17,33 @@ Including another URLconf
 # pyrefly: ignore [missing-import]
 from django.contrib import admin
 # pyrefly: ignore [missing-import]
-from django.urls import path,include
+from django.urls import path, include
+from django.http import JsonResponse
+from django.conf import settings
+from django.db import connection
+
+
+def health_check(request):
+    """Diagnostic endpoint to check Django configuration and database connection."""
+    try:
+        # Test database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            db_status = "✓ Connected"
+    except Exception as e:
+        db_status = f"✗ Error: {str(e)}"
+    
+    return JsonResponse({
+        "status": "healthy",
+        "debug": settings.DEBUG,
+        "allowed_hosts": settings.ALLOWED_HOSTS,
+        "database": db_status,
+        "request_host": request.get_host(),
+    })
 
 
 urlpatterns = [
+    path('health/', health_check),
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
     path('api/', include('jobs.urls')),
