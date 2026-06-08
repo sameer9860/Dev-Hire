@@ -1,2 +1,2 @@
-release: set -e && echo "Starting migrations..." && python manage.py migrate --noinput && echo "Migrations complete" && python manage.py collectstatic --noinput && echo "Static files collected"
-web: gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --access-logfile -
+release: python manage.py migrate --noinput && python manage.py collectstatic --noinput
+web: sh start.sh
