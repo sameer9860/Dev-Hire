@@ -24,6 +24,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: devhire-backend
+    # Override production CMD — use Django dev server locally
+    command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:

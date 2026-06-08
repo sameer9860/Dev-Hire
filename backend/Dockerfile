@@ -16,8 +16,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the backend files
 COPY . .
 
-# Expose port
+# Collect static files (whitenoise serves them at runtime)
+RUN python manage.py collectstatic --noinput || true
+
+# Expose port (Railway injects $PORT at runtime)
 EXPOSE 8000
 
-# Default command for development (will be overridden or customized in compose if needed)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Use gunicorn in production; Railway overrides $PORT automatically
+CMD gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120
+
