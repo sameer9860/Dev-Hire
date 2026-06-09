@@ -5,9 +5,9 @@ services:
     image: postgres:16-alpine
     container_name: devhire-db
     environment:
-      POSTGRES_DB: devhire
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5433:5432"
     volumes:
@@ -24,22 +24,22 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: devhire-backend
-    # Override production CMD — use Django dev server locally
-    command: python manage.py runserver 0.0.0.0:8000
+    
+    command: gunicorn devhire.wsgi:application --bind [IP_ADDRESS]
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     environment:
-      - DJANGO_SECRET_KEY=django-insecure-tu7$$ym+ahg0u+4_8etf@@z_s!ndys#%x2*9#5-fo^ror@!nu*!
-      - DEBUG=True
-      - DB_NAME=devhire
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
-      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
     depends_on:
       db:
         condition: service_healthy
@@ -56,7 +56,7 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     depends_on:
       - backend
 

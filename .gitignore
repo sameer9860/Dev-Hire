@@ -26,3 +26,6 @@ backend/core/__pycache__/*
 backend/accounts/__pycache__/*
 backend/jobs/__pycache__/*
 backend/applications/__pycache__/*
+
+
+docker-compose.yml
