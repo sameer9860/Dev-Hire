@@ -7,6 +7,7 @@ interface Props {
 
 async function getProfileData(username: string) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  
   try {
     const res = await fetch(`${apiUrl}/auth/profile/${username}/`, {
       next: { revalidate: 60 }, // Cache response for 1 minute
