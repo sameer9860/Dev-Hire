@@ -59,6 +59,16 @@ class TestAuthenticationAPI:
         assert "access" in response.data
         assert "refresh" in response.data
 
+    def test_login_accepts_email(self, api_client, developer_user):
+        data = {
+            "email": developer_user.email,
+            "password": "securepass123"
+        }
+        response = api_client.post("/api/auth/login/", data)
+        assert response.status_code == status.HTTP_200_OK
+        assert "access" in response.data
+        assert "refresh" in response.data
+
     def test_get_current_user_profile(self, auth_dev_client, developer_user):
         response = auth_dev_client.get("/api/auth/me/")
         assert response.status_code == status.HTTP_200_OK

@@ -1,9 +1,36 @@
 # pyrefly: ignore [missing-import]
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 # pyrefly: ignore [missing-import]
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    username = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+    def validate(self, attrs):
+        identifier = attrs.get('email') or attrs.get('username')
+        password = attrs.get('password')
+
+        if not identifier:
+            raise serializers.ValidationError({
+                'username': 'This field is required.',
+                'email': 'This field is required.'
+            })
+
+        user = User.objects.filter(email__iexact=identifier).first()
+        if user is None:
+            user = User.objects.filter(username=identifier).first()
+
+        if user is None or not user.check_password(password):
+            raise serializers.ValidationError({'detail': 'No active account found with the given credentials'})
+
+        attrs['username'] = user.username
+        return super().validate(attrs)
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)

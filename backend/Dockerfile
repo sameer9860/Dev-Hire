@@ -22,6 +22,6 @@ COPY . .
 # Expose port (Railway injects $PORT at runtime)
 EXPOSE 8000
 
-# Use gunicorn in production; Railway overrides $PORT automatically
-CMD gunicorn core.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers 2 --timeout 120
+# Run migrations at container startup, then start Gunicorn
+CMD ["sh", "start.sh"]
 

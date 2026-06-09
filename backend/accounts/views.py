@@ -2,6 +2,7 @@
 from rest_framework import generics, permissions
 # pyrefly: ignore [missing-import]
 from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import EmailTokenObtainPairSerializer
 # pyrefly: ignore [missing-import]
 from .serializers import (
     RegisterSerializer,
@@ -14,6 +15,11 @@ from .serializers import (
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
+
 
 class RegisterView(generics.CreateAPIView):
        queryset = User.objects.all()
