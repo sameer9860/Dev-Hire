@@ -102,8 +102,12 @@ AUTH_USER_MODEL = 'accounts.User'
 # Use DATABASE_URL on Railway, fall back to individual vars locally
 DATABASE_URL = config('DATABASE_URL', default=None)
 if DATABASE_URL:
+    # Railway Postgres accepts SSL; set DATABASE_SSL_REQUIRE=False if you hit SSL errors
+    ssl_require = config('DATABASE_SSL_REQUIRE', default=True, cast=bool)
     DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
+        'default': dj_database_url.parse(
+            DATABASE_URL, conn_max_age=600, ssl_require=ssl_require
+        )
     }
 else:
     DATABASES = {
@@ -189,10 +193,16 @@ SIMPLE_JWT = {
 
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000').split(',')
 
-# Security settings for production
+# Security settings for production (Railway terminates SSL at the edge)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
+    # Keep False on Railway — internal health checks use HTTP without the proxy header
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [
+        origin.strip()
+        for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+        if origin.strip()
+    ]
 

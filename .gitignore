@@ -2,6 +2,7 @@ devhire-plan.md
 .env
 __pycache__
 venv
+.venv
 venv/
 /__pycache__/
 *.pyc
@@ -16,10 +17,7 @@ backend/core/__pycache__/
 backend/__pycache__/*
 backend/.pytest_cache/*
 
-backend/accounts/migrations/*
-backend/core/migrations/*
-backend/jobs/migrations/*
-backend/applications/migrations/*
+backend/*/migrations/__pycache__/
 
 bakend/core/__pycache__/*
 backend/accounts/__pycache__/*

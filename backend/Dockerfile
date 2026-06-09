@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the backend files
 COPY . .
 
+RUN chmod +x start.sh
+
 # Note: Static files are collected during the release phase in Procfile
 # This is done to avoid database connectivity issues during Docker build
 
