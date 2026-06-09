@@ -21,3 +21,8 @@ backend/*/migrations/__pycache__/
 
 bakend/core/__pycache__/*
 backend/accounts/__pycache__/*
+
+backend/core/__pycache__/*
+backend/accounts/__pycache__/*
+backend/jobs/__pycache__/*
+backend/applications/__pycache__/*
