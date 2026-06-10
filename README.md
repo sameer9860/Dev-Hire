@@ -1,171 +1,329 @@
-# DevHire - Open Source Talent Marketplace
+# DevHire — Full-Stack Developer Job Board
 
-**DevHire** is a modern, open-source job board and talent marketplace built for developers, by developers. It connects skilled freelancers and professionals with companies looking for top tech talent, all while prioritizing transparency, fairness, and community-driven development.
+A production-ready job board where tech companies post jobs and developers apply.
 
-## 🚀 Key Features
-
-### For Job Seekers
-- **Personalized Job Feed:** Get matched with relevant opportunities based on your skills, experience, and career goals
-- **Verified Profiles:** Showcase your skills, certifications, and project portfolio
-- **Easy Application Tracking:** Manage your applications and interviews in one unified dashboard
-- **Skill Validation:** Take optional skill tests to verify your expertise and boost your credibility
-- **Community Reviews:** Read and contribute to transparent company reviews
-
-### For Companies
-- **Smart Talent Matching:** Find the best candidates with AI-powered recommendation engine
-- **Post Verified Jobs:** Create detailed job listings with transparent requirements
-- **Applicant Management:** Streamline your hiring process with organized candidate pipelines
-- **Employer Branding:** Build your employer brand with company reviews and insights
-- **Direct Messaging:** Communicate directly with candidates through our secure platform
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Framework:** React 18+ (Next.js 14+ with App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **UI Components:** Shadcn/UI, Radix UI
-- **State Management:** TanStack Query (React Query), Zustand
-- **Authentication:** NextAuth.js / Clerk
-- **Forms:** React Hook Form
-- **Validation:** Zod
-- **Data Fetching:** TanStack Query (React Query)
-
-### Backend
-- **Framework:** NestJS (Node.js)
-- **Language:** TypeScript
-- **Database:** PostgreSQL (with Prisma ORM)
-- **Authentication:** Passport.js (JWT, OAuth)
-- **Real-time:** Socket.IO
-- **Job Queue:** BullMQ (Redis)
-- **Validation:** class-validator, class-transformer
-- **Testing:** Jest, Supertest
-
-### Infrastructure
-- **Containerization:** Docker, Docker Compose
-- **Deployment Target:** Kubernetes
-- **CI/CD:** GitHub Actions
-- **Monitoring:** Prometheus, Grafana
-- **Logging:** Winston, Elasticsearch, Kibana (ELK Stack)
-- **Search:** Meilisearch (Optional for enhanced job search)
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 20.x or higher
-- npm or yarn
-- PostgreSQL 13 or higher
-- Docker and Docker Compose
-- Git
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/devhire/devhire.git
-   cd devhire
-   ```
-
-2. **Install backend dependencies**
-   ```bash
-   cd backend
-   npm install
-   ```
-
-3. **Install frontend dependencies**
-   ```bash
-   cd ../frontend
-   npm install
-   ```
-
-4. **Database Setup**
-   ```bash
-   cd ../backend
-   
-   # Create database
-   npx prisma db push
-   ```
-
-5. **Run the application**
-   ```bash
-   # Start backend
-   cd ../backend
-   npm run start:dev
-   
-   # Start frontend
-   cd ../frontend
-   npm run dev
-   ```
-
-6. **Access the application**
-   Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## 📂 Project Structure
-
-```
-devhire/
-├── frontend/          # React/Next.js application
-│   ├── app/           # Next.js App Router
-│   ├── components/    # Reusable UI components
-│   └── lib/           # Utilities and helpers
-├── backend/           # NestJS application
-│   ├── src/
-│   │   ├── api/       # API routes and controllers
-│   │   ├── modules/   # Feature modules (auth, jobs, users, etc.)
-│   │   ├── core/      # Core services and middleware
-│   │   └── filters/   # Exception filters
-│   ├── prisma/        # Database schema and migrations
-│   └── test/          # Test files
-├── docker/            # Docker configuration files
-├── .github/           # CI/CD workflows
-├── .env.example       # Environment variable examples
-└── README.md          # Project documentation
-```
-
-## 📚 Documentation
-
-- [Backend Documentation](backend/docs/README.md)
-- [Frontend Documentation](frontend/docs/README.md)
-- [API Documentation](backend/docs/API.md)
-- [Deployment Guide](docs/deployment.md)
-- [Development Setup](docs/development.md)
-
-## 🤝 Contributing
-
-We welcome contributions from the community! Whether you're fixing bugs, adding features, improving documentation, or reporting issues, your help is appreciated.
-
-### Contribution Guidelines
-
-Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for detailed information on our code of conduct, the process for submitting pull requests, and our development workflow.
-
-### Code of Conduct
-
-We are committed to providing a friendly, safe, and welcoming environment for everyone, regardless of gender, sexual orientation, disability, age, religion, or ethnicity. Please read and follow our [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Community
-
-- **Discord:** [Join our Discord server](https://discord.gg/your-server) (Coming soon)
-- **GitHub Discussions:** [Start a discussion](https://github.com/devhire/devhire/discussions)
-- **Twitter:** [@devhireapp](https://twitter.com/devhireapp) (Coming soon)
-
-## 📄 Project Goals
-
-- Create a transparent and ethical job marketplace that prioritizes developer well-being
-- Provide high-quality tools for both job seekers and companies
-- Build a thriving open-source community around talent acquisition
-- Foster fair hiring practices and reduce bias in recruitment
-
-## 📞 Contact
-
-For support, collaboration opportunities, or general inquiries:
-
-- **Email:** [EMAIL_ADDRESS]
-- **GitHub Issues:** [Open an issue](https://github.com/devhire/devhire/issues)
+Built with **Next.js**, **TypeScript**, **Django REST Framework**, and **PostgreSQL**.
 
 ---
 
-**Star this project if you find it useful!** ⭐
+## Live Demo
+
+| | URL |
+|---|---|
+| **Frontend** | https://devhire-frontend-gamma.vercel.app |
+| **Backend API** | https://dev-hire-production-0047.up.railway.app |
+| **GitHub** | https://github.com/sameer9860/Dev-Hire.git |
+
+> Replace the URLs above with your deployed Vercel, Railway, and GitHub links.
+
+---
+
+## Features
+
+### Authentication & Roles
+- JWT authentication with access + refresh tokens (`djangorestframework-simplejwt`)
+- Role-based accounts: **Company** and **Developer**
+- Protected routes and role-specific dashboards
+
+### Jobs
+- Public job listings with search, filters, and pagination
+- Filters: job type, experience level, remote, salary range
+- Companies can create, update, and manage their own listings
+- Dynamic SEO metadata on job detail pages
+
+### Applications
+- Developers apply to jobs with cover letter and resume URL
+- Duplicate application prevention
+- Application status workflow: `pending` → `reviewing` → `shortlisted` → `accepted` / `rejected`
+- Company dashboard to review and update applicant status
+- Developer dashboard to track application history
+
+### Profiles
+- Public developer/company profile pages (`/profile/[username]`)
+- Role-based profile editing (skills, portfolio, company info)
+
+### Frontend
+- Next.js App Router with Server + Client component split
+- TypeScript strict mode with shared API types
+- TanStack Query for data fetching and caching
+- React Hook Form + Zod validation
+- Route-level `loading.tsx` skeletons
+- Responsive design (mobile → desktop)
+- Toast notifications with Sonner
+
+### Backend
+- Django REST Framework with filtering, search, and ordering
+- Pytest test suite for auth, jobs, and applications
+- Production deploy with Gunicorn + WhiteNoise on Railway
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui |
+| Data fetching | TanStack Query v5, Axios |
+| Forms | React Hook Form + Zod |
+| Backend | Django 6, Django REST Framework |
+| Auth | JWT (simplejwt) |
+| Database | PostgreSQL |
+| Testing | pytest, pytest-django |
+| Local dev | Docker Compose |
+| Deployment | Vercel (frontend) + Railway (backend) |
+
+---
+
+## Project Structure
+
+```
+devhire/
+├── backend/                    # Django REST API
+│   ├── accounts/               # Auth, users, profiles
+│   ├── jobs/                   # Job listings
+│   ├── applications/           # Job applications
+│   ├── core/                   # Settings, URLs, WSGI
+│   ├── db_dump.sql             # Seed data for local Docker
+│   ├── Dockerfile              # Used by Railway + local Docker
+│   ├── railway.json
+│   ├── start.sh                # Migrate, collectstatic, Gunicorn
+│   ├── requirements.txt
+│   └── pytest.ini
+├── frontend/                   # Next.js app
+│   ├── src/
+│   │   ├── app/                # App Router pages
+│   │   ├── components/         # UI + feature components
+│   │   ├── hooks/              # React Query hooks
+│   │   ├── lib/                # API client, auth helpers
+│   │   ├── schemas/            # Zod schemas
+│   │   └── types/              # TypeScript interfaces
+│   ├── Dockerfile
+│   └── vercel.json
+├── docker-compose.example.yml  # Local Docker template
+└── README.md
+```
+
+---
+
+## Quick Start (Docker — Recommended)
+
+### Prerequisites
+- Docker & Docker Compose
+- Git
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/sameer9860/Dev-Hire.git
+cd devhire
+```
+
+### 2. Create environment file
+
+```bash
+cp backend/.env.example .env
+```
+
+Fill in `.env`:
+
+```env
+DJANGO_SECRET_KEY=your-local-dev-secret-key
+DEBUG=True
+DB_NAME=devhire
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_HOST=db
+DB_PORT=5432
+ALLOWED_HOSTS=localhost,127.0.0.1,backend
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+```
+
+### 3. Start services
+
+```bash
+cp docker-compose.example.yml docker-compose.yml
+docker compose up --build
+```
+
+For local development, override the backend command in `docker-compose.yml`:
+
+```yaml
+command: python manage.py runserver 0.0.0.0:8000
+```
+
+### 4. Open the app
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8000/api |
+| Django Admin | http://localhost:8000/admin |
+| PostgreSQL (host) | localhost:5433 |
+
+> `db_dump.sql` loads automatically on first database startup. To reload seed data: `docker compose down -v` then `docker compose up --build`.
+
+---
+
+## Manual Local Setup (Without Docker)
+
+### Backend
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env            # configure DB vars
+python manage.py migrate
+python manage.py runserver
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:8000/api" > .env.local
+npm run dev
+```
+
+---
+
+## API Endpoints
+
+### Auth (`/api/auth/`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/register/` | Register company or developer |
+| POST | `/login/` | Login (email + password) → JWT tokens |
+| POST | `/token/refresh/` | Refresh access token |
+| GET | `/me/` | Current authenticated user |
+| PATCH | `/profile/` | Update own profile |
+| GET | `/profile/<username>/` | Public profile |
+
+### Jobs (`/api/jobs/`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/jobs/` | List jobs (public, filterable) |
+| POST | `/jobs/` | Create job (company only) |
+| GET | `/jobs/<id>/` | Job detail |
+| PATCH/PUT | `/jobs/<id>/` | Update job (owner only) |
+| DELETE | `/jobs/<id>/` | Delete job (owner only) |
+
+**Query filters:** `search`, `job_type`, `experience_level`, `is_remote`, `salary_min`, `salary_max`, `ordering`, `page`
+
+### Applications (`/api/applications/`)
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/applications/` | List applications (role-based) |
+| POST | `/applications/` | Apply to job (developer only) |
+| PATCH | `/applications/<id>/` | Update status (company only) |
+
+### Health
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health/` | Backend + database health check |
+
+---
+
+## Running Tests
+
+```bash
+cd backend
+pytest
+```
+
+Tests cover:
+- User registration and JWT login
+- Job CRUD permissions (company vs developer)
+- Application flow and status updates
+- Duplicate application prevention
+
+---
+
+## Deployment
+
+### Backend — Railway
+
+1. Connect GitHub repo → set root directory to `backend`
+2. Add PostgreSQL plugin
+3. Set environment variables:
+
+```env
+DJANGO_SECRET_KEY=<strong-random-key>
+DEBUG=False
+DATABASE_URL=<from-railway-postgres>
+ALLOWED_HOSTS=your-backend.up.railway.app
+CORS_ALLOWED_ORIGINS=https://your-app.vercel.app
+CSRF_TRUSTED_ORIGINS=https://your-app.vercel.app
+```
+
+4. Railway builds from `Dockerfile` via `railway.json`
+5. `start.sh` runs migrations, collectstatic, and starts Gunicorn
+
+### Frontend — Vercel
+
+1. Import GitHub repo → set root directory to `frontend`
+2. Set environment variable:
+
+```env
+NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app/api
+```
+
+3. Deploy — Vercel auto-detects Next.js
+
+---
+
+## TypeScript Concepts Used
+
+| Concept | Where |
+|---|---|
+| `interface` | `frontend/src/types/api.ts` — User, Job, Application |
+| Discriminated union | `AuthState`, `ProfileUpdate` |
+| Generics | `PaginatedResponse<T>` |
+| Utility types | `Partial<JobFilters>`, `Record<ApplicationStatus, string>` |
+| Zod inference | `z.infer<typeof schema>` in form schemas |
+| Type guards | Role-based UI rendering (company vs developer) |
+
+---
+
+## Environment Variables
+
+### Backend (`.env`)
+
+| Variable | Description |
+|---|---|
+| `DJANGO_SECRET_KEY` | Django secret key |
+| `DEBUG` | `True` locally, `False` in production |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | Local PostgreSQL |
+| `DATABASE_URL` | Railway PostgreSQL (production) |
+| `ALLOWED_HOSTS` | Comma-separated allowed hosts |
+| `CORS_ALLOWED_ORIGINS` | Frontend origin(s) |
+| `CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF (production) |
+
+### Frontend (`.env.local` / Vercel)
+
+| Variable | Description |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend API base URL |
+| `NEXT_PUBLIC_SITE_URL` | Site URL for metadata (optional) |
+
+---
+
+## Author
+
+**Samir Khatiwada**  
+Full-Stack Developer | Django + Next.js + TypeScript
+
+- Portfolio: [samirkhatiwada.com.np](https://samirkhatiwada.com.np)
+
+---
+
+## License
+
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
