@@ -6,6 +6,14 @@ Built with Next.js, TypeScript, Django REST Framework, and PostgreSQL.
 
 ---
 
+## Live Demo
+
+| Platform    | URL                                             |
+| ----------- | ----------------------------------------------- |
+| Frontend    | https://devhire-frontend-gamma.vercel.app       |
+| Backend API | https://dev-hire-production-0047.up.railway.app |
+| GitHub      | https://github.com/sameer9860/Dev-Hire.git      |
+
 ## Executive Summary
 
 ### Overview
@@ -70,16 +78,6 @@ DevHire provides a centralized hiring platform tailored for software developers 
 ✅ Ready for Portfolio Demonstration and Further Scaling
 
 ---
-
-## Live Demo
-
-| Platform    | URL                                             |
-| ----------- | ----------------------------------------------- |
-| Frontend    | https://devhire-frontend-gamma.vercel.app       |
-| Backend API | https://dev-hire-production-0047.up.railway.app |
-| GitHub      | https://github.com/sameer9860/Dev-Hire.git      |
-
-Replace the URLs above with your deployed Vercel, Railway, and GitHub links.
 
 ## Features
 
