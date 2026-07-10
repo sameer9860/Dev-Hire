@@ -7,7 +7,6 @@ venv/
 /__pycache__/
 *.pyc
 /.env*
-RAILWAY_DEPLOYMENT.md
 backend/.env
 frontend/.env
 frontend/node_modules
