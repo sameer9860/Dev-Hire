@@ -23,8 +23,13 @@ api.interceptors.response.use(
     const original = error.config;
     if (error.response?.status === 401 && !original._retry) {
       original._retry = true;
+      const refresh = localStorage.getItem('refresh_token');
+
+      if (!refresh) {
+        return Promise.reject(error);
+      }
+
       try {
-        const refresh = localStorage.getItem('refresh_token');
         const res = await axios.post(`${api.defaults.baseURL}/auth/token/refresh/`, { refresh });
         
         // Update localStorage

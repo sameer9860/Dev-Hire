@@ -6,6 +6,9 @@ import { setCookie } from '@/lib/cookies';
 import { toast } from 'sonner';
 
 export function useMe() {
+  const hasToken =
+    typeof window !== 'undefined' && !!localStorage.getItem('access_token');
+
   return useQuery<User>({
     queryKey: ['me'],
     queryFn: async () => {
@@ -14,6 +17,7 @@ export function useMe() {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
+    enabled: hasToken,
   });
 }
 
