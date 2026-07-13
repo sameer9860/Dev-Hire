@@ -4,11 +4,27 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterFormData } from '@/schemas/authSchema';
 import { useRegister } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Eye, EyeOff, User, Lock, Mail, Building2, Globe, Code } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useMe } from '@/hooks/useAuth';
 
 export default function RegisterPage() {
+  const { data: user, isLoading } = useMe();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      router.replace('/');
+    }
+  }, [user, router]);
+
   const {
     register,
     handleSubmit,
@@ -37,6 +53,14 @@ export default function RegisterPage() {
     };
     registerMutation.mutate(payload);
   };
+
+  if (!mounted || isLoading || user) {
+    return (
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center">
+        <div className="animate-spin border-4 border-zinc-950 border-t-transparent rounded-full w-8 h-8"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4 py-8">
