@@ -24,9 +24,15 @@ export default function Navbar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   
+  const [mounted, setMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   // Monitor scroll for shadow effects
   useEffect(() => {
@@ -85,21 +91,21 @@ export default function Navbar() {
 
     return (
       <>
-        {(!user || user.role !== 'company') && (
+        {(!mounted || !user || user.role !== 'company') && (
           <Link href="/jobs" className={getLinkStyle('/jobs')}>
             <Briefcase className="w-4 h-4" />
             Find Jobs
           </Link>
         )}
         
-        {user && user.role === 'developer' && (
+        {mounted && user && user.role === 'developer' && (
           <Link href="/dashboard/developer" className={getLinkStyle('/dashboard/developer')}>
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
           </Link>
         )}
 
-        {user && user.role === 'company' && (
+        {mounted && user && user.role === 'company' && (
           <>
             <Link href="/dashboard/company" className={getLinkStyle('/dashboard/company')}>
               <LayoutDashboard className="w-4 h-4" />
@@ -142,7 +148,7 @@ export default function Navbar() {
 
           {/* Desktop Right Panel (Auth control) */}
           <div className="hidden md:flex items-center gap-4">
-            {isLoading ? (
+            {!mounted || isLoading ? (
               <div className="h-8 w-24 bg-zinc-100 rounded-lg animate-pulse"></div>
             ) : user ? (
               <div className="relative">
@@ -167,6 +173,14 @@ export default function Navbar() {
                         {user.role}
                       </span>
                     </div>
+
+                    <Link
+                      href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 rounded-lg transition-colors cursor-pointer font-medium text-left"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-zinc-500" />
+                      Dashboard
+                    </Link>
 
                     <Link
                       href="/profile"
@@ -231,7 +245,7 @@ export default function Navbar() {
             {renderNavLinks(true)}
             
             <div className="border-t border-zinc-100 pt-4 mt-4">
-              {isLoading ? (
+              {!mounted || isLoading ? (
                 <div className="h-10 bg-zinc-100 rounded-lg animate-pulse w-full"></div>
               ) : user ? (
                 <div className="px-4 space-y-3">
