@@ -21,6 +21,21 @@
      return true;
    }, { message: 'Company name is required', path: ['company_name'] });
 
+   export const changePasswordSchema = z.object({
+     current_password: z.string().min(1, 'Current password is required'),
+     new_password: z.string().min(8, 'Minimum 8 characters'),
+     new_password2: z.string(),
+   }).refine((data) => data.new_password === data.new_password2, {
+     message: "Passwords don't match",
+     path: ['new_password2'],
+   });
+
+   export const deleteAccountSchema = z.object({
+     password: z.string().min(1, 'Password is required to delete your account'),
+   });
+
    // Infer TypeScript types from Zod — no duplication!
    export type LoginFormData = z.infer<typeof loginSchema>;
    export type RegisterFormData = z.infer<typeof registerSchema>;
+   export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+   export type DeleteAccountFormData = z.infer<typeof deleteAccountSchema>;
