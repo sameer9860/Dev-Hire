@@ -1,5 +1,9 @@
 # pyrefly: ignore [missing-import]
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
+# pyrefly: ignore [missing-import]
+from rest_framework.response import Response
+# pyrefly: ignore [missing-import]
+from rest_framework.views import APIView
 # pyrefly: ignore [missing-import]
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import EmailTokenObtainPairSerializer
@@ -10,6 +14,8 @@ from .serializers import (
     DeveloperProfileSerializer,
     CompanyProfileSerializer,
     PublicProfileSerializer,
+    ChangePasswordSerializer,
+    DeleteAccountSerializer,
 )
 # pyrefly: ignore [missing-import]
 from django.contrib.auth import get_user_model
@@ -62,3 +68,25 @@ class PublicProfileView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return User.objects.all()
+
+
+class ChangePasswordView(APIView):
+    """POST /api/auth/change-password/"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
+
+
+class DeleteAccountView(APIView):
+    """DELETE /api/auth/delete-account/ — requires password confirmation."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        serializer = DeleteAccountSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        request.user.delete()
+        return Response({'detail': 'Account deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
