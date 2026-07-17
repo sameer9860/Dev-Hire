@@ -89,3 +89,36 @@ class TestAuthenticationAPI:
         response = api_client.get(f"/api/auth/profile/{developer_user.username}/")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["username"] == developer_user.username
+
+    def test_change_password(self, auth_dev_client, developer_user):
+        response = auth_dev_client.post("/api/auth/change-password/", {
+            "current_password": "securepass123",
+            "new_password": "newsecurepass456",
+            "new_password2": "newsecurepass456",
+        }, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        developer_user.refresh_from_db()
+        assert developer_user.check_password("newsecurepass456")
+
+    def test_change_password_wrong_current(self, auth_dev_client):
+        response = auth_dev_client.post("/api/auth/change-password/", {
+            "current_password": "wrongpassword",
+            "new_password": "newsecurepass456",
+            "new_password2": "newsecurepass456",
+        }, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_delete_account_requires_password(self, auth_dev_client, developer_user):
+        response = auth_dev_client.delete("/api/auth/delete-account/", {
+            "password": "wrongpassword",
+        }, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert User.objects.filter(pk=developer_user.pk).exists()
+
+    def test_delete_account_success(self, auth_dev_client, developer_user):
+        user_id = developer_user.pk
+        response = auth_dev_client.delete("/api/auth/delete-account/", {
+            "password": "securepass123",
+        }, format="json")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not User.objects.filter(pk=user_id).exists()
