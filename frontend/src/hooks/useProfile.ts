@@ -19,7 +19,7 @@ export function useProfile() {
 /**
  * Update the authenticated user's profile (PATCH).
  * Invalidates both 'profile' and 'me' query caches on success
- * so the Navbar avatar/name stays in sync.
+ * so the Sidebar avatar/name stays in sync.
  */
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
