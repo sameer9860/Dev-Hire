@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_ROUTES = ['/dashboard', '/jobs/post', '/profile'];
+const PROTECTED_ROUTES = ['/dashboard', '/jobs/post', '/profile', '/settings'];
 const AUTH_ROUTES = ['/login', '/register'];
 
 export function proxy(request: NextRequest) {
@@ -16,10 +16,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/jobs', request.url));
   }
 
-  if (pathname === '/' && token) {
-    return NextResponse.redirect(new URL('/jobs', request.url));
-  }
-
   return NextResponse.next();
 }
 
@@ -29,6 +25,7 @@ export const config = {
     '/dashboard/:path*',
     '/jobs/post',
     '/profile',
+    '/settings',
     '/login',
     '/register',
   ],
