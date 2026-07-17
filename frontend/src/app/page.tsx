@@ -3,21 +3,15 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { useMe } from '@/hooks/useAuth';
-import { deleteCookie } from '@/lib/cookies';
-import { 
-  Briefcase, 
-  Users, 
-  Shield, 
-  Zap, 
-  ArrowRight, 
+import {
+  Briefcase,
+  Users,
+  Shield,
+  Zap,
+  ArrowRight,
   CheckCircle,
   LayoutDashboard,
-  User,
-  ExternalLink,
-  LogOut
 } from 'lucide-react';
 
 
@@ -56,23 +50,12 @@ const HIGHLIGHTS = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: user, isLoading } = useMe();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    deleteCookie('access_token');
-    deleteCookie('refresh_token');
-    queryClient.clear();
-    router.push('/login');
-  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -104,36 +87,13 @@ export default function HomePage() {
               {!mounted || isLoading ? (
                 <div className="h-11 w-32 bg-zinc-100 rounded-xl animate-pulse"></div>
               ) : user ? (
-                <>
-                  <Link
-                    href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
-                    className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-zinc-800 hover:shadow-md"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/profile"
-                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-6 py-3 text-sm font-semibold text-zinc-700 transition-all duration-150 hover:border-zinc-300 hover:bg-zinc-50"
-                  >
-                    <User className="h-4 w-4 text-zinc-500" />
-                    My Profile
-                  </Link>
-                  <Link
-                    href={`/profile/${user.username}`}
-                    className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 px-6 py-3 text-sm font-semibold text-zinc-700 transition-all duration-150 hover:border-zinc-300 hover:bg-zinc-50"
-                  >
-                    <ExternalLink className="h-4 w-4 text-zinc-500" />
-                    Public Profile
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50/50 text-red-600 px-6 py-3 text-sm font-semibold transition-all duration-150 hover:bg-red-100"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </>
+                <Link
+                  href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+                  className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-zinc-800 hover:shadow-md"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Go to Dashboard
+                </Link>
               ) : (
                 <>
                   <Link
@@ -264,36 +224,13 @@ export default function HomePage() {
             {!mounted || isLoading ? (
               <div className="h-11 w-32 bg-zinc-800 rounded-xl animate-pulse"></div>
             ) : user ? (
-              <>
-                <Link
-                  href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
-                  className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-950 shadow-sm transition-all hover:bg-zinc-100"
-                >
-                  <LayoutDashboard className="h-4 w-4" />
-                  Go to Dashboard
-                </Link>
-                <Link
-                  href="/profile"
-                  className="inline-flex items-center rounded-xl px-4 py-3 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-                >
-                  <User className="h-4 w-4 mr-1.5" />
-                  My Profile
-                </Link>
-                <Link
-                  href={`/profile/${user.username}`}
-                  className="inline-flex items-center rounded-xl px-4 py-3 text-sm font-medium text-zinc-400 transition-colors hover:text-white"
-                >
-                  <ExternalLink className="h-4 w-4 mr-1.5" />
-                  Public Profile
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center rounded-xl px-4 py-3 text-sm font-medium text-red-400 transition-colors hover:text-red-500"
-                >
-                  <LogOut className="h-4 w-4 mr-1.5" />
-                  Logout
-                </button>
-              </>
+              <Link
+                href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-950 shadow-sm transition-all hover:bg-zinc-100"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Go to Dashboard
+              </Link>
             ) : (
               <>
                 <Link
