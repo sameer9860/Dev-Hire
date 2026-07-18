@@ -81,10 +81,10 @@ const FAQS = [
 ];
 
 const SOCIAL_LINKS = [
-  { icon: FaGithub, label: 'GitHub', href: 'https://github.com/samirkhatiwada' },
-  { icon: FaXTwitter, label: 'Twitter / X', href: 'https://twitter.com/' },
-  { icon: FaLinkedinIn, label: 'LinkedIn', href: 'https://linkedin.com/' },
-  { icon: MdEmail, label: 'Email', href: 'mailto:hello@devhire.com' },
+  { icon: FaGithub, label: 'GitHub', href: 'https://github.com/sameer9860' },
+  { icon: FaXTwitter, label: 'Twitter / X', href: '#' },
+  { icon: FaLinkedinIn, label: 'LinkedIn', href: 'https://www.linkedin.com/in/samir-khatiwada-a34708346/' },
+  { icon: MdEmail, label: 'Email', href: 'mailto:samirkhatiwada68@gmail.com' },
 ];
 
 const FOOTER_LINKS = {
@@ -167,7 +167,7 @@ export default function HomePage() {
 
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-zinc-500 lg:mx-0">
               DevHire connects tech companies with developers. Browse open positions, apply in
-              minutes, and track your applications — all in one place.
+              minutes, and track your applications all in one place.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
@@ -255,7 +255,7 @@ export default function HomePage() {
             Everything you need
           </h2>
           <p className="mx-auto max-w-sm text-zinc-500">
-            Built for both sides of hiring — developers and companies.
+            Built for both sides of hiring developers and companies.
           </p>
         </div>
 
@@ -324,7 +324,7 @@ export default function HomePage() {
                   href="/register"
                   className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-950 shadow-sm transition-all hover:bg-zinc-100"
                 >
-                  Get Started — It&apos;s Free
+                  Get Started - It&apos;s Free
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
@@ -371,7 +371,7 @@ export default function HomePage() {
               </div>
               <p className="mb-6 max-w-sm text-sm leading-relaxed text-zinc-400">
                 DevHire connects tech companies with developers. Browse open positions, apply in
-                minutes, and track every application — all in one place.
+                minutes, and track every application all in one place.
               </p>
               <div className="flex items-center gap-3">
                 {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
@@ -419,7 +419,7 @@ export default function HomePage() {
             <p className="text-sm text-zinc-500">
               Developed by{' '}
               <a
-                href="https://github.com/samirkhatiwada"
+                href="https://github.com/sameer9860"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-zinc-300 transition-colors hover:text-white"
