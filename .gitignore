@@ -1,31 +1,30 @@
 devhire-plan.md
-.env
-__pycache__
-venv
-.venv
-venv/
-/__pycache__/
+
+# Python
+__pycache__/
+**/__pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables
+.env
 /.env*
 backend/.env
 frontend/.env
-frontend/node_modules
-backend/core/__pycache__/
-backend/__pycache__/*
-backend/core/__pycache__/
-backend/__pycache__/*
-backend/.pytest_cache/*
 
-backend/*/migrations/__pycache__/
+# Python test/cache
+backend/.pytest_cache/
 
-bakend/core/__pycache__/*
-backend/accounts/__pycache__/*
+# Node
+frontend/node_modules/
 
-backend/core/__pycache__/*
-backend/accounts/__pycache__/*
-backend/jobs/__pycache__/*
-backend/applications/__pycache__/*
-
-
+# Docker
 docker-compose.yml
+
+# Misc
 favicoon.ico
