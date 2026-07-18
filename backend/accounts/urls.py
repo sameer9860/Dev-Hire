@@ -9,6 +9,12 @@ urlpatterns = [
        path('login/', views.EmailTokenObtainPairView.as_view()),
        path('token/refresh/', TokenRefreshView.as_view()),
        path('me/', views.MeView.as_view()),
+       path('check-username/', views.CheckUsernameView.as_view()),
+       path('check-email/', views.CheckEmailView.as_view()),
+       path('check-company-name/', views.CheckCompanyNameView.as_view()),
+       path('check-company-website/', views.CheckCompanyWebsiteView.as_view()),
+       path('oauth/config/', views.OAuthConfigView.as_view()),
+       path('oauth/<str:provider>/', views.DeveloperOAuthView.as_view()),
        path('change-password/', views.ChangePasswordView.as_view()),
        path('delete-account/', views.DeleteAccountView.as_view()),
        # Day 16 — Profile endpoints
