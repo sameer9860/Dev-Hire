@@ -2,6 +2,9 @@
 from django.contrib.auth.models import AbstractUser
 # pyrefly: ignore [missing-import]
 from django.db import models
+# pyrefly: ignore [missing-import]
+from django.db.models import Q
+
 
 class User(AbstractUser):
        ROLE_CHOICES = [
@@ -20,6 +23,18 @@ class User(AbstractUser):
        skills = models.JSONField(default=list)
        github_url = models.URLField(max_length=500, blank=True)
        portfolio_url = models.URLField(max_length=500, blank=True)
+       # Social OAuth (developers only)
+       oauth_provider = models.CharField(max_length=20, blank=True)
+       oauth_uid = models.CharField(max_length=255, blank=True)
+
+       class Meta:
+           constraints = [
+               models.UniqueConstraint(
+                   fields=['oauth_provider', 'oauth_uid'],
+                   name='unique_oauth_identity',
+                   condition=~Q(oauth_uid=''),
+               ),
+           ]
 
        def __str__(self):
            return f"{self.username} ({self.role})"
