@@ -10,8 +10,9 @@ import {
   useDeleteAccount,
 } from '@/hooks/useAuth';
 import {
-  changePasswordSchema,
+  createChangePasswordSchema,
   deleteAccountSchema,
+  PASSWORD_RULES_HELP,
   type ChangePasswordFormData,
   type DeleteAccountFormData,
 } from '@/schemas/authSchema';
@@ -20,6 +21,26 @@ import { Eye, EyeOff, KeyRound, ShieldAlert, Trash2 } from 'lucide-react';
 export default function SettingsPage() {
   const router = useRouter();
   const { data: user, isLoading } = useMe();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
+      if (!hasToken) router.push('/login');
+    }
+  }, [isLoading, user, router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
+      </div>
+    );
+  }
+
+  return <SettingsContent username={user.username} />;
+}
+
+function SettingsContent({ username }: { username: string }) {
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
 
@@ -29,15 +50,8 @@ export default function SettingsPage() {
   const [showDeletePassword, setShowDeletePassword] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
-      if (!hasToken) router.push('/login');
-    }
-  }, [isLoading, user, router]);
-
   const passwordForm = useForm<ChangePasswordFormData>({
-    resolver: zodResolver(changePasswordSchema),
+    resolver: zodResolver(createChangePasswordSchema(username)),
     defaultValues: {
       current_password: '',
       new_password: '',
@@ -60,21 +74,13 @@ export default function SettingsPage() {
     deleteAccount.mutate(data);
   });
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900" />
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Settings</h1>
         <p className="mt-2 text-sm text-zinc-500">
           Manage your password and account for{' '}
-          <span className="font-semibold text-zinc-700">{user.username}</span>.
+          <span className="font-semibold text-zinc-700">{username}</span>.
         </p>
       </div>
 
@@ -86,9 +92,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-zinc-950">Change password</h2>
-              <p className="mt-0.5 text-sm text-zinc-500">
-                Update your password to keep your account secure.
-              </p>
+              <p className="mt-0.5 text-sm text-zinc-500">{PASSWORD_RULES_HELP}</p>
             </div>
           </div>
 

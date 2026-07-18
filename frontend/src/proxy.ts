@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PROTECTED_ROUTES = ['/dashboard', '/jobs/post', '/profile', '/settings'];
-const AUTH_ROUTES = ['/login', '/register'];
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get('access_token')?.value;
@@ -12,7 +11,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (AUTH_ROUTES.includes(pathname) && token) {
+  const isAuthRoute =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname.startsWith('/register/') ||
+    pathname.startsWith('/auth/callback');
+
+  if (isAuthRoute && token) {
     return NextResponse.redirect(new URL('/jobs', request.url));
   }
 
@@ -28,5 +33,7 @@ export const config = {
     '/settings',
     '/login',
     '/register',
+    '/register/:path*',
+    '/auth/callback/:path*',
   ],
 };

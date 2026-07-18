@@ -93,6 +93,105 @@ export function useRegister() {
   });
 }
 
+export type UsernameCheckResult = {
+  available: boolean;
+  username?: string;
+  detail?: string;
+  suggestions: string[];
+};
+
+export type AvailabilityCheckResult = {
+  available: boolean;
+  detail?: string;
+  email?: string;
+  company_name?: string;
+  company_website?: string;
+};
+
+function useDebouncedValue(value: string, delay = 400) {
+  const cleaned = value.trim();
+  const [debounced, setDebounced] = useState(cleaned);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(cleaned), delay);
+    return () => clearTimeout(t);
+  }, [cleaned, delay]);
+
+  return debounced;
+}
+
+export function useCheckUsername(username: string) {
+  const debounced = useDebouncedValue(username);
+  const enabled = debounced.length >= 3 && !/\s/.test(debounced);
+
+  return useQuery<UsernameCheckResult>({
+    queryKey: ['check-username', debounced],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/check-username/', {
+        params: { username: debounced },
+      });
+      return data;
+    },
+    enabled,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useCheckEmail(email: string) {
+  const debounced = useDebouncedValue(email);
+  const enabled = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debounced);
+
+  return useQuery<AvailabilityCheckResult>({
+    queryKey: ['check-email', debounced],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/check-email/', {
+        params: { email: debounced },
+      });
+      return data;
+    },
+    enabled,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useCheckCompanyName(companyName: string) {
+  const debounced = useDebouncedValue(companyName);
+  const enabled = debounced.length >= 1 && !/\s/.test(debounced);
+
+  return useQuery<AvailabilityCheckResult>({
+    queryKey: ['check-company-name', debounced],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/check-company-name/', {
+        params: { company_name: debounced },
+      });
+      return data;
+    },
+    enabled,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
+export function useCheckCompanyWebsite(website: string) {
+  const debounced = useDebouncedValue(website);
+  const enabled = debounced.length >= 4 && !/\s/.test(debounced) && /[.]/.test(debounced);
+
+  return useQuery<AvailabilityCheckResult>({
+    queryKey: ['check-company-website', debounced],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/check-company-website/', {
+        params: { company_website: debounced },
+      });
+      return data;
+    },
+    enabled,
+    staleTime: 30_000,
+    retry: false,
+  });
+}
+
 function extractApiError(error: any, fallback: string) {
   const data = error.response?.data;
   if (!data) return error.message || fallback;

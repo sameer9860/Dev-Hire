@@ -15,7 +15,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     },
   }));
 
-  const isAuthRoute = pathname === '/login' || pathname === '/register';
+  const isAuthRoute =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname.startsWith('/register/') ||
+    pathname.startsWith('/auth/callback');
   const isHomePage = pathname === '/';
 
   useEffect(() => {
