@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMe } from '@/hooks/useAuth';
+import { FaGithub, FaXTwitter, FaLinkedinIn } from 'react-icons/fa6';
+import { MdEmail } from 'react-icons/md';
 import {
   Briefcase,
   Users,
@@ -12,8 +14,9 @@ import {
   ArrowRight,
   CheckCircle,
   LayoutDashboard,
+  ChevronDown,
+  Code2,
 } from 'lucide-react';
-
 
 const FEATURES = [
   {
@@ -48,6 +51,90 @@ const HIGHLIGHTS = [
   'Public developer profiles for your portfolio',
   'Company candidate management dashboard',
 ];
+
+const FAQS = [
+  {
+    question: 'Is DevHire free to use?',
+    answer:
+      'Yes. Creating a developer account and applying to jobs is completely free. Companies can post jobs and manage applicants without any hidden fees.',
+  },
+  {
+    question: 'How do I apply for a job?',
+    answer:
+      'Create a developer profile with your resume URL and cover letter, then apply to any listing in seconds. You can track the status of every application from your dashboard.',
+  },
+  {
+    question: 'Can my company post multiple job openings?',
+    answer:
+      'Absolutely. Once you register as a company, you get access to a dashboard where you can post unlimited job listings, review applicants, and update candidate status in one place.',
+  },
+  {
+    question: 'Is my data secure?',
+    answer:
+      'Yes. DevHire uses role-based, JWT-secured authentication to keep developer and company accounts separate and protected.',
+  },
+  {
+    question: 'Can I edit or delete my profile later?',
+    answer:
+      'Yes, you can update your profile details, resume link, and preferences at any time from your account settings.',
+  },
+];
+
+const SOCIAL_LINKS = [
+  { icon: FaGithub, label: 'GitHub', href: 'https://github.com/samirkhatiwada' },
+  { icon: FaXTwitter, label: 'Twitter / X', href: 'https://twitter.com/' },
+  { icon: FaLinkedinIn, label: 'LinkedIn', href: 'https://linkedin.com/' },
+  { icon: MdEmail, label: 'Email', href: 'mailto:hello@devhire.com' },
+];
+
+const FOOTER_LINKS = {
+  Product: [
+    { label: 'Browse Jobs', href: '/jobs' },
+    { label: 'Create Account', href: '/register' },
+    { label: 'Sign In', href: '/login' },
+  ],
+  Company: [
+    { label: 'About Us', href: '/about' },
+    { label: 'Contact', href: '/contact' },
+    { label: 'Careers', href: '/careers' },
+  ],
+  Resources: [
+    { label: 'FAQs', href: '#faqs' },
+    { label: 'Privacy Policy', href: '/privacy' },
+    { label: 'Terms of Service', href: '/terms' },
+  ],
+};
+
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border-b border-zinc-100 last:border-b-0">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center justify-between gap-4 py-5 text-left"
+        aria-expanded={open}
+      >
+        <span className="text-base font-semibold text-zinc-900">{question}</span>
+        <ChevronDown
+          className={`h-5 w-5 flex-shrink-0 text-zinc-400 transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+      <div
+        className={`grid overflow-hidden transition-all duration-200 ease-in-out ${
+          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <p className="pb-5 pr-8 text-sm leading-relaxed text-zinc-500">{answer}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const { data: user, isLoading } = useMe();
@@ -252,11 +339,96 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* FAQs */}
+      <section id="faqs" className="border-t border-zinc-100 bg-white py-24">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <h2 className="mb-3 text-3xl font-bold tracking-tight text-zinc-950">
+              Frequently asked questions
+            </h2>
+            <p className="text-zinc-500">Everything you need to know before you get started.</p>
+          </div>
+
+          <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 px-6">
+            {FAQS.map((faq) => (
+              <FaqItem key={faq.question} question={faq.question} answer={faq.answer} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="border-t border-zinc-100 py-8">
-        <p className="text-center text-sm font-bold text-zinc-800">
-          © {new Date().getFullYear()} Samir Khatiwada. All rights reserved.
-        </p>
+      <footer className="border-t border-zinc-100 bg-zinc-950">
+        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+            {/* Brand / About */}
+            <div className="lg:col-span-2">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white">
+                  <Code2 className="h-5 w-5 text-zinc-950" />
+                </div>
+                <span className="text-lg font-bold text-white">DevHire</span>
+              </div>
+              <p className="mb-6 max-w-sm text-sm leading-relaxed text-zinc-400">
+                DevHire connects tech companies with developers. Browse open positions, apply in
+                minutes, and track every application — all in one place.
+              </p>
+              <div className="flex items-center gap-3">
+                {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 text-zinc-400 transition-colors hover:border-zinc-600 hover:text-white"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Link columns */}
+            {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
+              <div key={heading}>
+                <h3 className="mb-4 text-sm font-semibold text-white">{heading}</h3>
+                <ul className="space-y-3">
+                  {links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-zinc-400 transition-colors hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="border-t border-zinc-900">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 py-6 text-center sm:flex-row sm:px-6 sm:text-left lg:px-8">
+            <p className="text-sm text-zinc-500">
+              © {new Date().getFullYear()} DevHire. All rights reserved.
+            </p>
+            <p className="text-sm text-zinc-500">
+              Developed by{' '}
+              <a
+                href="https://github.com/samirkhatiwada"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-zinc-300 transition-colors hover:text-white"
+              >
+                Samir Khatiwada
+              </a>
+            </p>
+          </div>
+        </div>
       </footer>
     </div>
   );
