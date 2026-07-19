@@ -37,6 +37,21 @@ class TestAuthenticationAPI:
         assert response.data["username"] == "new_co"
         assert response.data["role"] == "company"
 
+    def test_register_company_accepts_domain_without_scheme(self, api_client):
+        data = {
+            "username": "new_co2",
+            "email": "co2@test.com",
+            "password": "Password1!",
+            "password2": "Password1!",
+            "role": "company",
+            "company_name": "TestCompanyInc2",
+            "company_website": "codynn.com.np"
+        }
+        response = api_client.post("/api/auth/register/", data)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["company_website"].startswith("https://")
+        assert "codynn.com.np" in response.data["company_website"]
+
     def test_register_passwords_dont_match(self, api_client):
         data = {
             "username": "mismatch_dev",
