@@ -264,7 +264,7 @@ export default function CompanyRegisterPage() {
                   className={inputCls}
                 />
                 <label htmlFor="company_website" className={labelCls}>
-                  Website (optional)
+                  Website (optional, e.g. codynn.com.np)
                 </label>
               </div>
             </div>

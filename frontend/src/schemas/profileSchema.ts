@@ -13,7 +13,13 @@ export const companyProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be under 500 characters'),
   avatar_url: z.string().url('Enter a valid URL').or(z.literal('')),
   company_name: z.string().min(1, 'Company name is required'),
-  company_website: z.string().url('Enter a valid website URL').or(z.literal('')),
+  company_website: z.string().refine((v) => {
+    if (!v) return true;
+    const valToTest = v.includes('://') ? v : `https://${v}`;
+    return z.string().url().safeParse(valToTest).success;
+  }, {
+    message: 'Enter a valid website URL',
+  }),
   company_size: z.string(),
 });
 

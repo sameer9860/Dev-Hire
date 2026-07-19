@@ -132,7 +132,11 @@ export const companyRegisterSchema = withMatchingPasswords(
       .string()
       .regex(/^\S*$/, noSpaceMsg('Website'))
       .optional()
-      .refine((v) => !v || z.string().url().safeParse(v).success, {
+      .refine((v) => {
+        if (!v) return true;
+        const valToTest = v.includes('://') ? v : `https://${v}`;
+        return z.string().url().safeParse(valToTest).success;
+      }, {
         message: 'Enter a valid URL',
       }),
   })
@@ -159,7 +163,11 @@ export const registerSchema = withMatchingPasswords(
       .string()
       .regex(/^\S*$/, noSpaceMsg('Website'))
       .optional()
-      .refine((v) => !v || z.string().url().safeParse(v).success, {
+      .refine((v) => {
+        if (!v) return true;
+        const valToTest = v.includes('://') ? v : `https://${v}`;
+        return z.string().url().safeParse(valToTest).success;
+      }, {
         message: 'Enter a valid URL',
       }),
   })
