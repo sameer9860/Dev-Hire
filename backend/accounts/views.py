@@ -5,6 +5,8 @@ from rest_framework.response import Response
 # pyrefly: ignore [missing-import]
 from rest_framework.views import APIView
 # pyrefly: ignore [missing-import]
+from rest_framework.parsers import MultiPartParser, FormParser
+# pyrefly: ignore [missing-import]
 from rest_framework_simplejwt.views import TokenObtainPairView
 import random
 import re
@@ -325,3 +327,34 @@ class OAuthConfigView(APIView):
             'google_client_id': getattr(settings, 'GOOGLE_CLIENT_ID', '') or '',
             'github_client_id': getattr(settings, 'GITHUB_CLIENT_ID', '') or '',
         })
+
+
+class FileUploadView(APIView):
+    """
+    POST /api/auth/upload/
+    Accepts a multipart file upload and saves it locally.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    
+    def post(self, request):
+        # pyrefly: ignore [missing-import]
+        from django.core.files.storage import default_storage
+        # pyrefly: ignore [missing-import]
+        from django.conf import settings
+        import uuid
+        import os
+        
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Save file with a unique name to avoid overwrites
+        ext = os.path.splitext(uploaded_file.name)[1]
+        unique_name = f"{uuid.uuid4()}{ext}"
+        file_path = default_storage.save(f'uploads/{unique_name}', uploaded_file)
+        
+        # Construct public URL
+        file_url = request.build_absolute_uri(settings.MEDIA_URL + file_path)
+        return Response({'url': file_url}, status=status.HTTP_201_CREATED)
+
