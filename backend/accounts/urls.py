@@ -20,4 +20,5 @@ urlpatterns = [
        # Day 16 — Profile endpoints
        path('profile/', views.ProfileUpdateView.as_view()),
        path('profile/<str:username>/', views.PublicProfileView.as_view()),
+       path('upload/', views.FileUploadView.as_view()),
    ]

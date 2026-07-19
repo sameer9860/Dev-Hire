@@ -13,16 +13,16 @@ class User(AbstractUser):
        ]
        role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='developer')
        bio = models.TextField(blank=True)
-       avatar_url = models.URLField(max_length=500, blank=True)
+       avatar_url = models.CharField(max_length=500, blank=True)
        # Company-specific
        company_name = models.CharField(max_length=200, blank=True)
-       company_website = models.URLField(max_length=500, blank=True)
+       company_website = models.CharField(max_length=500, blank=True)
        company_size = models.CharField(max_length=50, blank=True)
        # Developer-specific
-       resume_url = models.URLField(max_length=500, blank=True)
+       resume_url = models.CharField(max_length=500, blank=True)
        skills = models.JSONField(default=list)
-       github_url = models.URLField(max_length=500, blank=True)
-       portfolio_url = models.URLField(max_length=500, blank=True)
+       github_url = models.CharField(max_length=500, blank=True)
+       portfolio_url = models.CharField(max_length=500, blank=True)
        # Social OAuth (developers only)
        oauth_provider = models.CharField(max_length=20, blank=True)
        oauth_uid = models.CharField(max_length=255, blank=True)
