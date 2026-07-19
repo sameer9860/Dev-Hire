@@ -1,6 +1,19 @@
+import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import type { User } from '@/types/api';
+
+function extractApiError(error: any): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (!data) return error.message || 'An unknown error occurred.';
+    if (typeof data === 'string') return data;
+    if (data.detail) return typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+    const first = Object.values(data).flat()[0];
+    return typeof first === 'string' ? first : JSON.stringify(data);
+  }
+  return error?.message || 'An unknown error occurred.';
+}
 
 /**
  * Fetch the authenticated user's profile via the role-aware endpoint.
@@ -25,8 +38,14 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation<User, Error, Partial<User>>({
     mutationFn: async (profileData) => {
-      const { data } = await api.patch('/auth/profile/', profileData);
-      return data;
+      try {
+        const { data } = await api.patch('/auth/profile/', profileData, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        return data;
+      } catch (err: any) {
+        throw new Error(extractApiError(err));
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
