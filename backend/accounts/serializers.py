@@ -94,9 +94,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_company_website(self, value):
         value = self._reject_spaces(value, 'company_website')
         if value:
-            from .availability import company_website_taken
+            from .availability import company_website_taken, normalize_website
+            if not normalize_website(value):
+                raise serializers.ValidationError('Enter a valid company website.')
             if company_website_taken(value):
                 raise serializers.ValidationError('This company website is already registered.')
+            if '://' not in value:
+                value = f'https://{value}'
         return value
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -151,6 +155,33 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
             'company_name', 'company_website', 'company_size',
         ]
         read_only_fields = ['id', 'username', 'email', 'role']
+
+    def validate_company_name(self, value):
+        if value:
+            value = value.strip()
+            user = self.context['request'].user
+            if User.objects.filter(role='company', company_name__iexact=value).exclude(pk=user.pk).exists():
+                raise serializers.ValidationError('This company name is already taken.')
+        return value
+
+    def validate_company_website(self, value):
+        if value:
+            value = value.strip()
+            if any(ch.isspace() for ch in value):
+                raise serializers.ValidationError('Company website cannot contain spaces.')
+            from .availability import normalize_website
+            if not normalize_website(value):
+                raise serializers.ValidationError('Enter a valid company website.')
+            if '://' not in value:
+                value = f'https://{value}'
+            
+            user = self.context['request'].user
+            target = normalize_website(value)
+            
+            for existing in User.objects.filter(role='company').exclude(pk=user.pk).exclude(company_website=''):
+                if normalize_website(existing.company_website) == target:
+                    raise serializers.ValidationError('This company website is already registered.')
+        return value
 
 
 class PublicProfileSerializer(serializers.ModelSerializer):
