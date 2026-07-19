@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useMe } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import api from '@/lib/api';
 import {
   developerProfileSchema,
   companyProfileSchema,
@@ -163,10 +164,62 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
 
   const skillsValue = watch('skills');
   const avatarUrlWatch = watch('avatar_url');
+  const resumeUrlWatch = watch('resume_url');
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarUploadError, setAvatarUploadError] = useState('');
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [resumeUploadError, setResumeUploadError] = useState('');
+
+  const onAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    setAvatarUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/auth/upload/', formData);
+      setValue('avatar_url', data.url, { shouldValidate: true, shouldDirty: true });
+    } catch (err: any) {
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        'Failed to upload image. Please try again.';
+      setAvatarUploadError(String(message));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const onResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingResume(true);
+    setResumeUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/auth/upload/', formData);
+      setValue('resume_url', data.url, { shouldValidate: true, shouldDirty: true });
+    } catch (err: any) {
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        'Failed to upload resume. Please try again.';
+      setResumeUploadError(String(message));
+    } finally {
+      setUploadingResume(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Avatar URL */}
+      {/* Avatar URL / File Upload */}
       <div>
         <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Avatar Image URL</label>
         <div className="flex gap-4 items-center">
@@ -182,6 +235,23 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
               <img src={avatarUrlWatch} alt="Preview" className="w-full h-full object-cover" />
             </div>
           )}
+        </div>
+        
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onAvatarFileChange}
+            className="hidden"
+            id="avatar-file-upload"
+          />
+          <label
+            htmlFor="avatar-file-upload"
+            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 bg-white hover:bg-zinc-50 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+          >
+            {uploadingAvatar ? 'Uploading...' : 'Or upload from computer'}
+          </label>
+          {avatarUploadError && <p className="text-red-500 text-xs">{avatarUploadError}</p>}
         </div>
         {errors.avatar_url && <p className="text-red-500 text-xs mt-1.5">{errors.avatar_url.message}</p>}
       </div>
@@ -243,19 +313,51 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
           {errors.portfolio_url && <p className="text-red-500 text-xs mt-1.5">{errors.portfolio_url.message}</p>}
         </div>
 
+        {/* Resume - Computer upload only (no text url field) */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-zinc-800 mb-1.5">
             <span className="flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-zinc-600" />
-              Resume URL
+              Resume (Upload from computer only)
             </span>
           </label>
-          <input
-            {...register('resume_url')}
-            type="text"
-            placeholder="https://example.com/my-resume.pdf"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
+          <div className="flex flex-col gap-3">
+            {resumeUrlWatch ? (
+              <div className="flex items-center gap-2 p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm">
+                <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span className="flex-1 truncate text-zinc-700">
+                  Current Resume:{' '}
+                  <a
+                    href={resumeUrlWatch}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-zinc-950 font-semibold underline hover:text-zinc-800"
+                  >
+                    {resumeUrlWatch.split('/').pop()}
+                  </a>
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-zinc-500 italic">No resume uploaded yet.</p>
+            )}
+
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={onResumeFileChange}
+                className="hidden"
+                id="resume-file-upload"
+              />
+              <label
+                htmlFor="resume-file-upload"
+                className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 bg-white hover:bg-zinc-50 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+              >
+                {uploadingResume ? 'Uploading...' : resumeUrlWatch ? 'Upload new resume' : 'Choose file'}
+              </label>
+              {resumeUploadError && <p className="text-red-500 text-xs">{resumeUploadError}</p>}
+            </div>
+          </div>
           {errors.resume_url && <p className="text-red-500 text-xs mt-1.5">{errors.resume_url.message}</p>}
         </div>
       </div>
@@ -286,6 +388,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
   } = useForm<CompanyProfileFormData>({
@@ -300,6 +403,32 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
   });
 
   const avatarUrlWatch = watch('avatar_url');
+
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState('');
+
+  const onLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    setLogoUploadError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/auth/upload/', formData);
+      setValue('avatar_url', data.url, { shouldValidate: true, shouldDirty: true });
+    } catch (err: any) {
+      const message =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        'Failed to upload logo. Please try again.';
+      setLogoUploadError(String(message));
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -319,6 +448,23 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
               <img src={avatarUrlWatch} alt="Preview" className="w-full h-full object-cover" />
             </div>
           )}
+        </div>
+
+        <div className="mt-2 flex items-center gap-3">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onLogoFileChange}
+            className="hidden"
+            id="logo-file-upload"
+          />
+          <label
+            htmlFor="logo-file-upload"
+            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 bg-white hover:bg-zinc-50 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+          >
+            {uploadingLogo ? 'Uploading...' : 'Or upload from computer'}
+          </label>
+          {logoUploadError && <p className="text-red-500 text-xs">{logoUploadError}</p>}
         </div>
         {errors.avatar_url && <p className="text-red-500 text-xs mt-1.5">{errors.avatar_url.message}</p>}
       </div>
@@ -359,7 +505,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
           <input
             {...register('company_website')}
             type="text"
-            placeholder="https://acme.co"
+            placeholder="acme.co or https://acme.co"
             className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
           />
           {errors.company_website && <p className="text-red-500 text-xs mt-1.5">{errors.company_website.message}</p>}
