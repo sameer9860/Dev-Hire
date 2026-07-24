@@ -131,7 +131,9 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'role', 'bio', 'avatar_url',
                   'company_name', 'company_website', 'company_size',
-                  'resume_url', 'skills', 'github_url', 'portfolio_url']
+                  'resume_url', 'skills', 'github_url', 'portfolio_url',
+                  'headline', 'location', 'phone_number', 'education',
+                  'experience', 'projects', 'achievements', 'training', 'languages']
         read_only_fields = ['id']
 
 
@@ -142,6 +144,8 @@ class DeveloperProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'role', 'bio', 'avatar_url',
             'skills', 'github_url', 'portfolio_url', 'resume_url',
+            'headline', 'location', 'phone_number', 'education',
+            'experience', 'projects', 'achievements', 'training', 'languages',
         ]
         read_only_fields = ['id', 'username', 'email', 'role']
 
@@ -189,9 +193,11 @@ class PublicProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'role', 'bio', 'avatar_url',
+            'id', 'username', 'email', 'role', 'bio', 'avatar_url',
             # Developer fields
-            'skills', 'github_url', 'portfolio_url',
+            'skills', 'github_url', 'portfolio_url', 'resume_url',
+            'headline', 'location', 'phone_number', 'education',
+            'experience', 'projects', 'achievements', 'training', 'languages',
             # Company fields
             'company_name', 'company_website', 'company_size',
         ]
