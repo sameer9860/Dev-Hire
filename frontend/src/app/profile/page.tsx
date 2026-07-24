@@ -159,12 +159,27 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
       github_url: profile.github_url || '',
       portfolio_url: profile.portfolio_url || '',
       resume_url: profile.resume_url || '',
+      headline: profile.headline || '',
+      location: profile.location || '',
+      phone_number: profile.phone_number || '',
+      education: profile.education || [],
+      experience: profile.experience || [],
+      projects: profile.projects || [],
+      achievements: profile.achievements || [],
+      training: profile.training || [],
+      languages: profile.languages || [],
     },
   });
 
-  const skillsValue = watch('skills');
+  const skillsValue = watch('skills') || [];
+  const languagesValue = watch('languages') || [];
   const avatarUrlWatch = watch('avatar_url');
   const resumeUrlWatch = watch('resume_url');
+  const educationWatch = watch('education') || [];
+  const experienceWatch = watch('experience') || [];
+  const projectsWatch = watch('projects') || [];
+  const achievementsWatch = watch('achievements') || [];
+  const trainingWatch = watch('training') || [];
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarUploadError, setAvatarUploadError] = useState('');
@@ -217,9 +232,101 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
     }
   };
 
+  // Helper functions for dynamic array fields
+  const addEducation = () => {
+    setValue('education', [...educationWatch, { degree: '', institution: '', location: '', dates: '' }]);
+  };
+  const removeEducation = (index: number) => {
+    setValue('education', educationWatch.filter((_, i) => i !== index));
+  };
+  const updateEducationField = (index: number, field: string, value: string) => {
+    const updated = [...educationWatch];
+    updated[index] = { ...updated[index], [field]: value };
+    setValue('education', updated);
+  };
+
+  const addExperience = () => {
+    setValue('experience', [...experienceWatch, { position: '', company: '', dates: '', description: '' }]);
+  };
+  const removeExperience = (index: number) => {
+    setValue('experience', experienceWatch.filter((_, i) => i !== index));
+  };
+  const updateExperienceField = (index: number, field: string, value: string) => {
+    const updated = [...experienceWatch];
+    updated[index] = { ...updated[index], [field]: value };
+    setValue('experience', updated);
+  };
+
+  const addProject = () => {
+    setValue('projects', [...projectsWatch, { title: '', date: '', description: '', url: '' }]);
+  };
+  const removeProject = (index: number) => {
+    setValue('projects', projectsWatch.filter((_, i) => i !== index));
+  };
+  const updateProjectField = (index: number, field: string, value: string) => {
+    const updated = [...projectsWatch];
+    updated[index] = { ...updated[index], [field]: value };
+    setValue('projects', updated);
+  };
+
+  const addAchievement = () => {
+    setValue('achievements', [...achievementsWatch, '']);
+  };
+  const removeAchievement = (index: number) => {
+    setValue('achievements', achievementsWatch.filter((_, i) => i !== index));
+  };
+  const updateAchievementField = (index: number, value: string) => {
+    const updated = [...achievementsWatch];
+    updated[index] = value;
+    setValue('achievements', updated);
+  };
+
+  const addTraining = () => {
+    setValue('training', [...trainingWatch, { title: '', date: '' }]);
+  };
+  const removeTraining = (index: number) => {
+    setValue('training', trainingWatch.filter((_, i) => i !== index));
+  };
+  const updateTrainingField = (index: number, field: string, value: string) => {
+    const updated = [...trainingWatch];
+    updated[index] = { ...updated[index], [field]: value };
+    setValue('training', updated);
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Avatar URL / File Upload */}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* Header Info: Headline, Location, Phone */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-3">
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Headline / Professional Title</label>
+          <input
+            {...register('headline')}
+            type="text"
+            placeholder="e.g. full django,drf,react,next with ts"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Location</label>
+          <input
+            {...register('location')}
+            type="text"
+            placeholder="e.g. Dhading, Nepal"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Phone Number</label>
+          <input
+            {...register('phone_number')}
+            type="text"
+            placeholder="e.g. 9828989190"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+      </div>
+
+      {/* Avatar Image */}
       <div>
         <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Avatar Image URL</label>
         <div className="flex gap-4 items-center">
@@ -227,9 +334,9 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
             {...register('avatar_url')}
             type="text"
             placeholder="https://example.com/avatar.jpg"
-            className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+            className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
           />
-          {avatarUrlWatch && (avatarUrlWatch.startsWith('http://') || avatarUrlWatch.startsWith('https://') || avatarUrlWatch.startsWith('/') || avatarUrlWatch.startsWith('data:')) && (
+          {avatarUrlWatch && (avatarUrlWatch.startsWith('http') || avatarUrlWatch.startsWith('/') || avatarUrlWatch.startsWith('data:')) && (
             <div className="w-10 h-10 rounded-full border bg-zinc-150 overflow-hidden flex-shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarUrlWatch} alt="Preview" className="w-full h-full object-cover" />
@@ -253,113 +360,375 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
           </label>
           {avatarUploadError && <p className="text-red-500 text-xs">{avatarUploadError}</p>}
         </div>
-        {errors.avatar_url && <p className="text-red-500 text-xs mt-1.5">{errors.avatar_url.message}</p>}
       </div>
 
-      {/* Bio */}
+      {/* Bio / About */}
       <div>
-        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Bio</label>
+        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">About / Bio</label>
         <textarea
           {...register('bio')}
-          placeholder="Tell developers or companies about yourself, your background, and your goals..."
+          placeholder="Tell employers about yourself, your technical summary, background, and goals..."
           rows={4}
-          className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
         />
         {errors.bio && <p className="text-red-500 text-xs mt-1.5">{errors.bio.message}</p>}
       </div>
 
-      {/* Skills */}
-      <div>
-        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Skills / Tech Stack</label>
-        <TagInput
-          value={skillsValue}
-          onChange={(tags) => setValue('skills', tags)}
-          placeholder="Add tools, languages, and frameworks (e.g. React, Docker, Python)..."
-          error={errors.skills?.message}
-        />
-      </div>
-
-      {/* Links (GitHub, Portfolio, Resume) */}
+      {/* Skills & Languages */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">
-            <span className="flex items-center gap-1.5">
-              <GitBranch className="w-4 h-4 text-zinc-600" />
-              GitHub URL
-            </span>
-          </label>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Skills &amp; Tech Stack</label>
+          <TagInput
+            value={skillsValue}
+            onChange={(tags) => setValue('skills', tags)}
+            placeholder="Add skills (e.g. Django, React, TypeScript)..."
+            error={errors.skills?.message}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Languages</label>
+          <TagInput
+            value={languagesValue}
+            onChange={(tags) => setValue('languages', tags)}
+            placeholder="Add languages (e.g. Nepali, English, Hindi)..."
+          />
+        </div>
+      </div>
+
+      {/* Links (GitHub, Portfolio) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">GitHub URL</label>
           <input
             {...register('github_url')}
             type="text"
             placeholder="https://github.com/your-username"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
           />
-          {errors.github_url && <p className="text-red-500 text-xs mt-1.5">{errors.github_url.message}</p>}
         </div>
-
         <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">
-            <span className="flex items-center gap-1.5">
-              <LinkIcon className="w-4 h-4 text-zinc-600" />
-              Portfolio URL
-            </span>
-          </label>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Portfolio URL</label>
           <input
             {...register('portfolio_url')}
             type="text"
             placeholder="https://yourportfolio.dev"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
           />
-          {errors.portfolio_url && <p className="text-red-500 text-xs mt-1.5">{errors.portfolio_url.message}</p>}
         </div>
+      </div>
 
-        {/* Resume - Computer upload only (no text url field) */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">
-            <span className="flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-zinc-600" />
-              Resume (Upload from computer only)
-            </span>
+      {/* Resume Section with URL and Computer Upload + Preview */}
+      <div className="border border-zinc-200 rounded-2xl p-5 bg-zinc-50/30 space-y-4">
+        <label className="block text-sm font-bold text-zinc-900 flex items-center justify-between">
+          <span>Resume (URL or Computer Upload)</span>
+          {resumeUrlWatch && (
+            <a
+              href={resumeUrlWatch}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-blue-600 font-semibold hover:underline"
+            >
+              Open in full window
+            </a>
+          )}
+        </label>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            {...register('resume_url')}
+            type="text"
+            placeholder="Paste Google Drive / hosted resume URL or upload below..."
+            className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-white"
+          />
+
+          <input
+            type="file"
+            accept=".pdf,.doc,.docx"
+            onChange={onResumeFileChange}
+            className="hidden"
+            id="resume-file-upload"
+          />
+          <label
+            htmlFor="resume-file-upload"
+            className="inline-flex items-center justify-center px-4 py-3 border border-zinc-300 rounded-xl text-xs font-semibold text-zinc-800 bg-white hover:bg-zinc-100 cursor-pointer transition-colors shadow-xs flex-shrink-0 disabled:opacity-50"
+          >
+            {uploadingResume ? 'Uploading...' : 'Upload from computer'}
           </label>
-          <div className="flex flex-col gap-3">
-            {resumeUrlWatch ? (
-              <div className="flex items-center gap-2 p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-sm">
-                <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                <span className="flex-1 truncate text-zinc-700">
-                  Current Resume:{' '}
-                  <a
-                    href={resumeUrlWatch}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-zinc-950 font-semibold underline hover:text-zinc-800"
-                  >
-                    {resumeUrlWatch.split('/').pop()}
-                  </a>
-                </span>
-              </div>
-            ) : (
-              <p className="text-xs text-zinc-500 italic">No resume uploaded yet.</p>
-            )}
+        </div>
+        {resumeUploadError && <p className="text-red-500 text-xs">{resumeUploadError}</p>}
 
-            <div className="flex items-center gap-3">
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={onResumeFileChange}
-                className="hidden"
-                id="resume-file-upload"
+        {/* Live Resume Previewer */}
+        {resumeUrlWatch && (
+          <div className="mt-4 border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-xs">
+            <div className="bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-700 border-b border-zinc-200 flex justify-between items-center">
+              <span>Resume Preview</span>
+              <span className="text-zinc-400 font-mono text-[10px] truncate max-w-xs">{resumeUrlWatch}</span>
+            </div>
+            <div className="h-96 w-full relative bg-zinc-900">
+              <iframe
+                src={resumeUrlWatch}
+                className="w-full h-full border-0"
+                title="Resume Preview"
               />
-              <label
-                htmlFor="resume-file-upload"
-                className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 bg-white hover:bg-zinc-50 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
-              >
-                {uploadingResume ? 'Uploading...' : resumeUrlWatch ? 'Upload new resume' : 'Choose file'}
-              </label>
-              {resumeUploadError && <p className="text-red-500 text-xs">{resumeUploadError}</p>}
             </div>
           </div>
-          {errors.resume_url && <p className="text-red-500 text-xs mt-1.5">{errors.resume_url.message}</p>}
+        )}
+      </div>
+
+      {/* Education Section */}
+      <div className="space-y-4 pt-4 border-t border-zinc-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-zinc-900">Education</h3>
+          <button
+            type="button"
+            onClick={addEducation}
+            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+          >
+            + Add Education
+          </button>
         </div>
+        {educationWatch.length === 0 ? (
+          <p className="text-xs text-zinc-400 italic">No education entries added yet.</p>
+        ) : (
+          educationWatch.map((item: any, idx: number) => (
+            <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50 space-y-3 relative">
+              <button
+                type="button"
+                onClick={() => removeEducation(idx)}
+                className="absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                Remove
+              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="Degree (e.g. BACHELOR’S)"
+                  value={item.degree || ''}
+                  onChange={(e) => updateEducationField(idx, 'degree', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Institution (e.g. Nilkantha Multiple Campus)"
+                  value={item.institution || ''}
+                  onChange={(e) => updateEducationField(idx, 'institution', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Location (e.g. Kathmandu)"
+                  value={item.location || ''}
+                  onChange={(e) => updateEducationField(idx, 'location', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Dates (e.g. April 1, 2022 - April 5, 2026)"
+                  value={item.dates || ''}
+                  onChange={(e) => updateEducationField(idx, 'dates', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Experience Section */}
+      <div className="space-y-4 pt-4 border-t border-zinc-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-zinc-900">Experience</h3>
+          <button
+            type="button"
+            onClick={addExperience}
+            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+          >
+            + Add Experience
+          </button>
+        </div>
+        {experienceWatch.length === 0 ? (
+          <p className="text-xs text-zinc-400 italic">No experience entries added yet.</p>
+        ) : (
+          experienceWatch.map((item: any, idx: number) => (
+            <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50 space-y-3 relative">
+              <button
+                type="button"
+                onClick={() => removeExperience(idx)}
+                className="absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                Remove
+              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  placeholder="Position / Title"
+                  value={item.position || ''}
+                  onChange={(e) => updateExperienceField(idx, 'position', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Company / Organization"
+                  value={item.company || ''}
+                  onChange={(e) => updateExperienceField(idx, 'company', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Dates (e.g. Jan 2025 - Present)"
+                  value={item.dates || ''}
+                  onChange={(e) => updateExperienceField(idx, 'dates', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+              </div>
+              <textarea
+                placeholder="Description of responsibilities and achievements..."
+                value={item.description || ''}
+                rows={2}
+                onChange={(e) => updateExperienceField(idx, 'description', e.target.value)}
+                className="w-full border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+              />
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Projects Section */}
+      <div className="space-y-4 pt-4 border-t border-zinc-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-zinc-900">Projects</h3>
+          <button
+            type="button"
+            onClick={addProject}
+            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+          >
+            + Add Project
+          </button>
+        </div>
+        {projectsWatch.length === 0 ? (
+          <p className="text-xs text-zinc-400 italic">No projects added yet.</p>
+        ) : (
+          projectsWatch.map((item: any, idx: number) => (
+            <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50 space-y-3 relative">
+              <button
+                type="button"
+                onClick={() => removeProject(idx)}
+                className="absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                Remove
+              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  placeholder="Project Title (e.g. Job Tracker)"
+                  value={item.title || ''}
+                  onChange={(e) => updateProjectField(idx, 'title', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Date (e.g. May 10, 2026)"
+                  value={item.date || ''}
+                  onChange={(e) => updateProjectField(idx, 'date', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Project Link / URL"
+                  value={item.url || ''}
+                  onChange={(e) => updateProjectField(idx, 'url', e.target.value)}
+                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+                />
+              </div>
+              <textarea
+                placeholder="Comprehensive project description..."
+                value={item.description || ''}
+                rows={2}
+                onChange={(e) => updateProjectField(idx, 'description', e.target.value)}
+                className="w-full border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+              />
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Achievements Section */}
+      <div className="space-y-4 pt-4 border-t border-zinc-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-zinc-900">Achievements</h3>
+          <button
+            type="button"
+            onClick={addAchievement}
+            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+          >
+            + Add Achievement
+          </button>
+        </div>
+        {achievementsWatch.length === 0 ? (
+          <p className="text-xs text-zinc-400 italic">No achievements added yet.</p>
+        ) : (
+          achievementsWatch.map((ach: string, idx: number) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <input
+                type="text"
+                placeholder="Achievement title / award..."
+                value={ach}
+                onChange={(e) => updateAchievementField(idx, e.target.value)}
+                className="flex-1 border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => removeAchievement(idx)}
+                className="text-xs text-red-500 hover:text-red-700 px-2 py-1 font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Training Section */}
+      <div className="space-y-4 pt-4 border-t border-zinc-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-bold text-zinc-900">Training &amp; Certifications</h3>
+          <button
+            type="button"
+            onClick={addTraining}
+            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+          >
+            + Add Training
+          </button>
+        </div>
+        {trainingWatch.length === 0 ? (
+          <p className="text-xs text-zinc-400 italic">No training entries added yet.</p>
+        ) : (
+          trainingWatch.map((item: any, idx: number) => (
+            <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center relative">
+              <input
+                type="text"
+                placeholder="Course / Certification (e.g. React.js)"
+                value={item.title || ''}
+                onChange={(e) => updateTrainingField(idx, 'title', e.target.value)}
+                className="flex-1 border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none w-full"
+              />
+              <input
+                type="text"
+                placeholder="Date (e.g. April 3, 2026)"
+                value={item.date || ''}
+                onChange={(e) => updateTrainingField(idx, 'date', e.target.value)}
+                className="w-full sm:w-48 border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => removeTraining(idx)}
+                className="text-xs text-red-500 hover:text-red-700 px-2 py-1 font-medium"
+              >
+                Remove
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">
