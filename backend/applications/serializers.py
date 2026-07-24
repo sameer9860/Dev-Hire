@@ -14,6 +14,8 @@ class ApplicationSerializer(serializers.ModelSerializer):
         read_only_fields = ['developer', 'applied_at', 'updated_at']
 
 class ApplicationCreateSerializer(serializers.ModelSerializer):
+    cover_letter = serializers.CharField(required=False, allow_blank=True, default='')
+
     class Meta:
         model = Application
         fields = ['id', 'job', 'cover_letter', 'resume_url', 'status', 'applied_at']
