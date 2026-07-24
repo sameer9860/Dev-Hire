@@ -1,5 +1,31 @@
 export type UserRole = 'developer' | 'company' | 'guest';
 
+   export interface EducationItem {
+     institution?: string;
+     degree?: string;
+     dates?: string;
+     location?: string;
+   }
+
+   export interface ExperienceItem {
+     position?: string;
+     company?: string;
+     dates?: string;
+     description?: string;
+   }
+
+   export interface ProjectItem {
+     title?: string;
+     date?: string;
+     description?: string;
+     url?: string;
+   }
+
+   export interface TrainingItem {
+     title?: string;
+     date?: string;
+   }
+
    export interface User {
      id: number;
      username: string;
@@ -16,6 +42,15 @@ export type UserRole = 'developer' | 'company' | 'guest';
      skills: string[];
      github_url: string;
      portfolio_url: string;
+     headline?: string;
+     location?: string;
+     phone_number?: string;
+     education?: EducationItem[];
+     experience?: ExperienceItem[];
+     projects?: ProjectItem[];
+     achievements?: string[];
+     training?: TrainingItem[];
+     languages?: string[];
    }
 
    // Discriminated union — great TypeScript pattern for auth state
@@ -131,6 +166,15 @@ export type UserRole = 'developer' | 'company' | 'guest';
      github_url: string;
      portfolio_url: string;
      resume_url: string;
+     headline?: string;
+     location?: string;
+     phone_number?: string;
+     education?: EducationItem[];
+     experience?: ExperienceItem[];
+     projects?: ProjectItem[];
+     achievements?: string[];
+     training?: TrainingItem[];
+     languages?: string[];
    }
 
    export interface CompanyProfileUpdate {
