@@ -260,3 +260,39 @@ class TestAuthenticationAPI:
         assert response.status_code == status.HTTP_200_OK
         assert "google_client_id" in response.data
         assert "github_client_id" in response.data
+
+    def test_file_upload_local_fallback(self, auth_dev_client, tmp_path, settings):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        settings.SUPABASE_URL = ""
+        settings.SUPABASE_KEY = ""
+        dummy_file = SimpleUploadedFile("resume.pdf", b"%PDF-1.4 dummy content", content_type="application/pdf")
+        response = auth_dev_client.post("/api/auth/upload/", {"file": dummy_file}, format="multipart")
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "url" in response.data
+        assert "uploads/" in response.data["url"]
+
+    def test_file_upload_supabase_success(self, auth_dev_client, settings, monkeypatch):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        import requests
+
+        settings.SUPABASE_URL = "https://testproject.supabase.co"
+        settings.SUPABASE_KEY = "test-api-key"
+        settings.SUPABASE_STORAGE_BUCKET = "test-bucket"
+
+        class DummyResponse:
+            status_code = 201
+            text = '{"message": "Uploaded"}'
+
+        def mock_post(url, data=None, headers=None, timeout=None):
+            assert "https://testproject.supabase.co/storage/v1/object/test-bucket/uploads/" in url
+            assert headers["Authorization"] == "Bearer test-api-key"
+            assert headers["apiKey"] == "test-api-key"
+            return DummyResponse()
+
+        monkeypatch.setattr(requests, "post", mock_post)
+
+        dummy_file = SimpleUploadedFile("avatar.png", b"fake image content", content_type="image/png")
+        response = auth_dev_client.post("/api/auth/upload/", {"file": dummy_file}, format="multipart")
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "https://testproject.supabase.co/storage/v1/object/public/test-bucket/uploads/" in response.data["url"]
+
