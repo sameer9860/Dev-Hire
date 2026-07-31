@@ -363,4 +363,5 @@ export function PublicProfileClient({ username }: { username: string }) {
       </div>
     </div>
   );
+  
 }
