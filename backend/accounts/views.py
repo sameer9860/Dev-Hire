@@ -332,29 +332,19 @@ class OAuthConfigView(APIView):
 class FileUploadView(APIView):
     """
     POST /api/auth/upload/
-    Accepts a multipart file upload and saves it locally.
+    Accepts a multipart file upload and saves it to Supabase Storage (or local storage fallback).
     """
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
-        # pyrefly: ignore [missing-import]
-        from django.core.files.storage import default_storage
-        # pyrefly: ignore [missing-import]
-        from django.conf import settings
-        import uuid
-        import os
+        from .storage import save_file_to_supabase_or_local
         
         uploaded_file = request.FILES.get('file')
         if not uploaded_file:
             return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Save file with a unique name to avoid overwrites
-        ext = os.path.splitext(uploaded_file.name)[1]
-        unique_name = f"{uuid.uuid4()}{ext}"
-        file_path = default_storage.save(f'uploads/{unique_name}', uploaded_file)
-        
-        # Construct public URL
-        file_url = request.build_absolute_uri(settings.MEDIA_URL + file_path)
+        file_url = save_file_to_supabase_or_local(uploaded_file, request=request)
         return Response({'url': file_url}, status=status.HTTP_201_CREATED)
+
 
