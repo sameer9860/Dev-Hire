@@ -67,6 +67,23 @@ class ProfileUpdateView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def perform_update(self, serializer):
+        from .activity import PROFILE_FIELD_MESSAGES, log_profile_changes
+
+        user = self.request.user
+        tracked = list(PROFILE_FIELD_MESSAGES.keys())
+        previous = {field: getattr(user, field, None) for field in tracked}
+        serializer.save()
+        user.refresh_from_db()
+        updated = {field: getattr(user, field, None) for field in tracked}
+        # Only log fields present in the request payload
+        payload_fields = set(getattr(serializer, 'validated_data', {}).keys())
+        log_profile_changes(
+            user,
+            previous,
+            {field: updated[field] for field in tracked if field in payload_fields},
+        )
+
 
 class PublicProfileView(generics.RetrieveAPIView):
     """
@@ -89,6 +106,13 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        from .activity import log_activity
+        log_activity(
+            request.user,
+            category='security',
+            action='password_changed',
+            message='Changed password',
+        )
         return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
 
 
@@ -346,5 +370,30 @@ class FileUploadView(APIView):
         
         file_url = save_file_to_supabase_or_local(uploaded_file, request=request)
         return Response({'url': file_url}, status=status.HTTP_201_CREATED)
+
+
+class ActivityLogListView(generics.ListAPIView):
+    """GET /api/auth/activity/ — recent account activity for the current user."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        from .models import ActivityLog
+        return ActivityLog.objects.filter(user=self.request.user)[:50]
+
+    def list(self, request, *args, **kwargs):
+        from .models import ActivityLog
+        logs = list(self.get_queryset())
+        data = [
+            {
+                'id': log.id,
+                'category': log.category,
+                'action': log.action,
+                'message': log.message,
+                'metadata': log.metadata,
+                'created_at': log.created_at,
+            }
+            for log in logs
+        ]
+        return Response({'count': len(data), 'results': data})
 
 
