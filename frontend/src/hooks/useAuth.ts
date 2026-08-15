@@ -202,6 +202,7 @@ function extractApiError(error: any, fallback: string) {
 }
 
 export function useChangePassword() {
+  const queryClient = useQueryClient();
   return useMutation<
     { detail: string },
     Error,
@@ -212,6 +213,7 @@ export function useChangePassword() {
       return data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
       toast.success('Password updated successfully.');
     },
     onError: (error: any) => {

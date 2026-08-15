@@ -51,6 +51,7 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: ['me'] });
       queryClient.invalidateQueries({ queryKey: ['public-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
     },
   });
 }

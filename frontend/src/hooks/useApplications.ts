@@ -25,6 +25,7 @@ export function useApply() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-applications'] });
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
       toast.success("Application submitted successfully!");
     },
     onError: (error: any) => {
