@@ -4,6 +4,8 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 # pyrefly: ignore [missing-import]
 from django.db.models import Q
+# pyrefly: ignore [missing-import]
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -47,3 +49,29 @@ class User(AbstractUser):
 
        def __str__(self):
            return f"{self.username} ({self.role})"
+
+
+class ActivityLog(models.Model):
+    CATEGORY_CHOICES = [
+        ('application', 'Application'),
+        ('bookmark', 'Bookmark'),
+        ('profile', 'Profile'),
+        ('security', 'Security'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='activity_logs',
+    )
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    action = models.CharField(max_length=64)
+    message = models.CharField(max_length=255)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user_id}: {self.message}"
