@@ -19,7 +19,10 @@ import {
   ExternalLink,
   Settings,
   ChevronDown,
+  FileText,
+  Bookmark,
 } from 'lucide-react';
+import { UserAvatar } from '@/components/UserAvatar';
 
 type ShellContextValue = {
   open: boolean;
@@ -110,9 +113,7 @@ function UserDropdown() {
         onClick={() => setOpen((v) => !v)}
         className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
       >
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
-          {user.username.substring(0, 2).toUpperCase()}
-        </div>
+        <UserAvatar src={user.avatar_url} name={user.username} size="sm" />
         <span className="hidden max-w-[100px] truncate sm:inline">{user.username}</span>
         <ChevronDown
           className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -121,12 +122,15 @@ function UserDropdown() {
 
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg">
-          <div className="mb-1 border-b border-zinc-100 px-3 py-2">
-            <p className="text-xs font-medium text-zinc-400">Signed in as</p>
-            <p className="truncate text-sm font-semibold text-zinc-900">{user.username}</p>
-            <span className="mt-1 inline-flex rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-zinc-700">
-              {user.role}
-            </span>
+          <div className="mb-1 flex items-center gap-3 border-b border-zinc-100 px-3 py-2">
+            <UserAvatar src={user.avatar_url} name={user.username} size="md" />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-zinc-400">Signed in as</p>
+              <p className="truncate text-sm font-semibold text-zinc-900">{user.username}</p>
+              <span className="mt-1 inline-flex rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-zinc-700">
+                {user.role}
+              </span>
+            </div>
           </div>
           <Link
             href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
@@ -193,6 +197,8 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
       );
     }
     if (path === '/profile') return pathname === '/profile';
+    if (path === '/applications') return pathname.startsWith('/applications');
+    if (path === '/bookmarks') return pathname.startsWith('/bookmarks');
     return pathname === path || pathname.startsWith(`${path}/`);
   };
 
@@ -236,10 +242,6 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           </p>
         )}
 
-        {(!mounted || !user || user.role !== 'company') && (
-          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Jobs" />
-        )}
-
         {mounted && user?.role === 'developer' && (
           <Item
             href="/dashboard/developer"
@@ -247,6 +249,27 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
             icon={LayoutDashboard}
             label="Dashboard"
           />
+        )}
+
+        {(!mounted || !user || user.role !== 'company') && (
+          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Jobs" />
+        )}
+
+        {mounted && user?.role === 'developer' && (
+          <>
+            <Item
+              href="/applications"
+              path="/applications"
+              icon={FileText}
+              label="Applications"
+            />
+            <Item
+              href="/bookmarks"
+              path="/bookmarks"
+              icon={Bookmark}
+              label="Bookmarks"
+            />
+          </>
         )}
 
         {mounted && user?.role === 'company' && (
@@ -291,13 +314,16 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
             </button>
             {!collapsed && (
               <div className="mt-2 flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
-                  {user.username.substring(0, 2).toUpperCase()}
-                </div>
+                <UserAvatar src={user.avatar_url} name={user.username} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-zinc-900">{user.username}</p>
                   <p className="truncate text-[11px] capitalize text-zinc-500">{user.role}</p>
                 </div>
+              </div>
+            )}
+            {collapsed && (
+              <div className="mt-2 flex justify-center">
+                <UserAvatar src={user.avatar_url} name={user.username} size="md" />
               </div>
             )}
           </div>
