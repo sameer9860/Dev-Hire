@@ -26,7 +26,15 @@ class ApplicationViewSet(viewsets.ModelViewSet):
            return ApplicationSerializer
 
        def perform_create(self, serializer):
-           serializer.save(developer=self.request.user)
+           application = serializer.save(developer=self.request.user)
+           from accounts.activity import log_activity
+           log_activity(
+               self.request.user,
+               category='application',
+               action='application_submitted',
+               message=f"Applied to {application.job.title}",
+               metadata={'job_id': application.job_id, 'application_id': application.id},
+           )
 
        @action(detail=True, methods=['patch'], url_path='status')
        def update_status(self, request, pk=None):
