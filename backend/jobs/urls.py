@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 # pyrefly: ignore [missing-import]
 from django.urls import path
 from django.http import JsonResponse
-from .views import JobViewSet
+from .views import JobViewSet, SavedJobViewSet
 from .models import Job
 
 def jobs_diagnostic(request):
@@ -25,6 +25,7 @@ def jobs_diagnostic(request):
 
 router = DefaultRouter()
 router.register(r'jobs', JobViewSet, basename='job')
+router.register(r'bookmarks', SavedJobViewSet, basename='bookmark')
 
 urlpatterns = [
     path('jobs-diagnostic/', jobs_diagnostic),
