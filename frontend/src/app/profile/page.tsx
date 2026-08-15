@@ -653,7 +653,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
       </div>
 
       {/* Achievements Section */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200">
+      <div id="achievements" className="space-y-4 pt-4 border-t border-zinc-200 scroll-mt-24">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-bold text-zinc-900">Achievements</h3>
           <button

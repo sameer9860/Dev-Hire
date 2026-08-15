@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { useJob } from '@/hooks/useJobs';
 import { useMe } from '@/hooks/useAuth';
 import { useMyApplications } from '@/hooks/useApplications';
+import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { ApplyModal } from '@/components/jobs/ApplyModal';
+import { Bookmark } from 'lucide-react';
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   'full-time': 'Full Time',
@@ -29,11 +31,13 @@ export function JobDetailClient({ jobId }: { jobId: number }) {
   const { data: job, isLoading, isError } = useJob(jobId);
   const { data: meData } = useMe();
   const { data: myApps } = useMyApplications();
+  const toggleBookmark = useToggleBookmark();
 
   const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
   const isDeveloper = meData?.role === 'developer';
 
   const alreadyApplied = myApps?.results?.some((app) => app.job.id === jobId) ?? false;
+  const isSaved = job?.is_saved ?? false;
 
   /* ───── Loading ───── */
   if (isLoading) {
@@ -138,9 +142,31 @@ export function JobDetailClient({ jobId }: { jobId: number }) {
             </div>
 
             {/* CTA on header */}
-            <div className="md:pt-1">
+            <div className="flex flex-col gap-2 md:pt-1 sm:flex-row sm:items-center">
+              {isDeveloper && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isLoggedIn) {
+                      router.push('/login');
+                      return;
+                    }
+                    toggleBookmark.mutate({ jobId, saved: isSaved });
+                  }}
+                  disabled={toggleBookmark.isPending}
+                  className={[
+                    'inline-flex w-full items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-xs font-semibold transition-all duration-200 md:w-auto',
+                    isSaved
+                      ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                  ].join(' ')}
+                >
+                  <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                  {isSaved ? 'Saved' : 'Save Job'}
+                </button>
+              )}
               {alreadyApplied ? (
-                <div className="inline-flex items-center bg-emerald-50 border border-emerald-100/70 text-emerald-700 text-xs font-bold px-5 py-2.5 rounded-lg">
+                <div className="inline-flex items-center justify-center bg-emerald-50 border border-emerald-100/70 text-emerald-700 text-xs font-bold px-5 py-2.5 rounded-lg">
                   ✓ Already Applied
                 </div>
               ) : (
