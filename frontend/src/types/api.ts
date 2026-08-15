@@ -81,6 +81,7 @@ export type UserRole = 'developer' | 'company' | 'guest';
      updated_at: string;
      deadline: string | null;
      application_count: number;
+     is_saved?: boolean;
    }
 
    export interface JobFormData {
@@ -115,6 +116,25 @@ export type UserRole = 'developer' | 'company' | 'guest';
      applied_at: string;
      updated_at: string;
      notes: string;
+   }
+
+   // ─── Bookmarks ────────────────────────────────────────────────────
+   export interface SavedJob {
+     id: number;
+     job: Job;
+     created_at: string;
+   }
+
+   // ─── Activity ─────────────────────────────────────────────────────
+   export type ActivityCategory = 'application' | 'bookmark' | 'profile' | 'security';
+
+   export interface ActivityLog {
+     id: number;
+     category: ActivityCategory;
+     action: string;
+     message: string;
+     metadata: Record<string, unknown>;
+     created_at: string;
    }
 
    // ─── API Utilities ─────────────────────────────────────────────────

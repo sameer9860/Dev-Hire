@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_ROUTES = ['/dashboard', '/jobs/post', '/profile', '/settings'];
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/jobs/post',
+  '/profile',
+  '/settings',
+  '/applications',
+  '/bookmarks',
+];
 
 export function proxy(request: NextRequest) {
   const token = request.cookies.get('access_token')?.value;
@@ -31,6 +38,8 @@ export const config = {
     '/jobs/post',
     '/profile',
     '/settings',
+    '/applications',
+    '/bookmarks',
     '/login',
     '/register',
     '/register/:path*',
