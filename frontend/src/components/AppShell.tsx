@@ -21,8 +21,10 @@ import {
   ChevronDown,
   FileText,
   Bookmark,
+  Mail,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
+import { NotificationBell } from '@/components/NotificationBell';
 
 type ShellContextValue = {
   open: boolean;
@@ -199,6 +201,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
     if (path === '/profile') return pathname === '/profile';
     if (path === '/applications') return pathname.startsWith('/applications');
     if (path === '/bookmarks') return pathname.startsWith('/bookmarks');
+    if (path === '/contact') return pathname === '/contact';
     return pathname === path || pathname.startsWith(`${path}/`);
   };
 
@@ -252,7 +255,23 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
         )}
 
         {(!mounted || !user || user.role !== 'company') && (
-          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Jobs" />
+          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
+        )}
+
+        {mounted && user?.role === 'company' && (
+          <>
+            <Item
+              href="/dashboard/company"
+              path="/dashboard/company"
+              icon={LayoutDashboard}
+              label="Dashboard"
+            />
+            <Item href="/jobs/post" path="/jobs/post" icon={PlusCircle} label="Post Job" />
+          </>
+        )}
+
+        {mounted && user && (
+          <Item href="/profile" path="/profile" icon={User} label="My Profile" />
         )}
 
         {mounted && user?.role === 'developer' && (
@@ -272,21 +291,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           </>
         )}
 
-        {mounted && user?.role === 'company' && (
-          <>
-            <Item
-              href="/dashboard/company"
-              path="/dashboard/company"
-              icon={LayoutDashboard}
-              label="Dashboard"
-            />
-            <Item href="/jobs/post" path="/jobs/post" icon={PlusCircle} label="Post Job" />
-          </>
-        )}
-
-        {mounted && user && (
-          <Item href="/profile" path="/profile" icon={User} label="My Profile" />
-        )}
+        <Item href="/contact" path="/contact" icon={Mail} label="Contact Us" />
       </nav>
 
       <div className="mt-auto border-t border-zinc-100 px-2 py-3 sm:px-3">
@@ -452,7 +457,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
 
-            <UserDropdown />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <NotificationBell />
+              <UserDropdown />
+            </div>
           </header>
 
           <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
