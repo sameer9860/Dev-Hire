@@ -34,7 +34,24 @@ export function isCompanyEmail(email: string) {
 }
 
 export const PASSWORD_RULES_HELP =
-  'Min 8 chars, with uppercase, lowercase, number, and special character. Cannot include your username.';
+  'Min 8 chars, with uppercase, lowercase, number, and special character. Letters, numbers, and special characters only — no spaces or emojis. Cannot include your username.';
+
+export const PASSWORD_CHARSET_ERROR =
+  'Only uppercase, lowercase, numbers, and special characters are allowed.';
+
+export const USERNAME_CHARSET_ERROR =
+  'Only uppercase, lowercase, numbers, and special characters are allowed.';
+
+/** Printable ASCII except space — blocks emojis, unicode, and other symbols. */
+export const ALLOWED_PASSWORD_CHARS = /^[\x21-\x7E]+$/;
+
+function passwordCharsetSchema(minLength = 1) {
+  return z
+    .string()
+    .refine((v) => !v || ALLOWED_PASSWORD_CHARS.test(v), PASSWORD_CHARSET_ERROR)
+    .min(minLength, minLength <= 1 ? 'Password is required' : `Password must be at least ${minLength} characters`)
+    .regex(/^\S+$/, noSpaceMsg('Password'));
+}
 
 /** True when password contains / is based on username (e.g. asdf → Asdf@123). */
 export function passwordRelatedToUsername(password: string, username?: string) {
@@ -52,6 +69,7 @@ export function passwordRelatedToUsername(password: string, username?: string) {
 export function strongPasswordSchema(username?: string) {
   return z
     .string()
+    .refine((v) => !v || ALLOWED_PASSWORD_CHARS.test(v), PASSWORD_CHARSET_ERROR)
     .min(8, 'Password must be at least 8 characters')
     .regex(/^\S+$/, noSpaceMsg('Password'))
     .regex(/[A-Z]/, 'Include at least one uppercase letter')
@@ -66,17 +84,16 @@ export function strongPasswordSchema(username?: string) {
 export const loginSchema = z.object({
   username: z
     .string()
+    .refine((v) => !v || ALLOWED_PASSWORD_CHARS.test(v), USERNAME_CHARSET_ERROR)
     .min(3, 'Username must be at least 3 characters')
     .regex(/^\S+$/, noSpaceMsg('Username')),
-  // Login only checks non-empty/spaces — strength enforced at register/change
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .regex(/^\S+$/, noSpaceMsg('Password')),
+  // Login rejects spaces, emojis, and other non-ASCII — strength enforced at register/change
+  password: passwordCharsetSchema(1),
 });
 
 const usernameField = z
   .string()
+  .refine((v) => !v || ALLOWED_PASSWORD_CHARS.test(v), USERNAME_CHARSET_ERROR)
   .min(3, 'Minimum 3 characters')
   .max(50)
   .regex(/^\S+$/, noSpaceMsg('Username'));
@@ -112,7 +129,7 @@ export const developerRegisterSchema = withMatchingPasswords(
     username: usernameField,
     email: emailField,
     password: z.string(),
-    password2: z.string().regex(/^\S*$/, noSpaceMsg('Password')),
+    password2: z.string().regex(/^\S*$/, noSpaceMsg('Password')).regex(/^$|^[\x21-\x7E]+$/, PASSWORD_CHARSET_ERROR),
     role: z.literal('developer'),
   })
 );
@@ -122,7 +139,7 @@ export const companyRegisterSchema = withMatchingPasswords(
     username: usernameField,
     email: emailField,
     password: z.string(),
-    password2: z.string().regex(/^\S*$/, noSpaceMsg('Password')),
+    password2: z.string().regex(/^\S*$/, noSpaceMsg('Password')).regex(/^$|^[\x21-\x7E]+$/, PASSWORD_CHARSET_ERROR),
     role: z.literal('company'),
     company_name: z
       .string()
@@ -192,12 +209,9 @@ export const registerSchema = withMatchingPasswords(
 export function createChangePasswordSchema(username: string) {
   return z
     .object({
-      current_password: z
-        .string()
-        .min(1, 'Current password is required')
-        .regex(/^\S+$/, noSpaceMsg('Password')),
+      current_password: passwordCharsetSchema(1),
       new_password: z.string(),
-      new_password2: z.string().regex(/^\S*$/, noSpaceMsg('Password')),
+      new_password2: z.string().regex(/^\S*$/, noSpaceMsg('Password')).regex(/^$|^[\x21-\x7E]+$/, PASSWORD_CHARSET_ERROR),
     })
     .superRefine((data, ctx) => {
       const pwd = strongPasswordSchema(username).safeParse(data.new_password);
@@ -247,6 +261,30 @@ export function noSpaceField(registerProps: RegisterReturn) {
     onChange: (e: ChangeEvent<HTMLInputElement>) => {
       e.target.value = e.target.value.replace(/\s/g, '');
       registerProps.onChange(e);
+    },
+  };
+}
+
+/** Block spaces; keep other invalid characters so the charset error can display. */
+export function passwordCharsetField(
+  registerProps: RegisterReturn,
+  trigger?: (name: string) => unknown,
+) {
+  return {
+    ...registerProps,
+    onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === ' ' || e.code === 'Space') e.preventDefault();
+    },
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      e.target.value = e.target.value.replace(/\s/g, '');
+      const value = e.target.value;
+      const invalid = Boolean(value) && !ALLOWED_PASSWORD_CHARS.test(value);
+      const wasInvalid = e.target.dataset.charsetInvalid === '1';
+      registerProps.onChange(e);
+      if (invalid || wasInvalid) {
+        void trigger?.(registerProps.name);
+      }
+      e.target.dataset.charsetInvalid = invalid ? '1' : '0';
     },
   };
 }
