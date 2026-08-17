@@ -15,8 +15,70 @@ import {
 } from '@/schemas/profileSchema';
 import { TagInput } from '@/components/jobs/TagInput';
 import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton';
-import { User, Globe, GitBranch, Link as LinkIcon, FileText, ArrowLeft, Building } from 'lucide-react';
+import { ArrowLeft, Globe, Building } from 'lucide-react';
 import Link from 'next/link';
+import {
+  GENDER_OPTIONS,
+  NEPAL_PROVINCES,
+  SOCIAL_PLATFORMS,
+} from '@/lib/profileOptions';
+import type { SocialLink } from '@/types/api';
+
+function seedSocialLinks(profile: {
+  social_links?: SocialLink[];
+  github_url?: string;
+  portfolio_url?: string;
+}): SocialLink[] {
+  if (profile.social_links && profile.social_links.length > 0) {
+    return profile.social_links;
+  }
+  const seeded: SocialLink[] = [];
+  if (profile.github_url) seeded.push({ platform: 'github', url: profile.github_url });
+  if (profile.portfolio_url) seeded.push({ platform: 'portfolio', url: profile.portfolio_url });
+  return seeded;
+}
+
+const PROFILE_SECTIONS = [
+  { id: 'about', label: 'About' },
+  { id: 'education', label: 'Education' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'skills', label: 'Skills & Tech Stack' },
+  { id: 'achievements', label: 'Achievements' },
+  { id: 'training', label: 'Training' },
+  { id: 'languages', label: 'Languages' },
+  { id: 'contact', label: 'Email & Phone' },
+];
+
+function ProfileSection({
+  id,
+  title,
+  description,
+  action,
+  children,
+}: {
+  id: string;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8"
+    >
+      <div className="mb-5 flex items-start justify-between gap-3 border-b border-zinc-100 pb-4">
+        <div>
+          <h2 className="text-lg font-bold text-zinc-900">{title}</h2>
+          {description ? <p className="mt-1 text-sm text-zinc-500">{description}</p> : null}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -60,57 +122,60 @@ export default function ProfilePage() {
           </Link>
         </div>
 
-        {/* Card Header & Form Container */}
-        <div className="bg-white rounded-2xl border border-zinc-200 shadow-[0_2px_15px_rgba(0,0,0,0.02)] p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center gap-5 pb-6 border-b border-zinc-100 mb-8">
-            <div className="w-20 h-20 rounded-full bg-zinc-950 flex items-center justify-center text-2xl text-white font-bold shadow-md">
-              {profile.avatar_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.username}
-                  className="w-full h-full rounded-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-              ) : null}
-              {!profile.avatar_url ? profile.username.substring(0, 2).toUpperCase() : null}
-            </div>
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl font-bold text-zinc-900">{profile.username}</h1>
-              <p className="text-sm text-zinc-500 capitalize">{profile.role} account</p>
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
+            <div className="flex flex-col items-center gap-5 sm:flex-row">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-zinc-950 text-2xl font-bold text-white shadow-md">
+                {profile.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.username}
+                    className="h-full w-full rounded-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                {!profile.avatar_url ? profile.username.substring(0, 2).toUpperCase() : null}
+              </div>
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl font-bold text-zinc-900">{profile.username}</h1>
+                <p className="text-sm capitalize text-zinc-500">{profile.role} account</p>
+              </div>
             </div>
           </div>
 
           {successMessage && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm font-medium animate-in fade-in duration-200">
+            <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-700 animate-in fade-in duration-200">
               {successMessage}
             </div>
           )}
 
           {updateProfile.error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
               {updateProfile.error.message || 'An error occurred while saving your profile.'}
             </div>
           )}
 
           {profile.role === 'company' ? (
-            <CompanyProfileForm
-              profile={profile}
-              onSubmit={(data) => {
-                updateProfile.mutate(data, {
-                  onSuccess: () => {
-                    setSuccessMessage('Company profile updated successfully! Redirecting...');
-                    setTimeout(() => {
-                      setSuccessMessage('');
-                      router.push(`/profile/${profile.username}`);
-                    }, 1500);
-                  },
-                });
-              }}
-              isSaving={updateProfile.isPending}
-            />
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
+              <CompanyProfileForm
+                profile={profile}
+                onSubmit={(data) => {
+                  updateProfile.mutate(data, {
+                    onSuccess: () => {
+                      setSuccessMessage('Company profile updated successfully! Redirecting...');
+                      setTimeout(() => {
+                        setSuccessMessage('');
+                        router.push(`/profile/${profile.username}`);
+                      }, 1500);
+                    },
+                  });
+                }}
+                isSaving={updateProfile.isPending}
+              />
+            </div>
           ) : (
             <DeveloperProfileForm
               profile={profile}
@@ -162,6 +227,15 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
       headline: profile.headline || '',
       location: profile.location || '',
       phone_number: profile.phone_number || '',
+      first_name: profile.first_name || '',
+      last_name: profile.last_name || '',
+      gender: profile.gender || '',
+      date_of_birth: profile.date_of_birth ? String(profile.date_of_birth).slice(0, 10) : '',
+      address: profile.address || '',
+      province: profile.province || '',
+      city: profile.city || '',
+      current_address: profile.current_address || '',
+      social_links: seedSocialLinks(profile),
       education: profile.education || [],
       experience: profile.experience || [],
       projects: profile.projects || [],
@@ -180,6 +254,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
   const projectsWatch = watch('projects') || [];
   const achievementsWatch = watch('achievements') || [];
   const trainingWatch = watch('training') || [];
+  const socialLinksWatch = watch('social_links') || [];
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [avatarUploadError, setAvatarUploadError] = useState('');
@@ -293,449 +368,627 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
     setValue('training', updated);
   };
 
+  const addSocialLink = () => {
+    setValue('social_links', [...socialLinksWatch, { platform: 'github', url: '' }], {
+      shouldDirty: true,
+    });
+  };
+  const removeSocialLink = (index: number) => {
+    setValue(
+      'social_links',
+      socialLinksWatch.filter((_, i) => i !== index),
+      { shouldDirty: true }
+    );
+  };
+  const updateSocialLink = (index: number, field: 'platform' | 'url', value: string) => {
+    const updated = [...socialLinksWatch];
+    updated[index] = { ...updated[index], [field]: value };
+    setValue('social_links', updated, { shouldDirty: true });
+  };
+
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+    const timer = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Header Info: Headline, Location, Phone */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-3">
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Headline / Professional Title</label>
-          <input
-            {...register('headline')}
-            type="text"
-            placeholder="e.g. full django,drf,react,next with ts"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Location</label>
-          <input
-            {...register('location')}
-            type="text"
-            placeholder="e.g. Dhading, Nepal"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Phone Number</label>
-          <input
-            {...register('phone_number')}
-            type="text"
-            placeholder="e.g. 9828989190"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
-        </div>
-      </div>
-
-      {/* Avatar Image */}
-      <div>
-        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Avatar Image URL</label>
-        <div className="flex gap-4 items-center">
-          <input
-            {...register('avatar_url')}
-            type="text"
-            placeholder="https://example.com/avatar.jpg"
-            className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
-          {avatarUrlWatch && (avatarUrlWatch.startsWith('http') || avatarUrlWatch.startsWith('/') || avatarUrlWatch.startsWith('data:')) && (
-            <div className="w-10 h-10 rounded-full border bg-zinc-150 overflow-hidden flex-shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarUrlWatch} alt="Preview" className="w-full h-full object-cover" />
-            </div>
-          )}
-        </div>
-        
-        <div className="mt-2 flex items-center gap-3">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={onAvatarFileChange}
-            className="hidden"
-            id="avatar-file-upload"
-          />
-          <label
-            htmlFor="avatar-file-upload"
-            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 bg-white hover:bg-zinc-50 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
-          >
-            {uploadingAvatar ? 'Uploading...' : 'Or upload from computer'}
-          </label>
-          {avatarUploadError && <p className="text-red-500 text-xs">{avatarUploadError}</p>}
-        </div>
-      </div>
-
-      {/* Bio / About */}
-      <div>
-        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">About / Bio</label>
-        <textarea
-          {...register('bio')}
-          placeholder="Tell employers about yourself, your technical summary, background, and goals..."
-          rows={4}
-          className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-        />
-        {errors.bio && <p className="text-red-500 text-xs mt-1.5">{errors.bio.message}</p>}
-      </div>
-
-      {/* Skills & Languages */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Skills &amp; Tech Stack</label>
-          <TagInput
-            value={skillsValue}
-            onChange={(tags) => setValue('skills', tags)}
-            placeholder="Add skills (e.g. Django, React, TypeScript)..."
-            error={errors.skills?.message}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Languages</label>
-          <TagInput
-            value={languagesValue}
-            onChange={(tags) => setValue('languages', tags)}
-            placeholder="Add languages (e.g. Nepali, English, Hindi)..."
-          />
-        </div>
-      </div>
-
-      {/* Links (GitHub, Portfolio) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">GitHub URL</label>
-          <input
-            {...register('github_url')}
-            type="text"
-            placeholder="https://github.com/your-username"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Portfolio URL</label>
-          <input
-            {...register('portfolio_url')}
-            type="text"
-            placeholder="https://yourportfolio.dev"
-            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
-        </div>
-      </div>
-
-      {/* Resume Section with URL and Computer Upload + Preview */}
-      <div className="border border-zinc-200 rounded-2xl p-5 bg-zinc-50/30 space-y-4">
-        <label className="block text-sm font-bold text-zinc-900 flex items-center justify-between">
-          <span>Resume (URL or Computer Upload)</span>
-          {resumeUrlWatch && (
+    <form
+      onSubmit={handleSubmit((data) =>
+        onSubmit({
+          ...data,
+          date_of_birth: data.date_of_birth || null,
+        })
+      )}
+      className="space-y-6"
+    >
+      <nav className="sticky top-16 z-20 -mx-1 overflow-x-auto rounded-2xl border border-zinc-200 bg-white/95 px-3 py-3 shadow-sm backdrop-blur-md">
+        <div className="flex min-w-max gap-1.5">
+          {PROFILE_SECTIONS.map((section) => (
             <a
-              href={resumeUrlWatch}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs text-blue-600 font-semibold hover:underline"
+              key={section.id}
+              href={`#${section.id}`}
+              className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-950"
             >
-              Open in full window
+              {section.label}
             </a>
-          )}
-        </label>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            {...register('resume_url')}
-            type="text"
-            placeholder="Paste Google Drive / hosted resume URL or upload below..."
-            className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 outline-none bg-white"
-          />
-
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={onResumeFileChange}
-            className="hidden"
-            id="resume-file-upload"
-          />
-          <label
-            htmlFor="resume-file-upload"
-            className="inline-flex items-center justify-center px-4 py-3 border border-zinc-300 rounded-xl text-xs font-semibold text-zinc-800 bg-white hover:bg-zinc-100 cursor-pointer transition-colors shadow-xs flex-shrink-0 disabled:opacity-50"
-          >
-            {uploadingResume ? 'Uploading...' : 'Upload from computer'}
-          </label>
+          ))}
         </div>
-        {resumeUploadError && <p className="text-red-500 text-xs">{resumeUploadError}</p>}
+      </nav>
 
-        {/* Live Resume Previewer */}
-        {resumeUrlWatch && (
-          <div className="mt-4 border border-zinc-200 rounded-xl overflow-hidden bg-white shadow-xs">
-            <div className="bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-700 border-b border-zinc-200 flex justify-between items-center">
-              <span>Resume Preview</span>
-              <span className="text-zinc-400 font-mono text-[10px] truncate max-w-xs">{resumeUrlWatch}</span>
+      <section id="about" className="scroll-mt-24 space-y-6">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
+          <div className="mb-5 border-b border-zinc-100 pb-4">
+            <h2 className="text-lg font-bold text-zinc-900">About</h2>
+            <p className="mt-1 text-sm text-zinc-500">Name, gender, date of birth, and bio.</p>
+          </div>
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-zinc-800">First name</label>
+                <input
+                  {...register('first_name')}
+                  type="text"
+                  placeholder="First name"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Last name</label>
+                <input
+                  {...register('last_name')}
+                  type="text"
+                  placeholder="Last name"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Gender</label>
+                <select
+                  {...register('gender')}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+                >
+                  <option value="">Select gender</option>
+                  {GENDER_OPTIONS.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Date of birth</label>
+                <input
+                  {...register('date_of_birth')}
+                  type="date"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+                />
+              </div>
             </div>
-            <div className="h-96 w-full relative bg-zinc-900">
-              <iframe
-                src={resumeUrlWatch}
-                className="w-full h-full border-0"
-                title="Resume Preview"
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-zinc-800">About / Bio</label>
+              <textarea
+                {...register('bio')}
+                placeholder="Tell employers about yourself, your technical summary, background, and goals..."
+                rows={4}
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
               />
+              {errors.bio && <p className="mt-1.5 text-xs text-red-500">{errors.bio.message}</p>}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Profile photo</label>
+              <input type="hidden" {...register('avatar_url')} />
+              <div className="flex items-center gap-4">
+                {avatarUrlWatch ? (
+                  <div className="h-16 w-16 overflow-hidden rounded-full border border-zinc-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={avatarUrlWatch} alt="Profile preview" className="h-full w-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-xs font-semibold text-zinc-500">
+                    Photo
+                  </div>
+                )}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={onAvatarFileChange}
+                    className="hidden"
+                    id="avatar-file-upload"
+                  />
+                  <label
+                    htmlFor="avatar-file-upload"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
+                  >
+                    {uploadingAvatar ? 'Uploading...' : avatarUrlWatch ? 'Change photo' : 'Upload from device'}
+                  </label>
+                  {avatarUploadError && <p className="mt-1.5 text-xs text-red-500">{avatarUploadError}</p>}
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Education Section */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-zinc-900">Education</h3>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
+          <div className="mb-5 border-b border-zinc-100 pb-4">
+            <h2 className="text-lg font-bold text-zinc-900">Address &amp; links</h2>
+            <p className="mt-1 text-sm text-zinc-500">Location, social profiles, and resume or CV.</p>
+          </div>
+          <div className="space-y-5">
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Address</label>
+              <input
+                {...register('address')}
+                type="text"
+                placeholder="Street address / permanent address"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Province</label>
+                <select
+                  {...register('province')}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+                >
+                  <option value="">Select province</option>
+                  {NEPAL_PROVINCES.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-zinc-800">City</label>
+                <input
+                  {...register('city')}
+                  type="text"
+                  placeholder="City"
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Current Address</label>
+              <input
+                {...register('current_address')}
+                type="text"
+                placeholder="Where you currently live"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+              />
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-zinc-800">Social links</label>
+                <button
+                  type="button"
+                  onClick={addSocialLink}
+                  className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
+                >
+                  + Add link
+                </button>
+              </div>
+              {socialLinksWatch.length === 0 ? (
+                <p className="text-xs italic text-zinc-400">
+                  Add GitHub, Portfolio, LinkedIn, Facebook, Instagram, or Twitter.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {socialLinksWatch.map((item, idx) => (
+                    <div key={idx} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <select
+                        value={item.platform}
+                        onChange={(e) => updateSocialLink(idx, 'platform', e.target.value)}
+                        className="w-full rounded-xl border border-zinc-200 bg-white p-2.5 text-sm outline-none sm:w-44"
+                      >
+                        {SOCIAL_PLATFORMS.map((platform) => (
+                          <option key={platform.value} value={platform.value}>
+                            {platform.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="url"
+                        value={item.url}
+                        onChange={(e) => updateSocialLink(idx, 'url', e.target.value)}
+                        placeholder="https://"
+                        className="min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white p-2.5 text-sm outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSocialLink(idx)}
+                        className="px-2 py-1 text-xs font-medium text-red-500 hover:text-red-700"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4 rounded-2xl border border-zinc-200 bg-zinc-50/30 p-5">
+              <label className="flex items-center justify-between text-sm font-bold text-zinc-900">
+                <span>Resume / CV</span>
+                {resumeUrlWatch && (
+                  <a
+                    href={resumeUrlWatch}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-semibold text-blue-600 hover:underline"
+                  >
+                    Open in full window
+                  </a>
+                )}
+              </label>
+              <input type="hidden" {...register('resume_url')} />
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={onResumeFileChange}
+                  className="hidden"
+                  id="resume-file-upload"
+                />
+                <label
+                  htmlFor="resume-file-upload"
+                  className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-xs font-semibold text-zinc-800 transition-colors hover:bg-zinc-100"
+                >
+                  {uploadingResume ? 'Uploading...' : resumeUrlWatch ? 'Replace resume' : 'Upload from device'}
+                </label>
+                {resumeUploadError && <p className="text-xs text-red-500">{resumeUploadError}</p>}
+              </div>
+              {resumeUrlWatch && (
+                <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
+                  <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-700">
+                    <span>Resume Preview</span>
+                  </div>
+                  <div className="relative h-96 w-full bg-zinc-900">
+                    <iframe src={resumeUrlWatch} className="h-full w-full border-0" title="Resume Preview" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <ProfileSection
+        id="education"
+        title="Education"
+        action={
           <button
             type="button"
             onClick={addEducation}
-            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+            className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
           >
             + Add Education
           </button>
-        </div>
+        }
+      >
         {educationWatch.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic">No education entries added yet.</p>
+          <p className="text-xs italic text-zinc-400">No education entries added yet.</p>
         ) : (
-          educationWatch.map((item: any, idx: number) => (
-            <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50 space-y-3 relative">
-              <button
-                type="button"
-                onClick={() => removeEducation(idx)}
-                className="absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-medium"
-              >
-                Remove
-              </button>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Degree (e.g. BACHELOR’S)"
-                  value={item.degree || ''}
-                  onChange={(e) => updateEducationField(idx, 'degree', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Institution (e.g. Nilkantha Multiple Campus)"
-                  value={item.institution || ''}
-                  onChange={(e) => updateEducationField(idx, 'institution', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Location (e.g. Kathmandu)"
-                  value={item.location || ''}
-                  onChange={(e) => updateEducationField(idx, 'location', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Dates (e.g. April 1, 2022 - April 5, 2026)"
-                  value={item.dates || ''}
-                  onChange={(e) => updateEducationField(idx, 'dates', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
+          <div className="space-y-3">
+            {educationWatch.map((item: any, idx: number) => (
+              <div key={idx} className="relative space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
+                <button
+                  type="button"
+                  onClick={() => removeEducation(idx)}
+                  className="absolute top-3 right-3 text-xs font-medium text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <input
+                    type="text"
+                    placeholder="Degree (e.g. BACHELOR’S)"
+                    value={item.degree || ''}
+                    onChange={(e) => updateEducationField(idx, 'degree', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Institution (e.g. Nilkantha Multiple Campus)"
+                    value={item.institution || ''}
+                    onChange={(e) => updateEducationField(idx, 'institution', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Location (e.g. Kathmandu)"
+                    value={item.location || ''}
+                    onChange={(e) => updateEducationField(idx, 'location', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Dates (e.g. April 1, 2022 - April 5, 2026)"
+                    value={item.dates || ''}
+                    onChange={(e) => updateEducationField(idx, 'dates', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
-      </div>
+      </ProfileSection>
 
-      {/* Experience Section */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-zinc-900">Experience</h3>
-          <button
-            type="button"
-            onClick={addExperience}
-            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
-          >
-            + Add Experience
-          </button>
-        </div>
-        {experienceWatch.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic">No experience entries added yet.</p>
-        ) : (
-          experienceWatch.map((item: any, idx: number) => (
-            <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50 space-y-3 relative">
-              <button
-                type="button"
-                onClick={() => removeExperience(idx)}
-                className="absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-medium"
-              >
-                Remove
-              </button>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  placeholder="Position / Title"
-                  value={item.position || ''}
-                  onChange={(e) => updateExperienceField(idx, 'position', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Company / Organization"
-                  value={item.company || ''}
-                  onChange={(e) => updateExperienceField(idx, 'company', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Dates (e.g. Jan 2025 - Present)"
-                  value={item.dates || ''}
-                  onChange={(e) => updateExperienceField(idx, 'dates', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-              </div>
-              <textarea
-                placeholder="Description of responsibilities and achievements..."
-                value={item.description || ''}
-                rows={2}
-                onChange={(e) => updateExperienceField(idx, 'description', e.target.value)}
-                className="w-full border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-              />
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Projects Section */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-zinc-900">Projects</h3>
+      <ProfileSection
+        id="projects"
+        title="Projects"
+        action={
           <button
             type="button"
             onClick={addProject}
-            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+            className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
           >
             + Add Project
           </button>
-        </div>
+        }
+      >
         {projectsWatch.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic">No projects added yet.</p>
+          <p className="text-xs italic text-zinc-400">No projects added yet.</p>
         ) : (
-          projectsWatch.map((item: any, idx: number) => (
-            <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50 space-y-3 relative">
-              <button
-                type="button"
-                onClick={() => removeProject(idx)}
-                className="absolute top-3 right-3 text-xs text-red-500 hover:text-red-700 font-medium"
-              >
-                Remove
-              </button>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  placeholder="Project Title (e.g. Job Tracker)"
-                  value={item.title || ''}
-                  onChange={(e) => updateProjectField(idx, 'title', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Date (e.g. May 10, 2026)"
-                  value={item.date || ''}
-                  onChange={(e) => updateProjectField(idx, 'date', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-                />
-                <input
-                  type="text"
-                  placeholder="Project Link / URL"
-                  value={item.url || ''}
-                  onChange={(e) => updateProjectField(idx, 'url', e.target.value)}
-                  className="border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
+          <div className="space-y-3">
+            {projectsWatch.map((item: any, idx: number) => (
+              <div key={idx} className="relative space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
+                <button
+                  type="button"
+                  onClick={() => removeProject(idx)}
+                  className="absolute top-3 right-3 text-xs font-medium text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <input
+                    type="text"
+                    placeholder="Project Title (e.g. Job Tracker)"
+                    value={item.title || ''}
+                    onChange={(e) => updateProjectField(idx, 'title', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Date (e.g. May 10, 2026)"
+                    value={item.date || ''}
+                    onChange={(e) => updateProjectField(idx, 'date', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Project Link / URL"
+                    value={item.url || ''}
+                    onChange={(e) => updateProjectField(idx, 'url', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                </div>
+                <textarea
+                  placeholder="Comprehensive project description..."
+                  value={item.description || ''}
+                  rows={2}
+                  onChange={(e) => updateProjectField(idx, 'description', e.target.value)}
+                  className="w-full rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
                 />
               </div>
-              <textarea
-                placeholder="Comprehensive project description..."
-                value={item.description || ''}
-                rows={2}
-                onChange={(e) => updateProjectField(idx, 'description', e.target.value)}
-                className="w-full border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-              />
-            </div>
-          ))
+            ))}
+          </div>
         )}
-      </div>
+      </ProfileSection>
 
-      {/* Achievements Section */}
-      <div id="achievements" className="space-y-4 pt-4 border-t border-zinc-200 scroll-mt-24">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-zinc-900">Achievements</h3>
+      <ProfileSection
+        id="experience"
+        title="Experience"
+        action={
+          <button
+            type="button"
+            onClick={addExperience}
+            className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
+          >
+            + Add Experience
+          </button>
+        }
+      >
+        {experienceWatch.length === 0 ? (
+          <p className="text-xs italic text-zinc-400">No experience entries added yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {experienceWatch.map((item: any, idx: number) => (
+              <div key={idx} className="relative space-y-3 rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
+                <button
+                  type="button"
+                  onClick={() => removeExperience(idx)}
+                  className="absolute top-3 right-3 text-xs font-medium text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <input
+                    type="text"
+                    placeholder="Position / Title"
+                    value={item.position || ''}
+                    onChange={(e) => updateExperienceField(idx, 'position', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Company / Organization"
+                    value={item.company || ''}
+                    onChange={(e) => updateExperienceField(idx, 'company', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Dates (e.g. Jan 2025 - Present)"
+                    value={item.dates || ''}
+                    onChange={(e) => updateExperienceField(idx, 'dates', e.target.value)}
+                    className="rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                  />
+                </div>
+                <textarea
+                  placeholder="Description of responsibilities and achievements..."
+                  value={item.description || ''}
+                  rows={2}
+                  onChange={(e) => updateExperienceField(idx, 'description', e.target.value)}
+                  className="w-full rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </ProfileSection>
+
+      <ProfileSection
+        id="skills"
+        title="Skills & Tech Stack"
+        description="Add the tools and technologies you work with."
+      >
+        <TagInput
+          value={skillsValue}
+          onChange={(tags) => setValue('skills', tags)}
+          placeholder="Add skills (e.g. Django, React, TypeScript)..."
+          error={errors.skills?.message}
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="achievements"
+        title="Achievements"
+        action={
           <button
             type="button"
             onClick={addAchievement}
-            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+            className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
           >
             + Add Achievement
           </button>
-        </div>
+        }
+      >
         {achievementsWatch.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic">No achievements added yet.</p>
+          <p className="text-xs italic text-zinc-400">No achievements added yet.</p>
         ) : (
-          achievementsWatch.map((ach: string, idx: number) => (
-            <div key={idx} className="flex gap-2 items-center">
-              <input
-                type="text"
-                placeholder="Achievement title / award..."
-                value={ach}
-                onChange={(e) => updateAchievementField(idx, e.target.value)}
-                className="flex-1 border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => removeAchievement(idx)}
-                className="text-xs text-red-500 hover:text-red-700 px-2 py-1 font-medium"
-              >
-                Remove
-              </button>
-            </div>
-          ))
+          <div className="space-y-2">
+            {achievementsWatch.map((ach: string, idx: number) => (
+              <div key={idx} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Achievement title / award..."
+                  value={ach}
+                  onChange={(e) => updateAchievementField(idx, e.target.value)}
+                  className="flex-1 rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeAchievement(idx)}
+                  className="px-2 py-1 text-xs font-medium text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
+      </ProfileSection>
 
-      {/* Training Section */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-bold text-zinc-900">Training &amp; Certifications</h3>
+      <ProfileSection
+        id="training"
+        title="Training"
+        description="Courses and certifications."
+        action={
           <button
             type="button"
             onClick={addTraining}
-            className="text-xs font-semibold text-zinc-900 bg-zinc-100 hover:bg-zinc-200 px-3 py-1.5 rounded-lg transition"
+            className="rounded-lg bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-200"
           >
             + Add Training
           </button>
-        </div>
+        }
+      >
         {trainingWatch.length === 0 ? (
-          <p className="text-xs text-zinc-400 italic">No training entries added yet.</p>
+          <p className="text-xs italic text-zinc-400">No training entries added yet.</p>
         ) : (
-          trainingWatch.map((item: any, idx: number) => (
-            <div key={idx} className="flex flex-col sm:flex-row gap-2 items-center relative">
-              <input
-                type="text"
-                placeholder="Course / Certification (e.g. React.js)"
-                value={item.title || ''}
-                onChange={(e) => updateTrainingField(idx, 'title', e.target.value)}
-                className="flex-1 border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none w-full"
-              />
-              <input
-                type="text"
-                placeholder="Date (e.g. April 3, 2026)"
-                value={item.date || ''}
-                onChange={(e) => updateTrainingField(idx, 'date', e.target.value)}
-                className="w-full sm:w-48 border border-zinc-200 rounded-lg p-2.5 text-xs bg-white focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => removeTraining(idx)}
-                className="text-xs text-red-500 hover:text-red-700 px-2 py-1 font-medium"
-              >
-                Remove
-              </button>
-            </div>
-          ))
+          <div className="space-y-2">
+            {trainingWatch.map((item: any, idx: number) => (
+              <div key={idx} className="relative flex flex-col items-center gap-2 sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Course / Certification (e.g. React.js)"
+                  value={item.title || ''}
+                  onChange={(e) => updateTrainingField(idx, 'title', e.target.value)}
+                  className="w-full flex-1 rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Date (e.g. April 3, 2026)"
+                  value={item.date || ''}
+                  onChange={(e) => updateTrainingField(idx, 'date', e.target.value)}
+                  className="w-full rounded-lg border border-zinc-200 bg-white p-2.5 text-xs focus:outline-none sm:w-48"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeTraining(idx)}
+                  className="px-2 py-1 text-xs font-medium text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
+      </ProfileSection>
 
-      <div className="pt-4 border-t border-zinc-100 flex justify-end gap-3">
+      <ProfileSection
+        id="languages"
+        title="Languages"
+        description="Spoken and written languages."
+      >
+        <TagInput
+          value={languagesValue}
+          onChange={(tags) => setValue('languages', tags)}
+          placeholder="Add languages (e.g. Nepali, English, Hindi)..."
+        />
+      </ProfileSection>
+
+      <ProfileSection
+        id="contact"
+        title="Email & Phone"
+        description="How employers can reach you."
+      >
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Email</label>
+            <input
+              type="email"
+              value={profile.email || ''}
+              readOnly
+              className="w-full cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 p-3 text-sm text-zinc-600"
+            />
+            <p className="mt-1 text-xs text-zinc-400">Email cannot be changed here.</p>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Phone Number</label>
+            <input
+              {...register('phone_number')}
+              type="text"
+              placeholder="e.g. 9828989190"
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 p-3 text-sm outline-none hover:bg-zinc-50 focus:ring-2 focus:ring-zinc-950"
+            />
+          </div>
+        </div>
+      </ProfileSection>
+
+      <div className="sticky bottom-4 flex justify-end">
         <button
           type="submit"
           disabled={isSaving}
-          className="px-6 py-2.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-white font-medium text-sm transition-colors shadow-sm disabled:opacity-50 cursor-pointer"
+          className="cursor-pointer rounded-xl bg-zinc-950 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
         >
           {isSaving ? 'Saving Changes...' : 'Save Profile'}
         </button>
@@ -801,25 +1054,15 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Avatar / Logo URL */}
       <div>
-        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Company Logo URL</label>
-        <div className="flex gap-4 items-center">
-          <input
-            {...register('avatar_url')}
-            type="text"
-            placeholder="https://example.com/logo.png"
-            className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
-          />
+        <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Company Logo</label>
+        <div className="flex items-center gap-4">
           {avatarUrlWatch && (avatarUrlWatch.startsWith('http://') || avatarUrlWatch.startsWith('https://') || avatarUrlWatch.startsWith('/') || avatarUrlWatch.startsWith('data:')) && (
-            <div className="w-10 h-10 rounded-full border bg-zinc-150 overflow-hidden flex-shrink-0">
+            <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full border bg-zinc-150">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={avatarUrlWatch} alt="Preview" className="w-full h-full object-cover" />
+              <img src={avatarUrlWatch} alt="Preview" className="h-full w-full object-cover" />
             </div>
           )}
-        </div>
-
-        <div className="mt-2 flex items-center gap-3">
           <input
             type="file"
             accept="image/*"
@@ -829,13 +1072,14 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
           />
           <label
             htmlFor="logo-file-upload"
-            className="inline-flex items-center justify-center px-4 py-2 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 bg-white hover:bg-zinc-50 cursor-pointer transition-colors shadow-sm disabled:opacity-50"
+            className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50"
           >
-            {uploadingLogo ? 'Uploading...' : 'Or upload from computer'}
+            {uploadingLogo ? 'Uploading...' : avatarUrlWatch ? 'Replace logo' : 'Upload from device'}
           </label>
-          {logoUploadError && <p className="text-red-500 text-xs">{logoUploadError}</p>}
+          {logoUploadError && <p className="text-xs text-red-500">{logoUploadError}</p>}
         </div>
-        {errors.avatar_url && <p className="text-red-500 text-xs mt-1.5">{errors.avatar_url.message}</p>}
+        <input type="hidden" {...register('avatar_url')} />
+        {errors.avatar_url && <p className="mt-1.5 text-xs text-red-500">{errors.avatar_url.message}</p>}
       </div>
 
       {/* Company Name */}

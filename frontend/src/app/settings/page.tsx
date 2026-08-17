@@ -13,6 +13,7 @@ import {
   createChangePasswordSchema,
   deleteAccountSchema,
   PASSWORD_RULES_HELP,
+  passwordCharsetField,
   type ChangePasswordFormData,
   type DeleteAccountFormData,
 } from '@/schemas/authSchema';
@@ -107,7 +108,7 @@ function SettingsContent({ username }: { username: string }) {
                   type={showCurrent ? 'text' : 'password'}
                   autoComplete="current-password"
                   className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                  {...passwordForm.register('current_password')}
+                  {...passwordCharsetField(passwordForm.register('current_password'), passwordForm.trigger)}
                 />
                 <button
                   type="button"
@@ -135,7 +136,7 @@ function SettingsContent({ username }: { username: string }) {
                   type={showNew ? 'text' : 'password'}
                   autoComplete="new-password"
                   className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                  {...passwordForm.register('new_password')}
+                  {...passwordCharsetField(passwordForm.register('new_password'), passwordForm.trigger)}
                 />
                 <button
                   type="button"
@@ -163,7 +164,7 @@ function SettingsContent({ username }: { username: string }) {
                   type={showNew2 ? 'text' : 'password'}
                   autoComplete="new-password"
                   className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                  {...passwordForm.register('new_password2')}
+                  {...passwordCharsetField(passwordForm.register('new_password2'), passwordForm.trigger)}
                 />
                 <button
                   type="button"
