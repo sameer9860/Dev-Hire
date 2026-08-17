@@ -26,6 +26,11 @@ export type UserRole = 'developer' | 'company' | 'guest';
      date?: string;
    }
 
+   export interface SocialLink {
+     platform: string;
+     url: string;
+   }
+
    export interface User {
      id: number;
      username: string;
@@ -33,6 +38,15 @@ export type UserRole = 'developer' | 'company' | 'guest';
      role: UserRole;
      bio: string;
      avatar_url: string;
+     first_name?: string;
+     last_name?: string;
+     gender?: string;
+     date_of_birth?: string | null;
+     address?: string;
+     province?: string;
+     city?: string;
+     current_address?: string;
+     social_links?: SocialLink[];
      // Company fields
      company_name: string;
      company_website: string;
@@ -134,6 +148,7 @@ export type UserRole = 'developer' | 'company' | 'guest';
      action: string;
      message: string;
      metadata: Record<string, unknown>;
+     is_read: boolean;
      created_at: string;
    }
 
@@ -144,6 +159,10 @@ export type UserRole = 'developer' | 'company' | 'guest';
      next: string | null;
      previous: string | null;
      results: T[];
+   }
+
+   export interface ActivityLogResponse extends PaginatedResponse<ActivityLog> {
+     unread_count: number;
    }
 
    // Utility types — you'll use these everywhere
@@ -189,6 +208,15 @@ export type UserRole = 'developer' | 'company' | 'guest';
      headline?: string;
      location?: string;
      phone_number?: string;
+     first_name?: string;
+     last_name?: string;
+     gender?: string;
+     date_of_birth?: string | null;
+     address?: string;
+     province?: string;
+     city?: string;
+     current_address?: string;
+     social_links?: SocialLink[];
      education?: EducationItem[];
      experience?: ExperienceItem[];
      projects?: ProjectItem[];
