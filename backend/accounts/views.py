@@ -193,6 +193,12 @@ class CheckUsernameView(APIView):
                 {'available': False, 'detail': 'Username cannot contain spaces.', 'suggestions': []},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        from .password_rules import password_charset_ok, USERNAME_CHARSET_ERROR
+        if not password_charset_ok(username):
+            return Response(
+                {'available': False, 'detail': USERNAME_CHARSET_ERROR, 'suggestions': []},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if len(username) < 3:
             return Response(
                 {'available': False, 'detail': 'Username must be at least 3 characters.', 'suggestions': []},
@@ -383,6 +389,7 @@ class ActivityLogListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         from .models import ActivityLog
         logs = list(self.get_queryset())
+        unread_count = ActivityLog.objects.filter(user=request.user, is_read=False).count()
         data = [
             {
                 'id': log.id,
@@ -390,10 +397,25 @@ class ActivityLogListView(generics.ListAPIView):
                 'action': log.action,
                 'message': log.message,
                 'metadata': log.metadata,
+                'is_read': log.is_read,
                 'created_at': log.created_at,
             }
             for log in logs
         ]
-        return Response({'count': len(data), 'results': data})
+        return Response({
+            'count': len(data),
+            'unread_count': unread_count,
+            'results': data,
+        })
+
+
+class MarkActivityReadView(APIView):
+    """POST /api/auth/activity/read-all/ — mark all activity as read."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from .models import ActivityLog
+        updated = ActivityLog.objects.filter(user=request.user, is_read=False).update(is_read=True)
+        return Response({'updated': updated}, status=status.HTTP_200_OK)
 
 
