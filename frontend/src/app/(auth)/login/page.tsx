@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginFormData, noSpaceField } from '@/schemas/authSchema';
+import { loginSchema, type LoginFormData, passwordCharsetField } from '@/schemas/authSchema';
 import { useLogin, useMe } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff, User, Lock, Code } from 'lucide-react';
@@ -25,8 +25,9 @@ export default function LoginPage() {
     }
   }, [user, router]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+  const { register, handleSubmit, trigger, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    mode: 'onChange',
   });
   const login = useLogin();
   const [showPassword, setShowPassword] = useState(false);
@@ -61,7 +62,7 @@ export default function LoginPage() {
                   id="username"
                   type="text"
                   placeholder=" "
-                  {...noSpaceField(register('username'))}
+                  {...passwordCharsetField(register('username'), trigger)}
                   className="peer w-full border-none bg-transparent outline-none text-sm text-zinc-900 pt-4 pb-0.5 placeholder-transparent"
                 />
                 <label
@@ -85,7 +86,7 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder=" "
-                  {...noSpaceField(register('password'))}
+                  {...passwordCharsetField(register('password'), trigger)}
                   className="peer w-full border-none bg-transparent outline-none text-sm text-zinc-900 pt-4 pb-0.5 placeholder-transparent"
                 />
                 <label

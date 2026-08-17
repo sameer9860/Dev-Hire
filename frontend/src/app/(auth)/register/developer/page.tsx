@@ -6,6 +6,7 @@ import {
   developerRegisterSchema,
   type DeveloperRegisterFormData,
   noSpaceField,
+  passwordCharsetField,
   PASSWORD_RULES_HELP,
 } from '@/schemas/authSchema';
 import { useRegister, useMe, useCheckUsername, useCheckEmail } from '@/hooks/useAuth';
@@ -102,7 +103,7 @@ export default function DeveloperRegisterPage() {
                   id="username"
                   type="text"
                   placeholder=" "
-                  {...noSpaceField(register('username'))}
+                  {...passwordCharsetField(register('username'), trigger)}
                   className={inputCls}
                 />
                 <label htmlFor="username" className={labelCls}>
@@ -198,7 +199,7 @@ export default function DeveloperRegisterPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder=" "
-                  {...noSpaceField(register('password'))}
+                  {...passwordCharsetField(register('password'), trigger)}
                   className={inputCls}
                 />
                 <label htmlFor="password" className={labelCls}>
@@ -229,7 +230,7 @@ export default function DeveloperRegisterPage() {
                   id="password2"
                   type={showPassword2 ? 'text' : 'password'}
                   placeholder=" "
-                  {...noSpaceField(register('password2'))}
+                  {...passwordCharsetField(register('password2'), trigger)}
                   className={inputCls}
                 />
                 <label htmlFor="password2" className={labelCls}>
