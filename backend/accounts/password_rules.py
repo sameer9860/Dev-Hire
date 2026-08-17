@@ -6,10 +6,26 @@ import re
 from django.core.exceptions import ValidationError
 
 
+# Printable ASCII except space: letters, numbers, and special characters.
+ALLOWED_PASSWORD_RE = re.compile(r'^[\x21-\x7E]+$')
+
 PASSWORD_RULES_HELP = (
     'Password must be at least 8 characters and include uppercase, lowercase, '
-    'a number, and a special character. It cannot include your username.'
+    'a number, and a special character. Only letters, numbers, and special '
+    'characters are allowed — no spaces or emojis. It cannot include your username.'
 )
+
+PASSWORD_CHARSET_ERROR = (
+    'Only uppercase, lowercase, numbers, and special characters are allowed.'
+)
+
+USERNAME_CHARSET_ERROR = (
+    'Only uppercase, lowercase, numbers, and special characters are allowed.'
+)
+
+
+def password_charset_ok(password: str) -> bool:
+    return bool(password) and bool(ALLOWED_PASSWORD_RE.fullmatch(password))
 
 
 def password_related_to_username(password: str, username: str | None) -> bool:
@@ -40,6 +56,8 @@ def validate_strong_password(password: str, username: str | None = None) -> None
 
     if not password or any(ch.isspace() for ch in password):
         errors.append('Password cannot contain spaces.')
+    elif password and not password_charset_ok(password):
+        errors.append(PASSWORD_CHARSET_ERROR)
 
     if not password or len(password) < 8:
         errors.append('Password must be at least 8 characters.')
