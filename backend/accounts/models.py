@@ -28,6 +28,13 @@ class User(AbstractUser):
        headline = models.CharField(max_length=255, blank=True)
        location = models.CharField(max_length=255, blank=True)
        phone_number = models.CharField(max_length=50, blank=True)
+       gender = models.CharField(max_length=32, blank=True)
+       date_of_birth = models.DateField(null=True, blank=True)
+       address = models.CharField(max_length=255, blank=True)
+       province = models.CharField(max_length=100, blank=True)
+       city = models.CharField(max_length=100, blank=True)
+       current_address = models.CharField(max_length=255, blank=True)
+       social_links = models.JSONField(default=list, blank=True)
        education = models.JSONField(default=list, blank=True)
        experience = models.JSONField(default=list, blank=True)
        projects = models.JSONField(default=list, blank=True)
@@ -68,6 +75,7 @@ class ActivityLog(models.Model):
     action = models.CharField(max_length=64)
     message = models.CharField(max_length=255)
     metadata = models.JSONField(default=dict, blank=True)
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
