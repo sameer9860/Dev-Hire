@@ -22,4 +22,5 @@ urlpatterns = [
        path('profile/<str:username>/', views.PublicProfileView.as_view()),
        path('upload/', views.FileUploadView.as_view()),
        path('activity/', views.ActivityLogListView.as_view()),
+       path('activity/read-all/', views.MarkActivityReadView.as_view()),
    ]
