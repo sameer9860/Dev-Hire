@@ -1,5 +1,10 @@
 import { z } from 'zod';
 
+export const socialLinkSchema = z.object({
+  platform: z.string(),
+  url: z.string(),
+});
+
 export const developerProfileSchema = z.object({
   bio: z.string().max(2000, 'Bio must be under 2000 characters'),
   avatar_url: z.string().or(z.literal('')),
@@ -10,6 +15,15 @@ export const developerProfileSchema = z.object({
   headline: z.string().optional(),
   location: z.string().optional(),
   phone_number: z.string().optional(),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  gender: z.string().optional(),
+  date_of_birth: z.string().optional().nullable(),
+  address: z.string().optional(),
+  province: z.string().optional(),
+  city: z.string().optional(),
+  current_address: z.string().optional(),
+  social_links: z.array(socialLinkSchema).optional(),
   education: z.array(z.any()).optional(),
   experience: z.array(z.any()).optional(),
   projects: z.array(z.any()).optional(),
@@ -20,7 +34,7 @@ export const developerProfileSchema = z.object({
 
 export const companyProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be under 500 characters'),
-  avatar_url: z.string().url('Enter a valid URL').or(z.literal('')),
+  avatar_url: z.string().or(z.literal('')),
   company_name: z.string().min(1, 'Company name is required'),
   company_website: z.string().refine((v) => {
     if (!v) return true;
