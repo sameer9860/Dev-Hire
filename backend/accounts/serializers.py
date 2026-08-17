@@ -29,8 +29,16 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         if isinstance(identifier, str) and any(ch.isspace() for ch in identifier):
             raise serializers.ValidationError({'detail': 'Username/email cannot contain spaces.'})
+        if isinstance(identifier, str) and identifier and '@' not in identifier:
+            from .password_rules import password_charset_ok, USERNAME_CHARSET_ERROR
+            if not password_charset_ok(identifier):
+                raise serializers.ValidationError({'detail': USERNAME_CHARSET_ERROR})
         if isinstance(password, str) and any(ch.isspace() for ch in password):
             raise serializers.ValidationError({'detail': 'Password cannot contain spaces.'})
+        if isinstance(password, str) and password:
+            from .password_rules import password_charset_ok, PASSWORD_CHARSET_ERROR
+            if not password_charset_ok(password):
+                raise serializers.ValidationError({'detail': PASSWORD_CHARSET_ERROR})
 
         user = User.objects.filter(email__iexact=identifier).first()
         if user is None:
@@ -60,7 +68,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_username(self, value):
-        return self._reject_spaces(value, 'username')
+        value = self._reject_spaces(value, 'username')
+        from .password_rules import password_charset_ok, USERNAME_CHARSET_ERROR
+        if value and not password_charset_ok(value):
+            raise serializers.ValidationError(USERNAME_CHARSET_ERROR)
+        return value
 
     def validate_email(self, value):
         value = self._reject_spaces(value, 'email')
@@ -132,8 +144,10 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'bio', 'avatar_url',
                   'company_name', 'company_website', 'company_size',
                   'resume_url', 'skills', 'github_url', 'portfolio_url',
-                  'headline', 'location', 'phone_number', 'education',
-                  'experience', 'projects', 'achievements', 'training', 'languages']
+                  'headline', 'location', 'phone_number',
+                  'first_name', 'last_name', 'gender', 'date_of_birth',
+                  'address', 'province', 'city', 'current_address', 'social_links',
+                  'education', 'experience', 'projects', 'achievements', 'training', 'languages']
         read_only_fields = ['id']
 
 
@@ -144,10 +158,26 @@ class DeveloperProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'role', 'bio', 'avatar_url',
             'skills', 'github_url', 'portfolio_url', 'resume_url',
-            'headline', 'location', 'phone_number', 'education',
-            'experience', 'projects', 'achievements', 'training', 'languages',
+            'headline', 'location', 'phone_number',
+            'first_name', 'last_name', 'gender', 'date_of_birth',
+            'address', 'province', 'city', 'current_address', 'social_links',
+            'education', 'experience', 'projects', 'achievements', 'training', 'languages',
         ]
         read_only_fields = ['id', 'username', 'email', 'role']
+
+    def update(self, instance, validated_data):
+        social_links = validated_data.get('social_links')
+        if isinstance(social_links, list):
+            by_platform = {
+                (item.get('platform') or '').lower(): (item.get('url') or '')
+                for item in social_links
+                if isinstance(item, dict)
+            }
+            if 'github' in by_platform:
+                validated_data['github_url'] = by_platform['github']
+            if 'portfolio' in by_platform:
+                validated_data['portfolio_url'] = by_platform['portfolio']
+        return super().update(instance, validated_data)
 
 
 class CompanyProfileSerializer(serializers.ModelSerializer):
@@ -196,7 +226,10 @@ class PublicProfileSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'role', 'bio', 'avatar_url',
             # Developer fields
             'skills', 'github_url', 'portfolio_url', 'resume_url',
-            'headline', 'location', 'phone_number', 'education',
+            'headline', 'location', 'phone_number',
+            'first_name', 'last_name', 'gender', 'date_of_birth',
+            'address', 'province', 'city', 'current_address', 'social_links',
+            'education',
             'experience', 'projects', 'achievements', 'training', 'languages',
             # Company fields
             'company_name', 'company_website', 'company_size',
@@ -220,6 +253,16 @@ class ChangePasswordSerializer(serializers.Serializer):
 
         if any(ch.isspace() for ch in data['new_password']):
             raise serializers.ValidationError({'new_password': 'Password cannot contain spaces.'})
+        if any(ch.isspace() for ch in data['new_password2']):
+            raise serializers.ValidationError({'new_password2': 'Password cannot contain spaces.'})
+        if any(ch.isspace() for ch in data['current_password']):
+            raise serializers.ValidationError({'current_password': 'Password cannot contain spaces.'})
+
+        from .password_rules import password_charset_ok, PASSWORD_CHARSET_ERROR
+        if data['current_password'] and not password_charset_ok(data['current_password']):
+            raise serializers.ValidationError({'current_password': PASSWORD_CHARSET_ERROR})
+        if data['new_password2'] and not password_charset_ok(data['new_password2']):
+            raise serializers.ValidationError({'new_password2': PASSWORD_CHARSET_ERROR})
 
         from .password_rules import validate_strong_password
         # pyrefly: ignore [missing-import]
