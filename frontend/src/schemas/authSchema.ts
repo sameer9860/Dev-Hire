@@ -268,7 +268,7 @@ export function noSpaceField(registerProps: RegisterReturn) {
 /** Block spaces; keep other invalid characters so the charset error can display. */
 export function passwordCharsetField(
   registerProps: RegisterReturn,
-  trigger?: (name: string) => unknown,
+  trigger?: (name: any) => unknown,
 ) {
   return {
     ...registerProps,
