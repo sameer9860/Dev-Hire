@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useMe } from '@/hooks/useAuth';
-import { FaGithub, FaXTwitter, FaLinkedinIn } from 'react-icons/fa6';
-import { MdEmail } from 'react-icons/md';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useMe } from "@/hooks/useAuth";
+import { FaGithub, FaXTwitter, FaLinkedinIn } from "react-icons/fa6";
+import { MdEmail } from "react-icons/md";
 import {
   Briefcase,
   Users,
@@ -16,92 +16,104 @@ import {
   LayoutDashboard,
   ChevronDown,
   Code2,
-} from 'lucide-react';
+} from "lucide-react";
 
 const FEATURES = [
   {
     icon: Briefcase,
-    title: 'Curated Tech Jobs',
-    description: 'Browse hundreds of vetted developer positions from companies actively hiring.',
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80',
+    title: "Curated Tech Jobs",
+    description:
+      "Browse hundreds of vetted developer positions from companies actively hiring.",
+    image:
+      "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&q=80",
   },
   {
     icon: Users,
-    title: 'Company Dashboards',
-    description: 'Post jobs, review applicants, and update candidate status — all in one place.',
-    image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80',
+    title: "Company Dashboards",
+    description:
+      "Post jobs, review applicants, and update candidate status — all in one place.",
+    image:
+      "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80",
   },
   {
     icon: Shield,
-    title: 'Role-Based Auth',
-    description: 'Separate flows for developers and companies with JWT-secured endpoints.',
-    image: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80',
+    title: "Role-Based Auth",
+    description:
+      "Separate flows for developers and companies with JWT-secured endpoints.",
+    image:
+      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80",
   },
   {
     icon: Zap,
-    title: 'Instant Applications',
-    description: 'Apply to any job in seconds with your saved profile, resume URL, and cover letter.',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80',
+    title: "Instant Applications",
+    description:
+      "Apply to any job in seconds with your saved profile, resume URL, and cover letter.",
+    image:
+      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80",
   },
 ];
 
 const HIGHLIGHTS = [
-  'Filter by job type, experience level, and remote',
-  'Track every application with real-time status',
-  'Public developer profiles for your portfolio',
-  'Company candidate management dashboard',
+  "Filter by job type, experience level, and remote",
+  "Track every application with real-time status",
+  "Public developer profiles for your portfolio",
+  "Company candidate management dashboard",
 ];
 
 const FAQS = [
   {
-    question: 'Is DevHire free to use?',
+    question: "Is DevHire free to use?",
     answer:
-      'Yes. Creating a developer account and applying to jobs is completely free. Companies can post jobs and manage applicants without any hidden fees.',
+      "Yes. Creating a developer account and applying to jobs is completely free. Companies can post jobs and manage applicants without any hidden fees.",
   },
   {
-    question: 'How do I apply for a job?',
+    question: "How do I apply for a job?",
     answer:
-      'Create a developer profile with your resume URL and cover letter, then apply to any listing in seconds. You can track the status of every application from your dashboard.',
+      "Create a developer profile with your resume URL and cover letter, then apply to any listing in seconds. You can track the status of every application from your dashboard.",
   },
   {
-    question: 'Can my company post multiple job openings?',
+    question: "Can my company post multiple job openings?",
     answer:
-      'Absolutely. Once you register as a company, you get access to a dashboard where you can post unlimited job listings, review applicants, and update candidate status in one place.',
+      "Absolutely. Once you register as a company, you get access to a dashboard where you can post unlimited job listings, review applicants, and update candidate status in one place.",
   },
   {
-    question: 'Is my data secure?',
+    question: "Is my data secure?",
     answer:
-      'Yes. DevHire uses role-based, JWT-secured authentication to keep developer and company accounts separate and protected.',
+      "Yes. DevHire uses role-based, JWT-secured authentication to keep developer and company accounts separate and protected.",
   },
   {
-    question: 'Can I edit or delete my profile later?',
+    question: "Can I edit or delete my profile later?",
     answer:
-      'Yes, you can update your profile details, resume link, and preferences at any time from your account settings.',
+      "Yes, you can update your profile details, resume link, and preferences at any time from your account settings.",
   },
 ];
 
 const SOCIAL_LINKS = [
-  { icon: FaGithub, label: 'GitHub', href: 'https://github.com/sameer9860' },
-  { icon: FaXTwitter, label: 'Twitter / X', href: '#' },
-  { icon: FaLinkedinIn, label: 'LinkedIn', href: 'https://www.linkedin.com/in/samir-khatiwada-a34708346/' },
-  { icon: MdEmail, label: 'Email', href: 'mailto:samirkhatiwada68@gmail.com' },
+  { icon: FaGithub, label: "GitHub", href: "https://github.com/sameer9860" },
+  { icon: FaXTwitter, label: "Twitter / X", href: "#" },
+  {
+    icon: FaLinkedinIn,
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/in/samir-khatiwada-a34708346/",
+  },
+  { icon: MdEmail, label: "Email", href: "mailto:samirkhatiwada68@gmail.com" },
 ];
 
 const FOOTER_LINKS = {
   Product: [
-    { label: 'Browse Jobs', href: '/jobs' },
-    { label: 'Create Account', href: '/register' },
-    { label: 'Sign In', href: '/login' },
+    { label: "Browse Jobs", href: "/jobs" },
+    { label: "Create Account", href: "/register" },
+    { label: "Sign In", href: "/login" },
   ],
   Company: [
-    { label: 'About Us', href: '/about' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'Careers', href: '/careers' },
+    { label: "About Us", href: "/about" },
+    { label: "Contact", href: "/contact" },
+    { label: "Careers", href: "/careers" },
   ],
   Resources: [
-    { label: 'FAQs', href: '#faqs' },
-    { label: 'Privacy Policy', href: '/privacy' },
-    { label: 'Terms of Service', href: '/terms' },
+    { label: "FAQs", href: "#faqs" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
   ],
 };
 
@@ -116,20 +128,24 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
         aria-expanded={open}
       >
-        <span className="text-base font-semibold text-zinc-900">{question}</span>
+        <span className="text-base font-semibold text-zinc-900">
+          {question}
+        </span>
         <ChevronDown
           className={`h-5 w-5 flex-shrink-0 text-zinc-400 transition-transform duration-200 ${
-            open ? 'rotate-180' : ''
+            open ? "rotate-180" : ""
           }`}
         />
       </button>
       <div
         className={`grid overflow-hidden transition-all duration-200 ease-in-out ${
-          open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
         }`}
       >
         <div className="overflow-hidden">
-          <p className="pb-5 pr-8 text-sm leading-relaxed text-zinc-500">{answer}</p>
+          <p className="pb-5 pr-8 text-sm leading-relaxed text-zinc-500">
+            {answer}
+          </p>
         </div>
       </div>
     </div>
@@ -152,8 +168,8 @@ export default function HomePage() {
           className="pointer-events-none absolute inset-0 opacity-[0.03]"
           style={{
             backgroundImage:
-              'linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)',
-            backgroundSize: '48px 48px',
+              "linear-gradient(#000 1px, transparent 1px), linear-gradient(to right, #000 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
           }}
         />
 
@@ -166,8 +182,9 @@ export default function HomePage() {
             </h1>
 
             <p className="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-zinc-500 lg:mx-0">
-              DevHire connects tech companies with developers. Browse open positions, apply in
-              minutes, and track your applications all in one place.
+              DevHire connects tech companies with developers. Browse open
+              positions, apply in minutes, and track your applications all in
+              one place.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
@@ -175,7 +192,11 @@ export default function HomePage() {
                 <div className="h-11 w-32 bg-zinc-100 rounded-xl animate-pulse"></div>
               ) : user ? (
                 <Link
-                  href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+                  href={
+                    user.role === "company"
+                      ? "/dashboard/company"
+                      : "/dashboard/developer"
+                  }
                   className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 hover:bg-zinc-800 hover:shadow-md"
                 >
                   <LayoutDashboard className="h-4 w-4" />
@@ -239,7 +260,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <ul className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
             {HIGHLIGHTS.map((h) => (
-              <li key={h} className="flex items-center gap-2 text-sm text-zinc-600">
+              <li
+                key={h}
+                className="flex items-center gap-2 text-sm text-zinc-600"
+              >
                 <CheckCircle className="h-4 w-4 flex-shrink-0 text-emerald-500" />
                 {h}
               </li>
@@ -280,7 +304,9 @@ export default function HomePage() {
               </div>
               <div className="p-6">
                 <h3 className="mb-1 font-semibold text-zinc-900">{title}</h3>
-                <p className="text-sm leading-relaxed text-zinc-500">{description}</p>
+                <p className="text-sm leading-relaxed text-zinc-500">
+                  {description}
+                </p>
               </div>
             </div>
           ))}
@@ -305,14 +331,19 @@ export default function HomePage() {
             Ready to start?
           </h2>
           <p className="mb-8 text-base text-zinc-400">
-            Join as a developer to find your next role, or as a company to hire top talent.
+            Join as a developer to find your next role, or as a company to hire
+            top talent.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {!mounted || isLoading ? (
               <div className="h-11 w-32 bg-zinc-800 rounded-xl animate-pulse"></div>
             ) : user ? (
               <Link
-                href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+                href={
+                  user.role === "company"
+                    ? "/dashboard/company"
+                    : "/dashboard/developer"
+                }
                 className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-zinc-950 shadow-sm transition-all hover:bg-zinc-100"
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -346,12 +377,18 @@ export default function HomePage() {
             <h2 className="mb-3 text-3xl font-bold tracking-tight text-zinc-950">
               Frequently asked questions
             </h2>
-            <p className="text-zinc-500">Everything you need to know before you get started.</p>
+            <p className="text-zinc-500">
+              Everything you need to know before you get started.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-zinc-100 bg-zinc-50/50 px-6">
             {FAQS.map((faq) => (
-              <FaqItem key={faq.question} question={faq.question} answer={faq.answer} />
+              <FaqItem
+                key={faq.question}
+                question={faq.question}
+                answer={faq.answer}
+              />
             ))}
           </div>
         </div>
@@ -370,8 +407,9 @@ export default function HomePage() {
                 <span className="text-lg font-bold text-white">DevHire</span>
               </div>
               <p className="mb-6 max-w-sm text-sm leading-relaxed text-zinc-400">
-                DevHire connects tech companies with developers. Browse open positions, apply in
-                minutes, and track every application all in one place.
+                DevHire connects tech companies with developers. Browse open
+                positions, apply in minutes, and track every application all in
+                one place.
               </p>
               <div className="flex items-center gap-3">
                 {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
@@ -392,7 +430,9 @@ export default function HomePage() {
             {/* Link columns */}
             {Object.entries(FOOTER_LINKS).map(([heading, links]) => (
               <div key={heading}>
-                <h3 className="mb-4 text-sm font-semibold text-white">{heading}</h3>
+                <h3 className="mb-4 text-sm font-semibold text-white">
+                  {heading}
+                </h3>
                 <ul className="space-y-3">
                   {links.map((link) => (
                     <li key={link.label}>
@@ -417,9 +457,9 @@ export default function HomePage() {
               © {new Date().getFullYear()} DevHire. All rights reserved.
             </p>
             <p className="text-sm text-zinc-500">
-              Developed by{' '}
+              Developed by{" "}
               <a
-                href="https://github.com/sameer9860"
+                href="https://samirkhatiwada.com.np/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-zinc-300 transition-colors hover:text-white"
