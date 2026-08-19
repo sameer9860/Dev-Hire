@@ -17,7 +17,7 @@ export function useMyApplications() {
 
 export function useApply() {
   const queryClient = useQueryClient();
-  return useMutation<Application, Error, { job: number; cover_letter: string; resume_url: string }>({
+  return useMutation<Application, Error, { job: number; cover_letter: string }>({
     mutationFn: async (applicationData) => {
       const { data } = await api.post('/applications/', applicationData);
       return data;
