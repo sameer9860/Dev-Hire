@@ -34,8 +34,78 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class LoginRateLimiter:
+    """In-memory rate limiter: max 3 failed login attempts per IP per hour."""
+    _attempts: dict[str, list[float]] = {}
+    MAX_ATTEMPTS = 3
+    WINDOW = 3600  # 1 hour in seconds
+
+    @classmethod
+    def _clean(cls, key: str) -> list[float]:
+        import time
+        now = time.time()
+        cls._attempts[key] = [t for t in cls._attempts.get(key, []) if now - t < cls.WINDOW]
+        return cls._attempts[key]
+
+    @classmethod
+    def is_locked(cls, key: str) -> bool:
+        return len(cls._clean(key)) >= cls.MAX_ATTEMPTS
+
+    @classmethod
+    def remaining(cls, key: str) -> int:
+        return max(0, cls.MAX_ATTEMPTS - len(cls._clean(key)))
+
+    @classmethod
+    def seconds_until_reset(cls, key: str) -> int:
+        import time
+        attempts = cls._clean(key)
+        if not attempts:
+            return 0
+        return max(0, int(cls.WINDOW - (time.time() - attempts[0])))
+
+    @classmethod
+    def record_failure(cls, key: str) -> None:
+        import time
+        cls._clean(key)
+        cls._attempts.setdefault(key, []).append(time.time())
+
+    @classmethod
+    def reset(cls, key: str) -> None:
+        cls._attempts.pop(key, None)
+
+
+def _get_client_ip(request) -> str:
+    xff = request.META.get('HTTP_X_FORWARDED_FOR')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
+
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        ip = _get_client_ip(request)
+        if LoginRateLimiter.is_locked(ip):
+            remaining_seconds = LoginRateLimiter.seconds_until_reset(ip)
+            remaining_minutes = max(1, (remaining_seconds + 59) // 60)
+            return Response(
+                {
+                    'detail': f'Too many failed login attempts. Please try again in {remaining_minutes} minute{"s" if remaining_minutes != 1 else ""}.',
+                    'retry_after': remaining_seconds,
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        try:
+            response = super().post(request, *args, **kwargs)
+        except Exception:
+            LoginRateLimiter.record_failure(ip)
+            raise
+        if response.status_code == 200:
+            LoginRateLimiter.reset(ip)
+        else:
+            LoginRateLimiter.record_failure(ip)
+        return response
 
 
 class RegisterView(generics.CreateAPIView):
