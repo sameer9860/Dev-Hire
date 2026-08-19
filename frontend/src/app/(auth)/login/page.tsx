@@ -121,7 +121,9 @@ export default function LoginPage() {
 
           {login.error && (
             <p className="text-red-500 text-xs text-center bg-red-50 py-2.5 px-3 rounded-lg border border-red-100 font-medium">
-              Invalid credentials. Please try again.
+              {(login.error as any)?.response?.status === 429
+                ? (login.error as any)?.response?.data?.detail || 'Too many failed attempts. Please try again later.'
+                : (login.error as any)?.response?.data?.detail || 'Invalid credentials. Please try again.'}
             </p>
           )}
 
