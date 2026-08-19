@@ -6,9 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useApply } from '@/hooks/useApplications';
 import { useMe } from '@/hooks/useAuth';
-import api from '@/lib/api';
 import type { Job } from '@/types/api';
-import { X, Send, FileText, CheckCircle2, AlertCircle, Upload, ExternalLink, User as UserIcon } from 'lucide-react';
+import { X, Send, FileText, CheckCircle2, AlertCircle, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 
 const applySchema = z.object({
@@ -16,7 +15,6 @@ const applySchema = z.object({
     .string()
     .max(2000, 'Cover letter must not exceed 2000 characters')
     .optional(),
-  resume_url: z.string().optional(),
 });
 
 type ApplyFormData = z.infer<typeof applySchema>;
@@ -30,68 +28,33 @@ export function ApplyModal({ job, onClose }: ApplyModalProps) {
   const apply = useApply();
   const { data: user } = useMe();
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [uploadingResume, setUploadingResume] = useState(false);
-  const [uploadError, setUploadError] = useState('');
 
   const {
     register,
     handleSubmit,
-    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ApplyFormData>({
     resolver: zodResolver(applySchema),
-    defaultValues: { cover_letter: '', resume_url: user?.resume_url || '' },
+    defaultValues: { cover_letter: '' },
   });
 
-  const resumeUrlValue = watch('resume_url');
   const coverLetterValue = watch('cover_letter') || '';
 
-  // Auto populate user's resume URL from profile if available
-  useEffect(() => {
-    if (user?.resume_url && !resumeUrlValue) {
-      setValue('resume_url', user.resume_url);
-    }
-  }, [user, setValue, resumeUrlValue]);
-
-  // Close on Escape key
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // Prevent body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  const onResumeFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingResume(true);
-    setUploadError('');
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { data } = await api.post('/auth/upload/', formData);
-      setValue('resume_url', data.url, { shouldValidate: true, shouldDirty: true });
-    } catch (err: any) {
-      const message =
-        err.response?.data?.detail ||
-        err.response?.data?.message ||
-        err.message ||
-        'Failed to upload resume file.';
-      setUploadError(String(message));
-    } finally {
-      setUploadingResume(false);
-    }
-  };
-
   const onSubmit = (data: ApplyFormData) => {
     apply.mutate(
-      { job: job.id, cover_letter: data.cover_letter || '', resume_url: data.resume_url || '' },
+      { job: job.id, cover_letter: data.cover_letter || '' },
       { onSuccess: () => { setTimeout(onClose, 1800); } }
     );
   };
@@ -131,7 +94,7 @@ export function ApplyModal({ job, onClose }: ApplyModalProps) {
             <h3 className="text-xl font-bold text-slate-900 mb-2">Application Sent!</h3>
             <p className="text-slate-500 text-sm max-w-sm">
               Your application for <span className="font-medium text-slate-700">{job.title}</span> has
-              been submitted. Good luck! 🎉
+              been submitted. Good luck!
             </p>
           </div>
         ) : (
@@ -155,7 +118,7 @@ export function ApplyModal({ job, onClose }: ApplyModalProps) {
               <div>
                 <h4 className="text-sm font-bold text-slate-900">Your Resume</h4>
                 <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                  Whenever you apply to an internship or fresher job, this is the resume that the employer will see. Always make sure it is up to date.
+                  Whenever you apply to an internship or fresher job, the employer will see the resume from your profile. Always make sure it is up to date.
                 </p>
               </div>
               <Link
@@ -190,74 +153,6 @@ export function ApplyModal({ job, onClose }: ApplyModalProps) {
                 )}
               </div>
             )}
-
-            {/* Resume Selection & Preview */}
-            <div className="space-y-3">
-              <label className="block text-sm font-semibold text-slate-700">
-                <span className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <FileText className="h-4 w-4 text-slate-500" />
-                    Resume Selection
-                  </span>
-                  {resumeUrlValue && (
-                    <a
-                      href={resumeUrlValue}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1"
-                    >
-                      Open Full Resume <ExternalLink className="w-3 h-3" />
-                    </a>
-                  )}
-                </span>
-              </label>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  {...register('resume_url')}
-                  type="text"
-                  placeholder="https://drive.google.com/your-resume or uploaded URL..."
-                  className="flex-1 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                />
-
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={onResumeFileUpload}
-                  className="hidden"
-                  id="modal-resume-upload"
-                />
-                <label
-                  htmlFor="modal-resume-upload"
-                  className="inline-flex items-center justify-center px-4 py-3 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 cursor-pointer transition shadow-xs flex-shrink-0 disabled:opacity-50"
-                >
-                  <Upload className="w-3.5 h-3.5 mr-1.5 text-slate-500" />
-                  {uploadingResume ? 'Uploading...' : 'Upload File'}
-                </label>
-              </div>
-              {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
-
-              {/* Full Resume Previewer inside Modal */}
-              {resumeUrlValue ? (
-                <div className="mt-3 border border-slate-200 rounded-xl overflow-hidden bg-slate-900 shadow-sm">
-                  <div className="bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700 border-b border-slate-200 flex justify-between items-center">
-                    <span>Attached Resume Preview</span>
-                    <span className="text-slate-400 font-mono text-[10px] truncate max-w-xs">{resumeUrlValue}</span>
-                  </div>
-                  <div className="h-72 w-full relative">
-                    <iframe
-                      src={resumeUrlValue}
-                      className="w-full h-full border-0"
-                      title="Application Resume Viewer"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                  ⚠️ No resume currently attached. Please upload a resume from your computer or paste a URL above.
-                </div>
-              )}
-            </div>
 
             {/* Cover Letter (Optional) */}
             <div>
