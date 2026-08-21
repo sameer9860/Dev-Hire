@@ -27,7 +27,7 @@ class JobViewSet(viewsets.ModelViewSet):
     permission_classes = [IsCompanyOrReadOnly]
     filterset_class = JobFilter
     search_fields = ['title', 'description', 'tech_stack']
-    ordering_fields = ['created_at', 'salary_min']
+    ordering_fields = ['created_at', 'salary_min', 'deadline']
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
