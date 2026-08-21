@@ -174,7 +174,8 @@ export type UserRole = 'developer' | 'company' | 'guest';
      salary_min: number;
      salary_max: number;
      page: number;
-   }>;
+     ordering: string;
+   }>; 
 
    // Auth request/response shapes
    export interface LoginRequest {
