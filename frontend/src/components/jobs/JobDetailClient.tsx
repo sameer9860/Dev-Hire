@@ -23,7 +23,7 @@ const EXPERIENCE_LABELS: Record<string, string> = {
   senior: 'Senior',
 };
 
-export function JobDetailClient({ jobId }: { jobId: number }) {
+export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: number; showFullPageLink?: boolean }) {
   const router = useRouter();
 
   const [showModal, setShowModal] = useState(false);
@@ -143,6 +143,14 @@ export function JobDetailClient({ jobId }: { jobId: number }) {
 
             {/* CTA on header */}
             <div className="flex flex-col gap-2 md:pt-1 sm:flex-row sm:items-center">
+              {showFullPageLink && (
+                <Link
+                  href={`/jobs/${jobId}`}
+                  className="text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-2 rounded-lg border border-gray-200 bg-white mr-2"
+                >
+                  View on full page
+                </Link>
+              )}
               {isDeveloper && (
                 <button
                   type="button"
