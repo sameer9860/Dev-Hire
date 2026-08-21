@@ -6,6 +6,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobCardSkeleton } from '@/components/jobs/JobCardSkeleton';
+import { JobDetailClient } from '@/components/jobs/JobDetailClient';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
 import { Pagination } from '@/components/jobs/Pagination';
 import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
@@ -23,6 +24,7 @@ function JobsContent() {
   const search = searchParams.get('search') || '';
   const job_type = (searchParams.get('job_type') as JobType) || undefined;
   const experience_level = (searchParams.get('experience_level') as ExperienceLevel) || undefined;
+  const ordering = searchParams.get('ordering') || undefined;
   const is_remote_param = searchParams.get('is_remote');
   const is_remote = is_remote_param === 'true' ? true : is_remote_param === 'false' ? false : undefined;
 
@@ -32,6 +34,7 @@ function JobsContent() {
     search,
     job_type,
     experience_level,
+    ordering,
     is_remote,
   };
 
@@ -71,6 +74,9 @@ function JobsContent() {
       } else {
         params.delete('search');
       }
+        // preserve ordering when updating search
+        const ordering = params.get('ordering');
+        if (ordering) params.set('ordering', ordering);
       // Always reset to page 1 on new searches
       params.delete('page');
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
@@ -105,6 +111,12 @@ function JobsContent() {
       params.delete('is_remote');
     }
 
+    if (newFilters.ordering) {
+      params.set('ordering', newFilters.ordering);
+    } else {
+      params.delete('ordering');
+    }
+
     params.delete('page');
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
@@ -127,6 +139,20 @@ function JobsContent() {
   };
 
   const jobs = data?.results ?? [];
+
+  // Master-detail selection state for large screens
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+
+  // When results load, default select the first job if none selected
+  useEffect(() => {
+    if (!selectedJobId && jobs.length > 0) {
+      setSelectedJobId(jobs[0].id);
+    }
+    // If selected job disappeared from results, reset to first
+    if (selectedJobId && !jobs.find((j) => j.id === selectedJobId)) {
+      setSelectedJobId(jobs.length > 0 ? jobs[0].id : null);
+    }
+  }, [jobs, selectedJobId]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -176,34 +202,55 @@ function JobsContent() {
               <RefreshCw className={`h-5 w-5 ${isFetching ? 'animate-spin' : ''}`} />
             </button>
           </div>
+          {/* Inline filters row under search bar (desktop & mobile) */}
+          <div className="mt-4">
+            <div className="container px-0">
+              <JobFiltersPanel filters={filters} onChange={handleFilterChange} inline={true} />
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Filters Sidebar — Desktop only */}
-          <div className="hidden lg:block lg:col-span-1">
-            <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow sticky top-6">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4 text-gray-600" />
-                  Filters
-                </h2>
-                {(job_type || experience_level || is_remote !== undefined || search) && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
+          {/* Left: list (desktop) or grid (mobile) */}
+          <div className="col-span-1">
+            {/* Desktop master-detail list */}
+            <div className="hidden lg:block space-y-3">
+              {jobs.map((job, index) => (
+                <div
+                  key={job.id}
+                  onClick={() => setSelectedJobId(job.id)}
+                  className={`cursor-pointer ${selectedJobId === job.id ? 'ring-2 ring-blue-200' : ''}`}
+                >
+                  <JobCard job={job} index={index} />
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile: grid of cards as before */}
+            <div className="block lg:hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {jobs.map((job, index) => (
+                  <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-[1.01] transition-transform duration-200">
+                    <JobCard job={job} index={index} />
+                  </Link>
+                ))}
               </div>
-              <JobFiltersPanel filters={filters} onChange={handleFilterChange} />
+            </div>
+            {/* Pagination (desktop & mobile) */}
+            <div className="mt-6">
+              <Pagination
+                currentPage={page}
+                totalCount={data?.count ?? 0}
+                pageSize={10}
+                onPageChange={handlePageChange}
+              />
             </div>
           </div>
 
-          {/* Job Listings — full width on mobile, 3/4 on lg */}
+          {/* Right: Details (desktop) or below content (mobile) */}
           <div className="col-span-1 lg:col-span-3">
             <div className="mb-6 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
@@ -242,24 +289,31 @@ function JobsContent() {
               </div>
             )}
 
-            {/* Jobs Grid */}
+            {/* Desktop: show selected job detail in-place */}
             {!isLoading && !isError && jobs.length > 0 && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {jobs.map((job, index) => (
-                    <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-[1.01] transition-transform duration-200">
-                      <JobCard job={job} index={index} />
-                    </Link>
-                  ))}
+                {/* On large screens show detail panel, on mobile the grid above handles listing */}
+                <div className="hidden lg:block">
+                  {selectedJobId ? (
+                    // JobDetailClient contains Apply Now and full details; add "View on full page" link inside it
+                    // so users can open the standalone page
+                    <JobDetailClient jobId={selectedJobId} showFullPageLink={true} />
+                  ) : (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                      <p className="text-gray-600">Select a job to view details</p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Pagination */}
-                <Pagination
-                  currentPage={page}
-                  totalCount={data?.count ?? 0}
-                  pageSize={10}
-                  onPageChange={handlePageChange}
-                />
+                {/* Mobile pagination (keeps same behavior) */}
+                <div className="block lg:hidden mt-6">
+                  <Pagination
+                    currentPage={page}
+                    totalCount={data?.count ?? 0}
+                    pageSize={10}
+                    onPageChange={handlePageChange}
+                  />
+                </div>
               </>
             )}
           </div>
