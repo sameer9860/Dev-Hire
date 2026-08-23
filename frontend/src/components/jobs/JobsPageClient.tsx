@@ -10,7 +10,7 @@ import { JobDetailClient } from '@/components/jobs/JobDetailClient';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
 import { Pagination } from '@/components/jobs/Pagination';
 import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
-import { Search, SlidersHorizontal, RefreshCw, X } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCw, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -142,6 +142,25 @@ function JobsContent() {
 
   // Master-detail selection state for large screens
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const jobCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  const currentIndex = jobs.findIndex((j) => j.id === selectedJobId);
+
+  const selectPrevJob = () => {
+    if (currentIndex > 0) {
+      const prev = jobs[currentIndex - 1];
+      setSelectedJobId(prev.id);
+      jobCardRefs.current[prev.id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
+
+  const selectNextJob = () => {
+    if (currentIndex >= 0 && currentIndex < jobs.length - 1) {
+      const next = jobs[currentIndex + 1];
+      setSelectedJobId(next.id);
+      jobCardRefs.current[next.id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
 
   // When results load, default select the first job if none selected
   useEffect(() => {
@@ -216,17 +235,46 @@ function JobsContent() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left: list (desktop) or grid (mobile) */}
           <div className="col-span-1">
-            {/* Desktop master-detail list */}
+            {/* Desktop master-detail list with Up/Down Slider Navigator */}
             <div className="hidden lg:block space-y-3">
-              {jobs.map((job, index) => (
-                <div
-                  key={job.id}
-                  onClick={() => setSelectedJobId(job.id)}
-                  className={`cursor-pointer ${selectedJobId === job.id ? 'ring-2 ring-blue-200' : ''}`}
-                >
-                  <JobCard job={job} index={index} />
+              {jobs.length > 0 && (
+                <div className="flex items-center justify-between p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs shadow-xs">
+                  <span className="font-semibold text-zinc-700">
+                    Job {currentIndex >= 0 ? currentIndex + 1 : 0} of {jobs.length}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={selectPrevJob}
+                      disabled={currentIndex <= 0}
+                      className="p-1 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 disabled:opacity-30 disabled:hover:bg-white text-zinc-700 transition-colors shadow-xs cursor-pointer"
+                      title="Previous Job (Up)"
+                    >
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={selectNextJob}
+                      disabled={currentIndex < 0 || currentIndex >= jobs.length - 1}
+                      className="p-1 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-100 disabled:opacity-30 disabled:hover:bg-white text-zinc-700 transition-colors shadow-xs cursor-pointer"
+                      title="Next Job (Down)"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              ))}
+              )}
+
+              <div className="space-y-3 max-h-[calc(100vh-230px)] overflow-y-auto pr-1 scroll-smooth">
+                {jobs.map((job, index) => (
+                  <div
+                    key={job.id}
+                    ref={(el) => { jobCardRefs.current[job.id] = el; }}
+                    onClick={() => setSelectedJobId(job.id)}
+                    className={`cursor-pointer transition-all ${selectedJobId === job.id ? 'ring-2 ring-blue-500 rounded-2xl shadow-sm' : ''}`}
+                  >
+                    <JobCard job={job} index={index} />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Mobile: grid of cards as before */}

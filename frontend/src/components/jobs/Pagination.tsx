@@ -8,6 +8,7 @@ interface PaginationProps {
   totalCount: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  itemLabel?: string;
 }
 
 export function Pagination({
@@ -15,6 +16,7 @@ export function Pagination({
   totalCount,
   pageSize,
   onPageChange,
+  itemLabel = 'jobs',
 }: PaginationProps) {
   const totalPages = Math.ceil(totalCount / pageSize);
 
@@ -22,17 +24,17 @@ export function Pagination({
 
   const getPages = () => {
     const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
+    if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, '...', totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
       } else {
-        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+        pages.push(1, '...', currentPage, '...', totalPages);
       }
     }
     return pages;
@@ -44,22 +46,49 @@ export function Pagination({
   const endResult = Math.min(currentPage * pageSize, totalCount);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t border-zinc-200 w-full">
       {/* Result stats */}
-      <span className="text-sm text-gray-500 font-medium">
-        Showing <span className="text-gray-900 font-semibold">{startResult}</span> to{' '}
-        <span className="text-gray-900 font-semibold">{endResult}</span> of{' '}
-        <span className="text-gray-900 font-semibold">{totalCount}</span> jobs
+      <span className="text-xs sm:text-sm text-zinc-500 font-medium text-center sm:text-left">
+        Showing <span className="text-zinc-900 font-semibold">{startResult}</span> to{' '}
+        <span className="text-zinc-900 font-semibold">{endResult}</span> of{' '}
+        <span className="text-zinc-900 font-semibold">{totalCount}</span> {itemLabel}
       </span>
 
-      {/* Page controls */}
-      <div className="flex items-center gap-1.5">
+      {/* Mobile controls (< sm) */}
+      <div className="flex sm:hidden items-center justify-between gap-2 w-full max-w-xs">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="h-9 px-3 text-xs font-semibold rounded-lg border-zinc-200 text-zinc-700 disabled:opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Prev
+        </Button>
+        <span className="text-xs font-semibold text-zinc-700">
+          Page {currentPage} of {totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="h-9 px-3 text-xs font-semibold rounded-lg border-zinc-200 text-zinc-700 disabled:opacity-40"
+        >
+          Next
+          <ChevronRight className="h-4 w-4 ml-1" />
+        </Button>
+      </div>
+
+      {/* Desktop & Tablet controls (>= sm) */}
+      <div className="hidden sm:flex items-center gap-1.5 flex-wrap justify-center">
         <Button
           variant="outline"
           size="icon"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="h-9 w-9 rounded-lg border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="h-9 w-9 rounded-lg border-zinc-200 hover:bg-zinc-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           aria-label="Previous page"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -70,7 +99,7 @@ export function Pagination({
             return (
               <span
                 key={`ellipsis-${index}`}
-                className="w-9 h-9 flex items-center justify-center text-gray-400 text-sm font-semibold select-none"
+                className="w-8 h-8 flex items-center justify-center text-zinc-400 text-xs font-semibold select-none"
               >
                 ...
               </span>
@@ -84,10 +113,10 @@ export function Pagination({
               key={`page-${page}`}
               variant={isCurrent ? 'default' : 'outline'}
               onClick={() => onPageChange(page as number)}
-              className={`h-9 w-9 text-sm font-semibold rounded-lg transition-all ${
+              className={`h-9 w-9 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
                 isCurrent
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm border-blue-600'
-                  : 'border-gray-200 text-gray-750 hover:bg-gray-50 hover:text-gray-900'
+                  ? 'bg-zinc-950 hover:bg-zinc-800 text-white shadow-sm border-zinc-950'
+                  : 'border-zinc-200 text-zinc-750 hover:bg-zinc-50 hover:text-zinc-900'
               }`}
             >
               {page}
@@ -100,7 +129,7 @@ export function Pagination({
           size="icon"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="h-9 w-9 rounded-lg border-gray-200 hover:bg-gray-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="h-9 w-9 rounded-lg border-zinc-200 hover:bg-zinc-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           aria-label="Next page"
         >
           <ChevronRight className="h-4 w-4" />
