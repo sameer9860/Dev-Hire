@@ -68,6 +68,13 @@ class TestApplicationsAPI:
         assert dev_res.status_code == status.HTTP_403_FORBIDDEN
 
         # Job Owner Company updates status to reviewing (should succeed)
-        co_res = auth_company_client.patch(f"/api/applications/{app.id}/status/", {"status": "reviewing"}, format="json")
+        co_res = auth_company_client.patch(f"/api/applications/{app.id}/status/", {"status": "shortlisted"}, format="json")
         assert co_res.status_code == status.HTTP_200_OK
-        assert co_res.data["status"] == "reviewing"
+        assert co_res.data["status"] == "shortlisted"
+
+        # Check ActivityLog was created for developer
+        from accounts.models import ActivityLog
+        log = ActivityLog.objects.filter(user=developer_user, action="application_shortlisted").first()
+        assert log is not None
+        assert "shortlisted" in log.message.lower()
+
