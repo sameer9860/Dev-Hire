@@ -105,6 +105,32 @@ class TestAuthenticationAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["username"] == developer_user.username
 
+    def test_company_profile_supports_metadata_and_gallery(self, auth_company_client, company_user):
+        response = auth_company_client.patch('/api/auth/profile/', {
+            'company_category': 'Technology',
+            'company_founded': '2020',
+            'company_location': 'Kathmandu, Nepal',
+            'company_address': '123 Tech Plaza',
+            'company_photos': ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
+            'company_social_links': [
+                {'platform': 'linkedin', 'url': 'https://linkedin.com/company/example'},
+                {'platform': 'github', 'url': 'https://github.com/example'},
+            ],
+        }, format='json')
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['company_category'] == 'Technology'
+        assert response.data['company_founded'] == '2020'
+        assert response.data['company_location'] == 'Kathmandu, Nepal'
+        assert response.data['company_address'] == '123 Tech Plaza'
+        assert len(response.data['company_photos']) == 2
+        assert response.data['company_social_links'][0]['platform'] == 'linkedin'
+
+    def test_public_company_profile_includes_recent_jobs(self, api_client, company_user, sample_job):
+        response = api_client.get(f"/api/auth/profile/{company_user.username}/")
+        assert response.status_code == status.HTTP_200_OK
+        assert 'recent_jobs' in response.data
+        assert response.data['recent_jobs'][0]['title'] == sample_job.title
+
     def test_change_password(self, auth_dev_client, developer_user):
         response = auth_dev_client.post("/api/auth/change-password/", {
             "current_password": "securepass123",
