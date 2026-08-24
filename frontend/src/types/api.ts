@@ -51,6 +51,13 @@ export type UserRole = 'developer' | 'company' | 'guest';
      company_name: string;
      company_website: string;
      company_size: string;
+     company_category?: string;
+     company_founded?: string;
+     company_location?: string;
+     company_address?: string;
+     company_photos?: string[];
+     company_social_links?: SocialLink[];
+     recent_jobs?: Job[];
      // Developer fields
      resume_url: string;
      skills: string[];
@@ -232,6 +239,12 @@ export type UserRole = 'developer' | 'company' | 'guest';
      company_name: string;
      company_website: string;
      company_size: string;
+     company_category?: string;
+     company_founded?: string;
+     company_location?: string;
+     company_address?: string;
+     company_photos?: string[];
+     company_social_links?: SocialLink[];
    }
 
    export type ProfileUpdate = DeveloperProfileUpdate | CompanyProfileUpdate;

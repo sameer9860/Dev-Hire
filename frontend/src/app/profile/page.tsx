@@ -18,6 +18,8 @@ import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton';
 import { ArrowLeft, Globe, Building } from 'lucide-react';
 import Link from 'next/link';
 import {
+  COMPANY_CATEGORIES,
+  COMPANY_SOCIAL_PLATFORMS,
   GENDER_OPTIONS,
   NEPAL_PROVINCES,
   SOCIAL_PLATFORMS,
@@ -1021,10 +1023,18 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       company_name: profile.company_name || '',
       company_website: profile.company_website || '',
       company_size: profile.company_size || '',
+      company_category: profile.company_category || '',
+      company_founded: profile.company_founded || '',
+      company_location: profile.company_location || '',
+      company_address: profile.company_address || '',
+      company_photos: Array.isArray(profile.company_photos) ? profile.company_photos : [],
+      company_social_links: Array.isArray(profile.company_social_links) ? profile.company_social_links : [],
     },
   });
 
   const avatarUrlWatch = watch('avatar_url');
+  const companyPhotos = watch('company_photos') ?? [];
+  const companySocialLinks = watch('company_social_links') ?? [];
 
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState('');
@@ -1037,7 +1047,9 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { data } = await api.post('/auth/upload/', formData);
+      const { data } = await api.post('/auth/upload/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       setValue('avatar_url', data.url, { shouldValidate: true, shouldDirty: true });
     } catch (err: any) {
       const message =
@@ -1050,6 +1062,60 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
     } finally {
       setUploadingLogo(false);
     }
+  };
+
+  const addCompanyPhoto = () => {
+    setValue('company_photos', [...companyPhotos, ''], { shouldDirty: true, shouldValidate: true });
+  };
+
+  const updateCompanyPhoto = (index: number, value: string) => {
+    const updated = [...companyPhotos];
+    updated[index] = value;
+    setValue('company_photos', updated, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const removeCompanyPhoto = (index: number) => {
+    setValue('company_photos', companyPhotos.filter((_, photoIndex) => photoIndex !== index), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const onCompanyPhotoUpload = async (file: File, index: number) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/auth/company-photos/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const photos = data.company_photos || [...companyPhotos];
+      setValue('company_photos', photos, { shouldDirty: true, shouldValidate: true });
+    } catch (err: any) {
+      const message = err.response?.data?.detail || 'Failed to upload photo. Please try again.';
+      console.error(message);
+    }
+  };
+
+  const addCompanySocialLink = () => {
+    setValue('company_social_links', [...companySocialLinks, { platform: 'website', url: '' }], {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  const updateCompanySocialLink = (index: number, field: 'platform' | 'url', value: string) => {
+    const updated = [...companySocialLinks];
+    updated[index] = { ...updated[index], [field]: value };
+    setValue('company_social_links', updated, { shouldDirty: true, shouldValidate: true });
+  };
+
+  const removeCompanySocialLink = (index: number) => {
+    setValue(
+      'company_social_links',
+      companySocialLinks.filter((_, socialIndex) => socialIndex !== index),
+      { shouldDirty: true, shouldValidate: true },
+    );
   };
 
   return (
@@ -1082,7 +1148,6 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
         {errors.avatar_url && <p className="mt-1.5 text-xs text-red-500">{errors.avatar_url.message}</p>}
       </div>
 
-      {/* Company Name */}
       <div>
         <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Company Name *</label>
         <input
@@ -1094,7 +1159,6 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
         {errors.company_name && <p className="text-red-500 text-xs mt-1.5">{errors.company_name.message}</p>}
       </div>
 
-      {/* Bio / About */}
       <div>
         <label className="block text-sm font-semibold text-zinc-800 mb-1.5">About Company</label>
         <textarea
@@ -1107,7 +1171,6 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Company Website */}
         <div>
           <label className="block text-sm font-semibold text-zinc-800 mb-1.5">
             <span className="flex items-center gap-1.5">
@@ -1124,7 +1187,6 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
           {errors.company_website && <p className="text-red-500 text-xs mt-1.5">{errors.company_website.message}</p>}
         </div>
 
-        {/* Company Size */}
         <div>
           <label className="block text-sm font-semibold text-zinc-800 mb-1.5">
             <span className="flex items-center gap-1.5">
@@ -1144,6 +1206,132 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
             <option value="500+">500+ employees</option>
           </select>
           {errors.company_size && <p className="text-red-500 text-xs mt-1.5">{errors.company_size.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Category</label>
+          <select
+            {...register('company_category')}
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          >
+            <option value="">Select category...</option>
+            {COMPANY_CATEGORIES.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Founded Year</label>
+          <input
+            {...register('company_founded')}
+            type="text"
+            placeholder="2020"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Location</label>
+          <input
+            {...register('company_location')}
+            type="text"
+            placeholder="Kathmandu, Nepal"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Address</label>
+          <input
+            {...register('company_address')}
+            type="text"
+            placeholder="123 Business Park, Kathmandu"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-semibold text-zinc-800">Company Photos</label>
+          <button type="button" onClick={addCompanyPhoto} className="text-xs font-semibold text-zinc-700 hover:text-zinc-900">
+            + Add photo
+          </button>
+        </div>
+        <div className="space-y-3">
+          {companyPhotos.length === 0 ? (
+            <p className="text-xs text-zinc-500 italic">Add up to 5 company photos.</p>
+          ) : (
+            companyPhotos.map((photo, index) => (
+              <div key={`company-photo-${index}`} className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={photo}
+                  onChange={(event) => updateCompanyPhoto(index, event.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id={`company-photo-upload-${index}`}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) onCompanyPhotoUpload(file, index);
+                  }}
+                />
+                <label
+                  htmlFor={`company-photo-upload-${index}`}
+                  className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50"
+                >
+                  Upload
+                </label>
+                <button type="button" onClick={() => removeCompanyPhoto(index)} className="px-2 py-1 text-xs text-red-600 hover:underline">
+                  Remove
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-semibold text-zinc-800">Social Links</label>
+          <button type="button" onClick={addCompanySocialLink} className="text-xs font-semibold text-zinc-700 hover:text-zinc-900">
+            + Add link
+          </button>
+        </div>
+        <div className="space-y-3">
+          {companySocialLinks.length === 0 ? (
+            <p className="text-xs text-zinc-500 italic">No social links added yet.</p>
+          ) : (
+            companySocialLinks.map((socialLink, index) => (
+              <div key={`company-social-${index}`} className="grid grid-cols-1 md:grid-cols-[160px_1fr_auto] gap-2 items-center">
+                <select
+                  value={socialLink.platform || 'website'}
+                  onChange={(event) => updateCompanySocialLink(index, 'platform', event.target.value)}
+                  className="border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+                >
+                  {COMPANY_SOCIAL_PLATFORMS.map((platform) => (
+                    <option key={platform.value} value={platform.value}>{platform.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={socialLink.url || ''}
+                  onChange={(event) => updateCompanySocialLink(index, 'url', event.target.value)}
+                  placeholder="https://..."
+                  className="border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+                />
+                <button type="button" onClick={() => removeCompanySocialLink(index)} className="px-2 py-1 text-xs text-red-600 hover:underline">
+                  Remove
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

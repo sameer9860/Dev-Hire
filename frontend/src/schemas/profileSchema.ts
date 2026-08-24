@@ -44,6 +44,12 @@ export const companyProfileSchema = z.object({
     message: 'Enter a valid website URL',
   }),
   company_size: z.string(),
+  company_category: z.string().optional(),
+  company_founded: z.string().optional(),
+  company_location: z.string().optional(),
+  company_address: z.string().optional(),
+  company_photos: z.array(z.string()).max(5, 'Maximum 5 photos allowed').optional(),
+  company_social_links: z.array(socialLinkSchema).optional(),
 });
 
 export type DeveloperProfileFormData = z.infer<typeof developerProfileSchema>;
