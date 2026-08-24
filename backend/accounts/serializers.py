@@ -143,6 +143,8 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'role', 'bio', 'avatar_url',
                   'company_name', 'company_website', 'company_size',
+                  'company_category', 'company_founded', 'company_location', 'company_address',
+                  'company_photos', 'company_social_links',
                   'resume_url', 'skills', 'github_url', 'portfolio_url',
                   'headline', 'location', 'phone_number',
                   'first_name', 'last_name', 'gender', 'date_of_birth',
@@ -187,6 +189,8 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'role', 'bio', 'avatar_url',
             'company_name', 'company_website', 'company_size',
+            'company_category', 'company_founded', 'company_location', 'company_address',
+            'company_photos', 'company_social_links',
         ]
         read_only_fields = ['id', 'username', 'email', 'role']
 
@@ -208,18 +212,48 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError('Enter a valid company website.')
             if '://' not in value:
                 value = f'https://{value}'
-            
+
             user = self.context['request'].user
             target = normalize_website(value)
-            
+
             for existing in User.objects.filter(role='company').exclude(pk=user.pk).exclude(company_website=''):
                 if normalize_website(existing.company_website) == target:
                     raise serializers.ValidationError('This company website is already registered.')
         return value
 
+    def validate_company_photos(self, value):
+        if value is None:
+            return value
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Company photos must be a list of URLs.')
+        if len(value) > 5:
+            raise serializers.ValidationError('A company can have at most 5 photos.')
+        for item in value:
+            if not isinstance(item, str) or not item.strip():
+                raise serializers.ValidationError('Each company photo must be a non-empty URL string.')
+        return value
+
+    def validate_company_social_links(self, value):
+        if value is None:
+            return value
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Company social links must be a list of objects.')
+        for item in value:
+            if not isinstance(item, dict):
+                raise serializers.ValidationError('Each social link must be an object with platform and url.')
+            platform = (item.get('platform') or '').strip().lower()
+            url = (item.get('url') or '').strip()
+            if not platform or not url:
+                raise serializers.ValidationError('Each social link requires a platform and url.')
+            item['platform'] = platform
+            item['url'] = url
+        return value
+
 
 class PublicProfileSerializer(serializers.ModelSerializer):
     """Read-only serializer for public profile view — no sensitive fields."""
+    recent_jobs = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -233,7 +267,17 @@ class PublicProfileSerializer(serializers.ModelSerializer):
             'experience', 'projects', 'achievements', 'training', 'languages',
             # Company fields
             'company_name', 'company_website', 'company_size',
+            'company_category', 'company_founded', 'company_location', 'company_address',
+            'company_photos', 'company_social_links', 'recent_jobs',
         ]
+
+    def get_recent_jobs(self, obj):
+        if getattr(obj, 'role', None) != 'company':
+            return []
+        from jobs.models import Job
+        from jobs.serializers import JobSerializer
+        jobs = Job.objects.filter(company=obj, is_active=True).select_related('company')[:5]
+        return JobSerializer(jobs, many=True, context=self.context).data
 
 
 class ChangePasswordSerializer(serializers.Serializer):

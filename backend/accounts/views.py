@@ -168,6 +168,33 @@ class PublicProfileView(generics.RetrieveAPIView):
         return User.objects.all()
 
 
+class CompanyPhotoUploadView(APIView):
+    """POST /api/auth/company-photos/ — upload a company gallery image."""
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        if getattr(request.user, 'role', None) != 'company':
+            return Response({'detail': 'Only company accounts can upload photos.'}, status=status.HTTP_403_FORBIDDEN)
+
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if uploaded_file.size > 1 * 1024 * 1024:
+            return Response({'detail': 'Each photo must be smaller than 1MB.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .storage import save_file_to_supabase_or_local
+        photo_url = save_file_to_supabase_or_local(uploaded_file, request=request, folder='company-photos')
+        photos = list(request.user.company_photos or [])
+        if len(photos) >= 5:
+            return Response({'detail': 'A company can have at most 5 photos.'}, status=status.HTTP_400_BAD_REQUEST)
+        photos.append(photo_url)
+        request.user.company_photos = photos
+        request.user.save(update_fields=['company_photos'])
+        return Response({'url': photo_url, 'company_photos': photos}, status=status.HTTP_201_CREATED)
+
+
 class ChangePasswordView(APIView):
     """POST /api/auth/change-password/"""
     permission_classes = [permissions.IsAuthenticated]
