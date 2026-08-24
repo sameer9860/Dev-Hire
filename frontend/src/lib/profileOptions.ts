@@ -7,6 +7,35 @@ export const SOCIAL_PLATFORMS = [
   { value: 'twitter', label: 'Twitter' },
 ] as const;
 
+export const COMPANY_SOCIAL_PLATFORMS = [
+  { value: 'website', label: 'Website' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'x', label: 'X' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'slack', label: 'Slack' },
+  { value: 'github', label: 'GitHub' },
+] as const;
+
+export const COMPANY_CATEGORIES = [
+  'Technology',
+  'Finance',
+  'Healthcare',
+  'Education',
+  'E-commerce',
+  'Media',
+  'Real Estate',
+  'Logistics',
+  'Agriculture',
+  'Manufacturing',
+  'Travel',
+  'Hospitality',
+  'Non-profit',
+  'Consulting',
+  'Telecommunications',
+  'Construction',
+] as const;
+
 export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]['value'];
 
 export const NEPAL_PROVINCES = [
@@ -27,5 +56,7 @@ export const GENDER_OPTIONS = [
 ] as const;
 
 export function socialPlatformLabel(value: string) {
-  return SOCIAL_PLATFORMS.find((item) => item.value === value)?.label ?? value;
+  const normalized = value?.toLowerCase();
+  const all = [...SOCIAL_PLATFORMS, ...COMPANY_SOCIAL_PLATFORMS];
+  return all.find((item) => item.value === normalized)?.label ?? value;
 }
