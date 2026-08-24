@@ -21,6 +21,7 @@ urlpatterns = [
        path('profile/', views.ProfileUpdateView.as_view()),
        path('profile/<str:username>/', views.PublicProfileView.as_view()),
        path('upload/', views.FileUploadView.as_view()),
+       path('company-photos/', views.CompanyPhotoUploadView.as_view()),
        path('activity/', views.ActivityLogListView.as_view()),
        path('activity/read-all/', views.MarkActivityReadView.as_view()),
    ]
