@@ -16,6 +16,9 @@ urlpatterns = [
        path('oauth/config/', views.OAuthConfigView.as_view()),
        path('oauth/<str:provider>/', views.DeveloperOAuthView.as_view()),
        path('change-password/', views.ChangePasswordView.as_view()),
+    path('password-reset/', views.PasswordResetRequestView.as_view()),
+    path('password-reset-verify-otp/', views.PasswordResetVerifyOTPView.as_view()),
+    path('password-reset-confirm/', views.PasswordResetConfirmView.as_view()),
        path('delete-account/', views.DeleteAccountView.as_view()),
        # Day 16 — Profile endpoints
        path('profile/', views.ProfileUpdateView.as_view()),
