@@ -21,6 +21,14 @@ from .serializers import (
     ChangePasswordSerializer,
     DeleteAccountSerializer,
 )
+from .serializers import PasswordResetSerializer, PasswordResetVerifyOTPSerializer, PasswordResetConfirmSerializer
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.conf import settings
+from django.core.mail import send_mail
+from django.core.cache import cache
+import secrets
 # pyrefly: ignore [missing-import]
 from .oauth import (
     exchange_google_code,
@@ -79,6 +87,39 @@ def _get_client_ip(request) -> str:
     if xff:
         return xff.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR', '')
+
+
+class PasswordResetRateLimiter:
+    """Simple in-memory rate limiter for password reset requests."""
+    _requests: dict[str, list[float]] = {}
+
+    @classmethod
+    def _clean(cls, key: str) -> list[float]:
+        import time
+        now = time.time()
+        window = getattr(settings, 'PASSWORD_RESET_REQUEST_WINDOW', 3600)
+        cls._requests[key] = [t for t in cls._requests.get(key, []) if now - t < window]
+        return cls._requests[key]
+
+    @classmethod
+    def is_limited(cls, key: str) -> bool:
+        limit = getattr(settings, 'PASSWORD_RESET_REQUEST_LIMIT', 5)
+        return len(cls._clean(key)) >= limit
+
+    @classmethod
+    def seconds_until_reset(cls, key: str) -> int:
+        import time
+        attempts = cls._clean(key)
+        if not attempts:
+            return 0
+        window = getattr(settings, 'PASSWORD_RESET_REQUEST_WINDOW', 3600)
+        return max(0, int(window - (time.time() - attempts[0])))
+
+    @classmethod
+    def record(cls, key: str) -> None:
+        import time
+        cls._clean(key)
+        cls._requests.setdefault(key, []).append(time.time())
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):
@@ -514,5 +555,175 @@ class MarkActivityReadView(APIView):
         from .models import ActivityLog
         updated = ActivityLog.objects.filter(user=request.user, is_read=False).update(is_read=True)
         return Response({'updated': updated}, status=status.HTTP_200_OK)
+
+
+
+class PasswordResetRequestView(APIView):
+    """POST /api/auth/password-reset/ — body: { "email": "user@example.com" }"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'].strip().lower()
+        user = User.objects.filter(email__iexact=email).first()
+
+        # Rate limit password reset requests per email and per IP
+        ip = _get_client_ip(request)
+        email_key = f'pwreset:email:{email}'
+        ip_key = f'pwreset:ip:{ip}'
+
+        if PasswordResetRateLimiter.is_limited(email_key) or PasswordResetRateLimiter.is_limited(ip_key):
+            retry_seconds = max(PasswordResetRateLimiter.seconds_until_reset(email_key), PasswordResetRateLimiter.seconds_until_reset(ip_key))
+            return Response({'detail': 'Too many password reset requests. Try again later.', 'retry_after': retry_seconds}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        if user:
+            # Generate 6-digit numeric OTP code
+            otp_code = f"{random.randint(100000, 999999)}"
+            cache_key = f'pwreset_otp:{email}'
+            cache.set(
+                cache_key,
+                {
+                    'otp': otp_code,
+                    'user_id': user.pk,
+                    'attempts': 0,
+                },
+                timeout=600,  # 10 minutes TTL
+            )
+
+            subject = 'Your DevHire Password Reset Verification Code'
+            message = (
+                f"Hi {user.username},\n\n"
+                f"You requested a password reset for your DevHire account.\n"
+                f"Your 6-digit verification code is: {otp_code}\n\n"
+                f"This code will expire in 10 minutes.\n"
+                f"If you did not request this password reset, please ignore this email."
+            )
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+            try:
+                send_mail(subject, message, from_email, [user.email], fail_silently=False)
+            except Exception:
+                pass
+
+        PasswordResetRateLimiter.record(email_key)
+        PasswordResetRateLimiter.record(ip_key)
+
+        return Response(
+            {'detail': 'If an account with that email exists, a 6-digit verification code has been sent.'},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetVerifyOTPView(APIView):
+    """POST /api/auth/password-reset-verify-otp/ — body: { "email": "user@example.com", "otp": "123456" }"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetVerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'].strip().lower()
+        otp = serializer.validated_data['otp'].strip()
+
+        cache_key = f'pwreset_otp:{email}'
+        otp_data = cache.get(cache_key)
+
+        if not otp_data:
+            return Response(
+                {'detail': 'Verification code has expired or is invalid. Please request a new code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_data.get('attempts', 0) >= 5:
+            cache.delete(cache_key)
+            return Response(
+                {'detail': 'Too many failed verification attempts. Please request a new code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_data.get('otp') != otp:
+            otp_data['attempts'] = otp_data.get('attempts', 0) + 1
+            cache.set(cache_key, otp_data, timeout=300)
+            return Response(
+                {'detail': 'Invalid verification code. Please check and try again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Code is valid! Create a temporary single-use reset_token
+        reset_token = secrets.token_urlsafe(32)
+        verified_key = f'pwreset_verified:{email}'
+        cache.set(
+            verified_key,
+            {
+                'user_id': otp_data['user_id'],
+                'reset_token': reset_token,
+            },
+            timeout=600,  # 10 minutes to complete password reset
+        )
+        # Clear the OTP code so it cannot be reused
+        cache.delete(cache_key)
+
+        return Response(
+            {
+                'detail': 'Verification code confirmed successfully.',
+                'reset_token': reset_token,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    """POST /api/auth/password-reset-confirm/ — body: { email, reset_token, new_password, new_password2 }"""
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        email = (serializer.validated_data.get('email') or '').strip().lower()
+        reset_token = serializer.validated_data.get('reset_token')
+        uid = serializer.validated_data.get('uid')
+        token = serializer.validated_data.get('token')
+        new_password = serializer.validated_data.get('new_password')
+
+        user = None
+
+        # Method 1: OTP Verified Token (Email + Reset Token)
+        if email and reset_token:
+            verified_key = f'pwreset_verified:{email}'
+            verified_data = cache.get(verified_key)
+            if not verified_data or verified_data.get('reset_token') != reset_token:
+                return Response(
+                    {'detail': 'Invalid or expired reset session. Please verify your OTP code again.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user = User.objects.filter(pk=verified_data.get('user_id')).first()
+            if user:
+                cache.delete(verified_key)
+
+        # Method 2: Legacy UID + Token direct link
+        elif uid and token:
+            try:
+                uid_decoded = force_str(urlsafe_base64_decode(uid))
+                user = User.objects.filter(pk=uid_decoded).first()
+            except Exception:
+                return Response({'detail': 'Invalid reset link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not user or not default_token_generator.check_token(user, token):
+                return Response({'detail': 'Invalid or expired reset token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user:
+            return Response({'detail': 'User not found or session invalid.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        from .activity import log_activity
+        log_activity(
+            user,
+            category='security',
+            action='password_reset',
+            message='Password reset via OTP verification',
+        )
+        return Response({'detail': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
 
 
