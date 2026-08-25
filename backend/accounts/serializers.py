@@ -334,3 +334,46 @@ class DeleteAccountSerializer(serializers.Serializer):
         if not user.check_password(value):
             raise serializers.ValidationError('Password is incorrect.')
         return value
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetVerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6, min_length=6)
+
+    def validate_otp(self, value):
+        value = value.strip()
+        if not value.isdigit() or len(value) != 6:
+            raise serializers.ValidationError('Verification code must be 6 digits.')
+        return value
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField(required=False, allow_blank=True)
+    token = serializers.CharField(required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    reset_token = serializers.CharField(required=False, allow_blank=True)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password2 = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        if not (data.get('uid') and data.get('token')) and not (data.get('email') and data.get('reset_token')):
+            raise serializers.ValidationError('Either uid/token or email/reset_token is required.')
+
+        if data.get('new_password') != data.get('new_password2'):
+            raise serializers.ValidationError({'new_password2': "Passwords don't match."})
+        if any(ch.isspace() for ch in data.get('new_password') or ''):
+            raise serializers.ValidationError({'new_password': 'Password cannot contain spaces.'})
+        from .password_rules import password_charset_ok, PASSWORD_CHARSET_ERROR, validate_strong_password
+        # pyrefly: ignore [missing-import]
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        if data.get('new_password') and not password_charset_ok(data.get('new_password')):
+            raise serializers.ValidationError({'new_password': PASSWORD_CHARSET_ERROR})
+        try:
+            validate_strong_password(data.get('new_password'))
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'new_password': list(exc.messages)}) from exc
+        return data
