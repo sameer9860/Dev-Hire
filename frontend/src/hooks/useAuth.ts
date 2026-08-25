@@ -243,3 +243,55 @@ export function useDeleteAccount() {
     },
   });
 }
+
+export function usePasswordResetRequest() {
+  return useMutation<{ detail: string }, Error, { email: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/password-reset/', payload);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('A 6-digit verification code has been sent to your email.');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to request verification code.');
+    },
+  });
+}
+
+export function usePasswordResetVerifyOTP() {
+  return useMutation<{ detail: string; reset_token: string }, Error, { email: string; otp: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/password-reset-verify-otp/', payload);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Code verified! Set your new password.');
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Failed to verify OTP code.');
+    },
+  });
+}
+
+export function usePasswordResetConfirm() {
+  const router = useRouter();
+  return useMutation<
+    { detail: string },
+    Error,
+    { email?: string; reset_token?: string; uid?: string; token?: string; new_password: string; new_password2: string }
+  >({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/password-reset-confirm/', payload);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Password reset successful. You can now sign in.');
+      router.push('/login');
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail || 'Failed to reset password.';
+      toast.error(msg);
+    },
+  });
+}
