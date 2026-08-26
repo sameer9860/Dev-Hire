@@ -244,6 +244,47 @@ export function useDeleteAccount() {
   });
 }
 
+export function useChangeEmailRequest() {
+  return useMutation<{ detail: string }, Error, { new_email: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/change-email/request/', payload);
+      return data;
+    },
+    onError: (error: any) => {
+      toast.error(extractApiError(error, 'Failed to request email change.'));
+    },
+  });
+}
+
+export function useChangeEmailVerifyOTP() {
+  return useMutation<{ detail: string; verification_token: string }, Error, { new_email: string; otp: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/change-email/verify-otp/', payload);
+      return data;
+    },
+    onError: (error: any) => {
+      toast.error(extractApiError(error, 'Failed to verify email change code.'));
+    },
+  });
+}
+
+export function useChangeEmailConfirm() {
+  const queryClient = useQueryClient();
+  return useMutation<{ detail: string }, Error, { new_email: string; verification_token: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/change-email/confirm/', payload);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success('Email updated successfully.');
+    },
+    onError: (error: any) => {
+      toast.error(extractApiError(error, 'Failed to confirm email change.'));
+    },
+  });
+}
+
 export function usePasswordResetRequest() {
   return useMutation<{ detail: string }, Error, { email: string }>({
     mutationFn: async (payload) => {
