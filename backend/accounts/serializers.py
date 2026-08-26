@@ -280,6 +280,43 @@ class PublicProfileSerializer(serializers.ModelSerializer):
         return JobSerializer(jobs, many=True, context=self.context).data
 
 
+class ChangeEmailRequestSerializer(serializers.Serializer):
+    new_email = serializers.EmailField()
+
+    def validate_new_email(self, value):
+        email = (value or '').strip().lower()
+        user = self.context['request'].user
+
+        if user.email and email.lower() == user.email.lower():
+            raise serializers.ValidationError('This is already your current email address.')
+
+        if User.objects.filter(email__iexact=email).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError('This email is already registered to another account.')
+
+        if getattr(user, 'role', None) == 'company':
+            from .company_email import is_company_email
+            if not is_company_email(email):
+                raise serializers.ValidationError('Companies must use a valid company email for email changes.')
+
+        return email
+
+
+class ChangeEmailVerifyOTPSerializer(serializers.Serializer):
+    new_email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6, min_length=6)
+
+    def validate_otp(self, value):
+        value = value.strip()
+        if not value.isdigit() or len(value) != 6:
+            raise serializers.ValidationError('Verification code must be 6 digits.')
+        return value
+
+
+class ChangeEmailConfirmSerializer(serializers.Serializer):
+    new_email = serializers.EmailField()
+    verification_token = serializers.CharField()
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
     new_password = serializers.CharField(write_only=True, min_length=8)

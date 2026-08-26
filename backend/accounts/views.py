@@ -265,6 +265,153 @@ class DeleteAccountView(APIView):
         return Response({'detail': 'Account deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
 
 
+def _email_change_cache_key(user_id, email: str) -> str:
+    return f'change_email_otp:{user_id}:{(email or "").strip().lower()}'
+
+
+def _email_change_verified_key(user_id, email: str) -> str:
+    return f'change_email_verified:{user_id}:{(email or "").strip().lower()}'
+
+
+class ChangeEmailRequestView(APIView):
+    """POST /api/auth/change-email/request/ — body: { "new_email": "user@example.com" }"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from .serializers import ChangeEmailRequestSerializer
+        serializer = ChangeEmailRequestSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        new_email = serializer.validated_data['new_email']
+        user = request.user
+        otp_code = f"{random.randint(100000, 999999)}"
+        verification_token = secrets.token_urlsafe(32)
+        cache_key = _email_change_cache_key(user.pk, new_email)
+        cache.set(
+            cache_key,
+            {
+                'otp': otp_code,
+                'verification_token': verification_token,
+                'user_id': user.pk,
+                'attempts': 0,
+            },
+            timeout=600,
+        )
+
+        subject = 'Verify your new DevHire email address'
+        frontend_base = getattr(settings, 'FRONTEND_URL', '') or 'http://localhost:3000'
+        verification_link = f"{frontend_base.rstrip('/')}/verify-email?email={new_email}&token={verification_token}"
+        message = (
+            f"Hi {user.username},\n\n"
+            f"You requested to change your DevHire email to {new_email}.\n"
+            f"Your verification code is: {otp_code}\n"
+            f"Or confirm it here: {verification_link}\n\n"
+            f"If you did not request this change, please ignore this email."
+        )
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+        try:
+            send_mail(subject, message, from_email, [new_email], fail_silently=False)
+        except Exception:
+            pass
+
+        return Response(
+            {'detail': 'Verification code sent to your new email. Confirm it before the email is updated.'},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChangeEmailVerifyOTPView(APIView):
+    """POST /api/auth/change-email/verify-otp/ — body: { "new_email": "user@example.com", "otp": "123456" }"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from .serializers import ChangeEmailVerifyOTPSerializer
+        serializer = ChangeEmailVerifyOTPSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_email = serializer.validated_data['new_email']
+        otp = serializer.validated_data['otp']
+        cache_key = _email_change_cache_key(request.user.pk, new_email)
+        change_data = cache.get(cache_key)
+
+        if not change_data:
+            return Response(
+                {'detail': 'Verification code has expired or is invalid. Please request a new one.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if change_data.get('attempts', 0) >= 5:
+            cache.delete(cache_key)
+            return Response(
+                {'detail': 'Too many failed verification attempts. Please request a new verification email.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if change_data.get('otp') != otp:
+            change_data['attempts'] = change_data.get('attempts', 0) + 1
+            cache.set(cache_key, change_data, timeout=600)
+            return Response(
+                {'detail': 'Invalid verification code. Please check and try again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        verified_key = _email_change_verified_key(request.user.pk, new_email)
+        verification_token = change_data.get('verification_token') or secrets.token_urlsafe(32)
+        cache.set(
+            verified_key,
+            {
+                'new_email': new_email,
+                'verification_token': verification_token,
+                'user_id': request.user.pk,
+            },
+            timeout=600,
+        )
+        cache.delete(cache_key)
+
+        return Response(
+            {
+                'detail': 'New email verified successfully.',
+                'verification_token': verification_token,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ChangeEmailConfirmView(APIView):
+    """POST /api/auth/change-email/confirm/ — body: { "new_email": "user@example.com", "verification_token": "..." }"""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from .serializers import ChangeEmailConfirmSerializer
+        serializer = ChangeEmailConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_email = serializer.validated_data['new_email']
+        verification_token = serializer.validated_data['verification_token']
+        verified_key = _email_change_verified_key(request.user.pk, new_email)
+        verified_data = cache.get(verified_key)
+
+        if not verified_data or verified_data.get('verification_token') != verification_token:
+            return Response(
+                {'detail': 'Email verification is invalid or expired. Please verify the new email again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        request.user.email = new_email
+        request.user.save(update_fields=['email'])
+        cache.delete(verified_key)
+
+        from .activity import log_activity
+        log_activity(
+            request.user,
+            category='security',
+            action='email_changed',
+            message='Email address updated after verification',
+        )
+
+        return Response({'detail': 'Email changed successfully.'}, status=status.HTTP_200_OK)
+
+
 def _username_suggestions(base: str, count: int = 3) -> list[str]:
     """Build related unused usernames from a taken base (no spaces)."""
     cleaned = re.sub(r'\s+', '', base or '').strip()[:40]
