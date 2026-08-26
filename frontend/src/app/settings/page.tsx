@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,9 @@ import {
   useMe,
   useChangePassword,
   useDeleteAccount,
+  useChangeEmailRequest,
+  useChangeEmailVerifyOTP,
+  useChangeEmailConfirm,
 } from '@/hooks/useAuth';
 import {
   createChangePasswordSchema,
@@ -45,6 +48,9 @@ export default function SettingsPage() {
 function SettingsContent({ username }: { username: string }) {
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
+  const changeEmailRequest = useChangeEmailRequest();
+  const changeEmailVerifyOTP = useChangeEmailVerifyOTP();
+  const changeEmailConfirm = useChangeEmailConfirm();
 
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -57,6 +63,10 @@ function SettingsContent({ username }: { username: string }) {
     preferred_internship: true,
     preferred_job: true,
   });
+  const [emailChangeEmail, setEmailChangeEmail] = useState('');
+  const [emailChangeOtp, setEmailChangeOtp] = useState('');
+  const [verificationToken, setVerificationToken] = useState('');
+  const [emailChangeStage, setEmailChangeStage] = useState<'idle' | 'sent' | 'verified'>('idle');
 
   useEffect(() => {
     try {
@@ -105,6 +115,61 @@ function SettingsContent({ username }: { username: string }) {
   const onDeleteAccount = deleteForm.handleSubmit((data) => {
     deleteAccount.mutate(data);
   });
+
+  const submitEmailChangeRequest = (e: FormEvent) => {
+    e.preventDefault();
+    if (!emailChangeEmail.trim()) {
+      toast.error('Please enter a new email address.');
+      return;
+    }
+
+    changeEmailRequest.mutate(
+      { new_email: emailChangeEmail.trim() },
+      {
+        onSuccess: () => {
+          setEmailChangeStage('sent');
+          setEmailChangeOtp('');
+          setVerificationToken('');
+        },
+      },
+    );
+  };
+
+  const verifyEmailCode = () => {
+    if (!emailChangeEmail.trim() || !emailChangeOtp.trim()) {
+      toast.error('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    changeEmailVerifyOTP.mutate(
+      { new_email: emailChangeEmail.trim(), otp: emailChangeOtp.trim() },
+      {
+        onSuccess: (data) => {
+          setVerificationToken(data.verification_token);
+          setEmailChangeStage('verified');
+        },
+      },
+    );
+  };
+
+  const confirmEmailChange = () => {
+    if (!emailChangeEmail.trim() || !verificationToken) {
+      toast.error('Please verify the email before confirming the change.');
+      return;
+    }
+
+    changeEmailConfirm.mutate(
+      { new_email: emailChangeEmail.trim(), verification_token: verificationToken },
+      {
+        onSuccess: () => {
+          setEmailChangeEmail('');
+          setEmailChangeOtp('');
+          setVerificationToken('');
+          setEmailChangeStage('idle');
+        },
+      },
+    );
+  };
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -221,8 +286,85 @@ function SettingsContent({ username }: { username: string }) {
           </section>
         </div>
 
-        {/* Right: Notification settings */}
-        <div className="h-full">
+        {/* Right: Email change and notification settings */}
+        <div className="h-full space-y-8">
+          <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
+            <div className="mb-6 flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
+                <Bell className="h-5 w-5 text-zinc-700" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-950">Email address</h2>
+                <p className="mt-0.5 text-sm text-zinc-500">Verify a new email before it becomes active on your account.</p>
+              </div>
+            </div>
+
+            <form onSubmit={submitEmailChangeRequest} className="space-y-4">
+              <div>
+                <label htmlFor="new_email" className="mb-1.5 block text-sm font-medium text-zinc-700">
+                  New email address
+                </label>
+                <input
+                  id="new_email"
+                  type="email"
+                  value={emailChangeEmail}
+                  onChange={(e) => setEmailChangeEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={changeEmailRequest.isPending}
+                className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
+              >
+                {changeEmailRequest.isPending ? 'Sending code…' : 'Send verification code'}
+              </button>
+            </form>
+
+            {emailChangeStage !== 'idle' && (
+              <div className="mt-6 space-y-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                <div>
+                  <label htmlFor="verification_code" className="mb-1.5 block text-sm font-medium text-zinc-700">
+                    Verification code
+                  </label>
+                  <input
+                    id="verification_code"
+                    type="text"
+                    inputMode="numeric"
+                    value={emailChangeOtp}
+                    onChange={(e) => setEmailChangeOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="123456"
+                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={verifyEmailCode}
+                    disabled={changeEmailVerifyOTP.isPending}
+                    className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {changeEmailVerifyOTP.isPending ? 'Verifying…' : 'Verify code'}
+                  </button>
+
+                  {emailChangeStage === 'verified' && (
+                    <button
+                      type="button"
+                      onClick={confirmEmailChange}
+                      disabled={changeEmailConfirm.isPending}
+                      className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
+                    >
+                      {changeEmailConfirm.isPending ? 'Updating…' : 'Confirm email change'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+
           <section className="h-full rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
             <div>
               <div className="mb-6 flex items-start gap-3">
