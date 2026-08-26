@@ -972,7 +972,10 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
               readOnly
               className="w-full cursor-not-allowed rounded-xl border border-zinc-200 bg-zinc-100 p-3 text-sm text-zinc-600"
             />
-            <p className="mt-1 text-xs text-zinc-400">Email cannot be changed here.</p>
+            <p className="mt-1 text-xs text-zinc-400">
+              To change your email, go to{' '}
+              <a href="/settings" className="font-medium text-zinc-700 underline hover:text-zinc-900">Settings</a>.
+            </p>
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-zinc-800">Phone Number</label>
