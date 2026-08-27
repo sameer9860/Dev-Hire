@@ -47,6 +47,7 @@ DevHire provides a centralized hiring platform tailored for software developers 
 - SEO-friendly job pages
 - Secure JWT authentication
 
+
 ### Business Value
 
 - Reduces recruitment management overhead
