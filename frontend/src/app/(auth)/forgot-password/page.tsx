@@ -21,59 +21,112 @@ import {
   ShieldCheck,
   RefreshCw,
 } from 'lucide-react';
-import { ALLOWED_PASSWORD_CHARS, PASSWORD_CHARSET_ERROR } from '@/schemas/authSchema';
+import {
+  PASSWORD_RULES_HELP,
+  passwordCharsetField,
+  strongPasswordSchema,
+} from '@/schemas/authSchema';
 
-// Schema for Step 1: Email
 const emailSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
 });
 type EmailFormData = z.infer<typeof emailSchema>;
 
-// Schema for Step 3: New Password
 const passwordSchema = z
   .object({
-    new_password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .refine((v) => !v || ALLOWED_PASSWORD_CHARS.test(v), PASSWORD_CHARSET_ERROR)
-      .regex(/[A-Z]/, 'Include at least one uppercase letter')
-      .regex(/[a-z]/, 'Include at least one lowercase letter')
-      .regex(/\d/, 'Include at least one number')
-      .regex(/[^A-Za-z0-9]/, 'Include at least one special character'),
+    new_password: z.string(),
     new_password2: z.string().min(1, 'Please confirm your new password'),
   })
-  .refine((data) => data.new_password === data.new_password2, {
-    message: "Passwords don't match",
-    path: ['new_password2'],
+  .superRefine((data, ctx) => {
+    const pwd = strongPasswordSchema().safeParse(data.new_password);
+    if (!pwd.success) {
+      for (const issue of pwd.error.issues) {
+        ctx.addIssue({ ...issue, path: ['new_password'] });
+      }
+    }
+    if (data.new_password !== data.new_password2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Passwords don't match",
+        path: ['new_password2'],
+      });
+    }
   });
 type PasswordFormData = z.infer<typeof passwordSchema>;
+
+function StepDots({ current }: { current: 1 | 2 | 3 }) {
+  const labels = ['Email', 'Verify', 'Password'] as const;
+
+  return (
+    <div className="mb-8 flex items-center justify-center gap-0" aria-label={`Step ${current} of 3`}>
+      {labels.map((label, index) => {
+        const stepNum = (index + 1) as 1 | 2 | 3;
+        const isActive = stepNum === current;
+        const isDone = stepNum < current;
+
+        return (
+          <div key={label} className="flex items-center">
+            <div className="flex flex-col items-center gap-1.5">
+              <div
+                className={[
+                  'flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors',
+                  isActive
+                    ? 'bg-zinc-950 text-white ring-4 ring-zinc-950/10'
+                    : isDone
+                      ? 'bg-zinc-950 text-white'
+                      : 'bg-zinc-100 text-zinc-400',
+                ].join(' ')}
+              >
+                {isDone ? <CheckCircle2 className="h-4 w-4" /> : stepNum}
+              </div>
+              <span
+                className={[
+                  'text-[11px] font-semibold tracking-wide',
+                  isActive || isDone ? 'text-zinc-900' : 'text-zinc-400',
+                ].join(' ')}
+              >
+                {label}
+              </span>
+            </div>
+            {index < labels.length - 1 && (
+              <div
+                className={[
+                  'mx-2 mb-5 h-0.5 w-10 sm:w-14 rounded-full transition-colors',
+                  isDone ? 'bg-zinc-950' : 'bg-zinc-200',
+                ].join(' ')}
+                aria-hidden
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [userEmail, setUserEmail] = useState('');
   const [resetToken, setResetToken] = useState('');
 
-  // OTP Digits (6 individual input boxes)
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Resend Timer
   const [resendTimer, setResendTimer] = useState(0);
 
-  // Password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword2, setShowPassword2] = useState(false);
 
-  // Mutations
   const requestMutation = usePasswordResetRequest();
   const verifyMutation = usePasswordResetVerifyOTP();
   const confirmMutation = usePasswordResetConfirm();
 
-  // Forms
   const emailForm = useForm<EmailFormData>({ resolver: zodResolver(emailSchema) });
-  const passwordForm = useForm<PasswordFormData>({ resolver: zodResolver(passwordSchema) });
+  const passwordForm = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: { new_password: '', new_password2: '' },
+  });
 
-  // Resend countdown timer effect
   useEffect(() => {
     if (resendTimer <= 0) return;
     const interval = setInterval(() => {
@@ -82,14 +135,12 @@ export default function ForgotPasswordPage() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  // Focus first OTP input on Step 2
   useEffect(() => {
     if (step === 2) {
       setTimeout(() => inputRefs.current[0]?.focus(), 100);
     }
   }, [step]);
 
-  // Handler for Step 1: Send OTP
   const onEmailSubmit = (data: EmailFormData) => {
     const email = data.email.trim().toLowerCase();
     setUserEmail(email);
@@ -100,11 +151,10 @@ export default function ForgotPasswordPage() {
           setStep(2);
           setResendTimer(60);
         },
-      }
+      },
     );
   };
 
-  // Handler for Resending OTP
   const handleResendOTP = () => {
     if (resendTimer > 0 || !userEmail) return;
     requestMutation.mutate(
@@ -115,11 +165,10 @@ export default function ForgotPasswordPage() {
           setOtpDigits(['', '', '', '', '', '']);
           inputRefs.current[0]?.focus();
         },
-      }
+      },
     );
   };
 
-  // Handler for OTP input changes
   const handleOtpChange = (index: number, value: string) => {
     const cleanVal = value.replace(/[^0-9]/g, '');
     if (!cleanVal) {
@@ -129,7 +178,6 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    // Handle paste of full 6 digit code
     if (cleanVal.length >= 6) {
       const digits = cleanVal.slice(0, 6).split('');
       setOtpDigits(digits);
@@ -162,7 +210,6 @@ export default function ForgotPasswordPage() {
     }
   };
 
-  // Handler for Step 2: Verify OTP
   const onVerifyOTP = () => {
     const fullOtp = otpDigits.join('');
     if (fullOtp.length !== 6) return;
@@ -174,11 +221,10 @@ export default function ForgotPasswordPage() {
           setResetToken(data.reset_token);
           setStep(3);
         },
-      }
+      },
     );
   };
 
-  // Handler for Step 3: Set New Password
   const onPasswordSubmit = (data: PasswordFormData) => {
     confirmMutation.mutate(
       {
@@ -191,13 +237,12 @@ export default function ForgotPasswordPage() {
         onSuccess: () => {
           setStep(4);
         },
-      }
+      },
     );
   };
 
   return (
     <div className="min-h-screen bg-zinc-50/50 flex flex-col justify-center items-center px-4 py-12 sm:px-6 lg:px-8">
-      {/* Brand Header */}
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
         <Link href="/" className="inline-flex items-center gap-2.5 group mb-4">
           <div className="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center text-white shadow-md group-hover:bg-zinc-800 transition-colors">
@@ -209,7 +254,8 @@ export default function ForgotPasswordPage() {
 
       <div className="w-full max-w-[440px]">
         <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          {/* STEP 1: Enter Email */}
+          {step <= 3 && <StepDots current={step as 1 | 2 | 3} />}
+
           {step === 1 && (
             <>
               <div className="mb-6">
@@ -273,7 +319,6 @@ export default function ForgotPasswordPage() {
             </>
           )}
 
-          {/* STEP 2: Enter 6-Digit OTP */}
           {step === 2 && (
             <>
               <div className="mb-6">
@@ -288,7 +333,6 @@ export default function ForgotPasswordPage() {
               </div>
 
               <div className="space-y-5">
-                {/* 6 Digit Input Grid */}
                 <div className="flex justify-between items-center gap-2">
                   {otpDigits.map((digit, idx) => (
                     <input
@@ -346,7 +390,6 @@ export default function ForgotPasswordPage() {
             </>
           )}
 
-          {/* STEP 3: Set New Password */}
           {step === 3 && (
             <>
               <div className="mb-6">
@@ -360,7 +403,6 @@ export default function ForgotPasswordPage() {
               </div>
 
               <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                {/* New Password */}
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
                     New Password
@@ -373,7 +415,10 @@ export default function ForgotPasswordPage() {
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
                       className="w-full border border-zinc-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors"
-                      {...passwordForm.register('new_password')}
+                      {...passwordCharsetField(
+                        passwordForm.register('new_password'),
+                        passwordForm.trigger,
+                      )}
                     />
                     <button
                       type="button"
@@ -389,9 +434,9 @@ export default function ForgotPasswordPage() {
                       {passwordForm.formState.errors.new_password.message}
                     </p>
                   )}
+                  <p className="text-zinc-400 text-xs mt-1.5 pl-1">{PASSWORD_RULES_HELP}</p>
                 </div>
 
-                {/* Confirm New Password */}
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5">
                     Confirm New Password
@@ -404,7 +449,10 @@ export default function ForgotPasswordPage() {
                       type={showPassword2 ? 'text' : 'password'}
                       placeholder="••••••••"
                       className="w-full border border-zinc-200 rounded-xl pl-10 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50 transition-colors"
-                      {...passwordForm.register('new_password2')}
+                      {...passwordCharsetField(
+                        passwordForm.register('new_password2'),
+                        passwordForm.trigger,
+                      )}
                     />
                     <button
                       type="button"
@@ -440,7 +488,6 @@ export default function ForgotPasswordPage() {
             </>
           )}
 
-          {/* STEP 4: Success Screen */}
           {step === 4 && (
             <div className="text-center py-4 space-y-4">
               <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
@@ -448,7 +495,8 @@ export default function ForgotPasswordPage() {
               </div>
               <h2 className="text-xl font-bold text-zinc-900">Password Reset Complete</h2>
               <p className="text-sm text-zinc-600 leading-relaxed">
-                Your password has been successfully updated. You can now sign in to your DevHire account with your new password.
+                Your password has been successfully updated. You can now sign in to your DevHire account with
+                your new password.
               </p>
               <div className="pt-4">
                 <Link
