@@ -21,7 +21,7 @@ import {
   type ChangePasswordFormData,
   type DeleteAccountFormData,
 } from '@/schemas/authSchema';
-import { Eye, EyeOff, KeyRound, ShieldAlert, Trash2, Bell } from 'lucide-react';
+import { Eye, EyeOff, KeyRound, Mail, ShieldAlert, Trash2, Bell } from 'lucide-react';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -171,160 +171,157 @@ function SettingsContent({ username }: { username: string }) {
     );
   };
 
+  const inputClass =
+    'h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5';
+  const primaryBtnClass =
+    'inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60';
+
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-      <div className="mb-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Settings</h1>
         <p className="mt-2 text-sm text-zinc-500">
           Manage your account for <span className="font-semibold text-zinc-700">{username}</span>.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-        {/* Left: Change password */}
-        <div className="h-full">
-          <section className="h-full rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
-            <div className="mb-6 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                <KeyRound className="h-5 w-5 text-zinc-700" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+        {/* Change password */}
+        <section className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 sm:p-7">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
+              <KeyRound className="h-5 w-5 text-zinc-700" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-zinc-950">Change password</h2>
+              <p className="mt-0.5 text-sm text-zinc-500">Update your password to keep your account secure.</p>
+            </div>
+          </div>
+
+          <form onSubmit={onChangePassword} className="flex flex-1 flex-col gap-4">
+            <div>
+              <label htmlFor="current_password" className="mb-1.5 block text-sm font-medium text-zinc-700">
+                Old Password*
+              </label>
+              <div className="relative">
+                <input
+                  id="current_password"
+                  type={showCurrent ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  className={`${inputClass} pr-11`}
+                  {...passwordCharsetField(passwordForm.register('current_password'), passwordForm.trigger)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrent((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+                  aria-label={showCurrent ? 'Hide password' : 'Show password'}
+                >
+                  {showCurrent ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold text-zinc-950">Change password</h2>
-                <p className="mt-0.5 text-sm text-zinc-500">{PASSWORD_RULES_HELP}</p>
-              </div>
+              {passwordForm.formState.errors.current_password && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">
+                  {passwordForm.formState.errors.current_password.message}
+                </p>
+              )}
             </div>
 
-            <form onSubmit={onChangePassword} className="space-y-4">
-              <div>
-                <label htmlFor="current_password" className="mb-1.5 block text-sm font-medium text-zinc-700">
-                  Old Password*
-                </label>
-                <div className="relative">
-                  <input
-                    id="current_password"
-                    type={showCurrent ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                    {...passwordCharsetField(passwordForm.register('current_password'), passwordForm.trigger)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
-                    aria-label={showCurrent ? 'Hide password' : 'Show password'}
-                  >
-                    {showCurrent ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                </div>
-                {passwordForm.formState.errors.current_password && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">
-                    {passwordForm.formState.errors.current_password.message}
-                  </p>
-                )}
+            <div>
+              <label htmlFor="new_password" className="mb-1.5 block text-sm font-medium text-zinc-700">
+                New Password*
+              </label>
+              <div className="relative">
+                <input
+                  id="new_password"
+                  type={showNew ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  className={`${inputClass} pr-11`}
+                  {...passwordCharsetField(passwordForm.register('new_password'), passwordForm.trigger)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+                  aria-label={showNew ? 'Hide password' : 'Show password'}
+                >
+                  {showNew ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
               </div>
+              {passwordForm.formState.errors.new_password && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">{passwordForm.formState.errors.new_password.message}</p>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="new_password" className="mb-1.5 block text-sm font-medium text-zinc-700">
-                  New Password*
-                </label>
-                <div className="relative">
-                  <input
-                    id="new_password"
-                    type={showNew ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                    {...passwordCharsetField(passwordForm.register('new_password'), passwordForm.trigger)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
-                    aria-label={showNew ? 'Hide password' : 'Show password'}
-                  >
-                    {showNew ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                </div>
-                {passwordForm.formState.errors.new_password && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">{passwordForm.formState.errors.new_password.message}</p>
-                )}
+            <div>
+              <label htmlFor="new_password2" className="mb-1.5 block text-sm font-medium text-zinc-700">
+                Confirm Password*
+              </label>
+              <div className="relative">
+                <input
+                  id="new_password2"
+                  type={showNew2 ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  className={`${inputClass} pr-11`}
+                  {...passwordCharsetField(passwordForm.register('new_password2'), passwordForm.trigger)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNew2((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+                  aria-label={showNew2 ? 'Hide password' : 'Show password'}
+                >
+                  {showNew2 ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </button>
               </div>
+              {passwordForm.formState.errors.new_password2 && (
+                <p className="mt-1.5 text-xs font-medium text-red-500">{passwordForm.formState.errors.new_password2.message}</p>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="new_password2" className="mb-1.5 block text-sm font-medium text-zinc-700">
-                  Confirm Password*
-                </label>
-                <div className="relative">
-                  <input
-                    id="new_password2"
-                    type={showNew2 ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                    {...passwordCharsetField(passwordForm.register('new_password2'), passwordForm.trigger)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew2((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
-                    aria-label={showNew2 ? 'Hide password' : 'Show password'}
-                  >
-                    {showNew2 ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                </div>
-                {passwordForm.formState.errors.new_password2 && (
-                  <p className="mt-1.5 text-xs font-medium text-red-500">{passwordForm.formState.errors.new_password2.message}</p>
-                )}
-              </div>
+            <p className="text-xs leading-relaxed text-zinc-400">{PASSWORD_RULES_HELP}</p>
 
-              <button
-                type="submit"
-                disabled={changePassword.isPending}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
-              >
+            <div className="mt-auto pt-2">
+              <button type="submit" disabled={changePassword.isPending} className={primaryBtnClass}>
                 {changePassword.isPending ? 'Updating…' : 'Save Changes'}
               </button>
-            </form>
-          </section>
-        </div>
+            </div>
+          </form>
+        </section>
 
-        {/* Right: Email change and notification settings */}
-        <div className="h-full space-y-8">
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
-            <div className="mb-6 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                <Bell className="h-5 w-5 text-zinc-700" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-zinc-950">Email address</h2>
-                <p className="mt-0.5 text-sm text-zinc-500">Verify a new email before it becomes active on your account.</p>
-              </div>
+        {/* Email address */}
+        <section className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 sm:p-7">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
+              <Mail className="h-5 w-5 text-zinc-700" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-zinc-950">Email address</h2>
+              <p className="mt-0.5 text-sm text-zinc-500">Verify a new email before it becomes active on your account.</p>
+            </div>
+          </div>
+
+          <form onSubmit={submitEmailChangeRequest} className="flex flex-1 flex-col gap-4">
+            <div>
+              <label htmlFor="new_email" className="mb-1.5 block text-sm font-medium text-zinc-700">
+                New email address
+              </label>
+              <input
+                id="new_email"
+                type="email"
+                value={emailChangeEmail}
+                onChange={(e) => setEmailChangeEmail(e.target.value)}
+                placeholder="name@company.com"
+                className={inputClass}
+              />
             </div>
 
-            <form onSubmit={submitEmailChangeRequest} className="space-y-4">
-              <div>
-                <label htmlFor="new_email" className="mb-1.5 block text-sm font-medium text-zinc-700">
-                  New email address
-                </label>
-                <input
-                  id="new_email"
-                  type="email"
-                  value={emailChangeEmail}
-                  onChange={(e) => setEmailChangeEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={changeEmailRequest.isPending}
-                className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
-              >
-                {changeEmailRequest.isPending ? 'Sending code…' : 'Send verification code'}
-              </button>
-            </form>
+            <button type="submit" disabled={changeEmailRequest.isPending} className={primaryBtnClass}>
+              {changeEmailRequest.isPending ? 'Sending code…' : 'Send verification code'}
+            </button>
 
             {emailChangeStage !== 'idle' && (
-              <div className="mt-6 space-y-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="space-y-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
                 <div>
                   <label htmlFor="verification_code" className="mb-1.5 block text-sm font-medium text-zinc-700">
                     Verification code
@@ -336,7 +333,7 @@ function SettingsContent({ username }: { username: string }) {
                     value={emailChangeOtp}
                     onChange={(e) => setEmailChangeOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="123456"
-                    className="h-11 w-full rounded-xl border border-zinc-200 bg-white px-3.5 text-sm text-zinc-900 outline-none transition focus:border-zinc-400 focus:ring-2 focus:ring-zinc-900/5"
+                    className={inputClass}
                   />
                 </div>
 
@@ -345,7 +342,7 @@ function SettingsContent({ username }: { username: string }) {
                     type="button"
                     onClick={verifyEmailCode}
                     disabled={changeEmailVerifyOTP.isPending}
-                    className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                    className={primaryBtnClass}
                   >
                     {changeEmailVerifyOTP.isPending ? 'Verifying…' : 'Verify code'}
                   </button>
@@ -355,7 +352,7 @@ function SettingsContent({ username }: { username: string }) {
                       type="button"
                       onClick={confirmEmailChange}
                       disabled={changeEmailConfirm.isPending}
-                      className="inline-flex h-11 items-center justify-center rounded-xl bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
+                      className={primaryBtnClass}
                     >
                       {changeEmailConfirm.isPending ? 'Updating…' : 'Confirm email change'}
                     </button>
@@ -363,104 +360,98 @@ function SettingsContent({ username }: { username: string }) {
                 </div>
               </div>
             )}
-          </section>
+          </form>
+        </section>
 
-          <section className="h-full rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
-            <div>
-              <div className="mb-6 flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
-                  <Bell className="h-5 w-5 text-zinc-700" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-zinc-950">Notification Setting</h2>
-                  <p className="mt-0.5 text-sm text-zinc-500">Choose which notifications you'd like to receive.</p>
-                </div>
-              </div>
-
-              <NotificationSettings
-                settings={notificationSettings}
-                onToggle={toggleNotificationSetting}
-              />
+        {/* Notifications — full width under the pair */}
+        <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-7 lg:col-span-2">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100">
+              <Bell className="h-5 w-5 text-zinc-700" />
             </div>
-          </section>
-        </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-zinc-950">Notification settings</h2>
+              <p className="mt-0.5 text-sm text-zinc-500">Choose which notifications you&apos;d like to receive.</p>
+            </div>
+          </div>
 
-        {/* Danger zone below spans full width */}
-        <div className="lg:col-span-2">
-          <section className="rounded-2xl border border-red-200 bg-red-50/40 p-6 sm:p-8">
-            <div className="mb-6 flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
-                <ShieldAlert className="h-5 w-5 text-red-600" />
-              </div>
+          <NotificationSettings settings={notificationSettings} onToggle={toggleNotificationSetting} />
+        </section>
+
+        {/* Danger zone */}
+        <section className="rounded-2xl border border-red-200 bg-red-50/40 p-6 sm:p-7 lg:col-span-2">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-100">
+              <ShieldAlert className="h-5 w-5 text-red-600" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-red-900">Danger zone</h2>
+              <p className="mt-0.5 text-sm text-red-700/80">
+                Once you deactivate this account, there is no going back. Please be certain.
+              </p>
+            </div>
+          </div>
+
+          {!confirmDelete ? (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Deactivate Account
+            </button>
+          ) : (
+            <form onSubmit={onDeleteAccount} className="space-y-4">
+              <p className="text-sm font-medium text-red-800">Enter your password to confirm account deletion.</p>
               <div>
-                <h2 className="text-lg font-semibold text-red-900">Danger zone</h2>
-                <p className="mt-0.5 text-sm text-red-700/80">
-                  Once you deactivate this account, there is no going back. Please be certain.
-                </p>
-              </div>
-            </div>
-
-            {!confirmDelete ? (
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(true)}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                Deactivate Account
-              </button>
-            ) : (
-              <form onSubmit={onDeleteAccount} className="space-y-4">
-                <p className="text-sm font-medium text-red-800">Enter your password to confirm account deletion.</p>
-                <div>
-                  <label htmlFor="delete_password" className="mb-1.5 block text-sm font-medium text-red-900">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="delete_password"
-                      type={showDeletePassword ? 'text' : 'password'}
-                      autoComplete="current-password"
-                      className="h-11 w-full rounded-xl border border-red-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-500/10"
-                      {...deleteForm.register('password')}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowDeletePassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
-                      aria-label={showDeletePassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {deleteForm.formState.errors.password && (
-                    <p className="mt-1.5 text-xs font-medium text-red-600">{deleteForm.formState.errors.password.message}</p>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="submit"
-                    disabled={deleteAccount.isPending}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {deleteAccount.isPending ? 'Deleting…' : 'Permanently delete'}
-                  </button>
+                <label htmlFor="delete_password" className="mb-1.5 block text-sm font-medium text-red-900">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="delete_password"
+                    type={showDeletePassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    className="h-11 w-full rounded-xl border border-red-200 bg-white px-3.5 pr-11 text-sm text-zinc-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-500/10"
+                    {...deleteForm.register('password')}
+                  />
                   <button
                     type="button"
-                    onClick={() => {
-                      setConfirmDelete(false);
-                      deleteForm.reset();
-                    }}
-                    className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                    onClick={() => setShowDeletePassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
+                    aria-label={showDeletePassword ? 'Hide password' : 'Show password'}
                   >
-                    Cancel
+                    {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-              </form>
-            )}
-          </section>
-        </div>
+                {deleteForm.formState.errors.password && (
+                  <p className="mt-1.5 text-xs font-medium text-red-600">{deleteForm.formState.errors.password.message}</p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="submit"
+                  disabled={deleteAccount.isPending}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleteAccount.isPending ? 'Deleting…' : 'Permanently delete'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmDelete(false);
+                    deleteForm.reset();
+                  }}
+                  className="inline-flex h-11 items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
       </div>
     </div>
   );
@@ -502,21 +493,24 @@ function NotificationSettings({
   ];
 
   return (
-    <div className="divide-y divide-zinc-100 border-t border-b border-zinc-100 my-2">
+    <div className="grid gap-3 sm:grid-cols-2">
       {items.map((item) => (
-        <div key={item.key} className="flex items-center justify-between gap-4 py-4">
-          <div>
+        <div
+          key={item.key}
+          className="flex items-center justify-between gap-4 rounded-xl border border-zinc-100 bg-zinc-50/80 px-4 py-3.5"
+        >
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-zinc-900">{item.title}</p>
-            <p className="text-xs text-zinc-500 mt-0.5">{item.description}</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-zinc-500">{item.description}</p>
           </div>
-          <label className="relative inline-flex cursor-pointer items-center flex-shrink-0">
+          <label className="relative inline-flex shrink-0 cursor-pointer items-center">
             <input
               type="checkbox"
               checked={settings[item.key]}
               onChange={() => onToggle(item.key)}
               className="peer sr-only"
             />
-            <div className="h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-zinc-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-zinc-950 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-zinc-950/10"></div>
+            <div className="h-6 w-11 rounded-full bg-zinc-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-zinc-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-zinc-950 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-zinc-950/10" />
           </label>
         </div>
       ))}
