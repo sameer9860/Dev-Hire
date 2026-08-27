@@ -214,7 +214,23 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='webmaster@localhost')
+# Fail fast instead of hanging until Gunicorn worker timeout (common when
+# EMAIL_HOST is wrong/unreachable on Railway).
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+DEFAULT_FROM_EMAIL = config(
+    'DEFAULT_FROM_EMAIL',
+    default=config('EMAIL_HOST_USER', default='webmaster@localhost') or 'webmaster@localhost',
+)
+
+if not DEBUG and EMAIL_BACKEND.endswith('smtp.EmailBackend'):
+    if not EMAIL_HOST or EMAIL_HOST in ('localhost', '127.0.0.1'):
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            'EMAIL_HOST is %r — password reset / change-email will fail in production. '
+            'Set EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, '
+            'EMAIL_USE_TLS, and DEFAULT_FROM_EMAIL on Railway.',
+            EMAIL_HOST or '(empty)',
+        )
 
 # Password reset configuration
 PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=3600, cast=int)  # seconds
