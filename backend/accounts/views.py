@@ -28,7 +28,10 @@ from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.cache import cache
+import logging
 import secrets
+
+logger = logging.getLogger(__name__)
 # pyrefly: ignore [missing-import]
 from .oauth import (
     exchange_google_code,
@@ -299,20 +302,24 @@ class ChangeEmailRequestView(APIView):
         )
 
         subject = 'Verify your new DevHire email address'
-        frontend_base = getattr(settings, 'FRONTEND_URL', '') or 'http://localhost:3000'
-        verification_link = f"{frontend_base.rstrip('/')}/verify-email?email={new_email}&token={verification_token}"
         message = (
             f"Hi {user.username},\n\n"
             f"You requested to change your DevHire email to {new_email}.\n"
-            f"Your verification code is: {otp_code}\n"
-            f"Or confirm it here: {verification_link}\n\n"
+            f"Your 6-digit verification code is: {otp_code}\n\n"
+            f"Enter this code in Settings to confirm the change.\n"
+            f"This code will expire in 10 minutes.\n"
             f"If you did not request this change, please ignore this email."
         )
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
         try:
             send_mail(subject, message, from_email, [new_email], fail_silently=False)
         except Exception:
-            pass
+            logger.exception('Failed to send email-change verification to %s', new_email)
+            cache.delete(cache_key)
+            return Response(
+                {'detail': 'Could not send verification email. Check email settings and try again.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         return Response(
             {'detail': 'Verification code sent to your new email. Confirm it before the email is updated.'},
@@ -750,7 +757,8 @@ class PasswordResetRequestView(APIView):
             try:
                 send_mail(subject, message, from_email, [user.email], fail_silently=False)
             except Exception:
-                pass
+                # Keep response enumeration-safe; log so Railway SMTP misconfig is visible.
+                logger.exception('Failed to send password-reset OTP to %s', user.email)
 
         PasswordResetRateLimiter.record(email_key)
         PasswordResetRateLimiter.record(ip_key)

@@ -331,6 +331,18 @@ DATABASE_URL=<from-railway-postgres>
 ALLOWED_HOSTS=your-backend.up.railway.app
 CORS_ALLOWED_ORIGINS=https://your-app.vercel.app
 CSRF_TRUSTED_ORIGINS=https://your-app.vercel.app
+FRONTEND_URL=https://your-app.vercel.app
+
+# Required for forgot-password / change-email OTPs across workers
+REDIS_URL=<redis or upstash rediss://...>
+
+# Required in production (SMTP). Without these, codes never arrive.
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=...
+EMAIL_HOST_PASSWORD=...
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=noreply@yourdomain.com
 ```
 
 4. Railway builds from `Dockerfile` via `railway.json`
@@ -375,6 +387,9 @@ NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app/api
 | `ALLOWED_HOSTS`                                               | Comma-separated allowed hosts         |
 | `CORS_ALLOWED_ORIGINS`                                        | Frontend origin(s)                    |
 | `CSRF_TRUSTED_ORIGINS`                                        | Trusted origins for CSRF (production) |
+| `FRONTEND_URL`                                                | Frontend origin (OAuth / links)       |
+| `REDIS_URL`                                                   | Shared OTP cache (Upstash/Redis)      |
+| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` / `DEFAULT_FROM_EMAIL` | SMTP for password reset & email change |
 
 ### Frontend (`.env.local` / Vercel)
 
