@@ -225,6 +225,34 @@ SUPABASE_URL = config('SUPABASE_URL', default='')
 SUPABASE_KEY = config('SUPABASE_KEY', default='')
 SUPABASE_STORAGE_BUCKET = config('SUPABASE_STORAGE_BUCKET', default='devhire-media')
 
+# Cache — use Redis (Upstash) when REDIS_URL is set (production); fall back to
+# in-process LocMemCache for local development.  OTPs for password reset and
+# email change are stored in the cache, so a shared backend is required when
+# running multiple workers (Railway).
+_REDIS_URL = config('REDIS_URL', default='')
+if _REDIS_URL:
+    # Upstash uses rediss:// (TLS). django-redis passes the URL to redis-py
+    # which enables SSL automatically. ssl_cert_reqs=None skips cert verification
+    # since Upstash's cert may not be in the OS trust store on all platforms.
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': _REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'REDIS_CLIENT_KWARGS': {'ssl_cert_reqs': None},
+            },
+            'TIMEOUT': 600,  # 10-minute default TTL
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+
 # Security settings for production (Railway terminates SSL at the edge)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
