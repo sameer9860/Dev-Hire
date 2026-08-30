@@ -4,23 +4,40 @@ const STATUS_CONFIG: Record<
   ApplicationStatus,
   { label: string; className: string }
 > = {
-  pending: { label: 'Pending', className: 'bg-gray-100 text-gray-700' },
-  reviewing: { label: 'Reviewing', className: 'bg-blue-100 text-blue-700' },
+  pending: {
+    label: 'Pending',
+    className: 'border-amber-200 bg-amber-50 text-amber-800',
+  },
+  reviewing: {
+    label: 'Reviewing',
+    className: 'border-blue-200 bg-blue-50 text-blue-800',
+  },
   shortlisted: {
     label: 'Shortlisted',
-    className: 'bg-yellow-100 text-yellow-700',
+    className: 'border-purple-200 bg-purple-50 text-purple-800',
   },
-  accepted: { label: 'Accepted', className: 'bg-green-100 text-green-700' },
-  rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700' },
+  accepted: {
+    label: 'Accepted',
+    className: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  },
+  rejected: {
+    label: 'Rejected',
+    className: 'border-rose-200 bg-rose-50 text-rose-800',
+  },
 };
 
 export function StatusBadge({ status }: { status: ApplicationStatus }) {
-  const { label, className } = STATUS_CONFIG[status];
+  const config = STATUS_CONFIG[status] || {
+    label: status,
+    className: 'border-zinc-200 bg-zinc-50 text-zinc-700',
+  };
   return (
     <span
-      className={`text-xs px-2 py-1 rounded-full font-medium ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide ${config.className}`}
     >
-      {label}
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+      {config.label}
     </span>
   );
 }
+
