@@ -12,6 +12,7 @@ class User(AbstractUser):
        ROLE_CHOICES = [
            ('developer', 'Developer'),
            ('company', 'Company'),
+           ('admin', 'Admin'),
        ]
        role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='developer')
        bio = models.TextField(blank=True)
@@ -89,3 +90,64 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.user_id}: {self.message}"
+
+
+class ContactMessage(models.Model):
+    CATEGORY_CHOICES = [
+        ('bug', 'Bug'),
+        ('query', 'Query'),
+        ('others', 'Others'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='contact_messages',
+    )
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='others')
+    description = models.TextField()
+    attachment_url = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    admin_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.category}] {self.subject} - {self.email}"
+
+
+class DirectMessage(models.Model):
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='sent_messages',
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='received_messages',
+    )
+    subject = models.CharField(max_length=255, blank=True)
+    body = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"From {self.sender.username} to {self.recipient.username}: {self.subject or self.body[:30]}"
+
