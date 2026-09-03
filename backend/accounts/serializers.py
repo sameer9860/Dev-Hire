@@ -414,3 +414,38 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         except DjangoValidationError as exc:
             raise serializers.ValidationError({'new_password': list(exc.messages)}) from exc
         return data
+
+
+from .models import ContactMessage, DirectMessage
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    user_detail = UserSerializer(source='user', read_only=True)
+
+    class Meta:
+        model = ContactMessage
+        fields = [
+            'id', 'user', 'user_detail', 'name', 'email', 'subject',
+            'category', 'description', 'attachment_url', 'status',
+            'admin_notes', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+
+
+class DirectMessageSerializer(serializers.ModelSerializer):
+    sender_detail = UserSerializer(source='sender', read_only=True)
+    recipient_detail = UserSerializer(source='recipient', read_only=True)
+
+    class Meta:
+        model = DirectMessage
+        fields = [
+            'id', 'sender', 'sender_detail', 'recipient', 'recipient_detail',
+            'subject', 'body', 'is_read', 'created_at',
+        ]
+        read_only_fields = ['id', 'sender', 'created_at']
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'role', 'is_active', 'is_staff', 'is_superuser']
