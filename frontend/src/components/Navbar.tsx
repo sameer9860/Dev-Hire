@@ -120,8 +120,24 @@ export default function Navbar() {
                       </span>
                     </div>
 
+                    {(user.role === 'admin' || user.is_staff || user.is_superuser) && (
+                      <Link
+                        href="/dashboard/admin"
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg bg-purple-50 px-3 py-2 text-left text-sm font-semibold text-purple-900 transition-colors hover:bg-purple-100"
+                      >
+                        <LayoutDashboard className="h-4 w-4 text-purple-700" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+
                     <Link
-                      href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+                      href={
+                        user.role === 'admin' || user.is_staff || user.is_superuser
+                          ? '/dashboard/admin'
+                          : user.role === 'company'
+                          ? '/dashboard/company'
+                          : '/dashboard/developer'
+                      }
                       className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
                     >
                       <LayoutDashboard className="h-4 w-4 text-zinc-500" />
@@ -142,6 +158,14 @@ export default function Navbar() {
                     >
                       <ExternalLink className="h-4 w-4 text-zinc-500" />
                       Public Profile
+                    </Link>
+
+                    <Link
+                      href="/contact"
+                      className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                    >
+                      <Briefcase className="h-4 w-4 text-zinc-500" />
+                      Contact Us
                     </Link>
 
                     <button
