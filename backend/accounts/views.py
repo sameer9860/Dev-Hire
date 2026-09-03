@@ -27,6 +27,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.core.cache import cache
 import logging
 import secrets
@@ -880,5 +881,334 @@ class PasswordResetConfirmView(APIView):
             message='Password reset via OTP verification',
         )
         return Response({'detail': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
+
+
+from .serializers import (
+    ContactMessageSerializer,
+    DirectMessageSerializer,
+    AdminUserUpdateSerializer,
+)
+from .models import ContactMessage, DirectMessage
+
+
+class IsAdminUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(
+            request.user and
+            request.user.is_authenticated and
+            (request.user.is_staff or request.user.is_superuser or getattr(request.user, 'role', '') == 'admin')
+        )
+
+
+class ContactCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        name = (request.data.get('name') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        subject = (request.data.get('subject') or '').strip()
+        category = request.data.get('category') or 'others'
+        description = (request.data.get('description') or '').strip()
+        attachment_url = (request.data.get('attachment_url') or '').strip()
+
+        if request.user and request.user.is_authenticated:
+            if not name:
+                name = request.user.username
+            if not email:
+                email = request.user.email
+
+        if not name or not email or not subject or not description:
+            return Response(
+                {'detail': 'Name, email, subject, and description are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        contact_msg = ContactMessage.objects.create(
+            user=request.user if (request.user and request.user.is_authenticated) else None,
+            name=name,
+            email=email,
+            subject=subject,
+            category=category,
+            description=description,
+            attachment_url=attachment_url,
+        )
+
+        if request.user and request.user.is_authenticated:
+            from .activity import log_activity
+            log_activity(
+                request.user,
+                category='profile',
+                action='contact_submission',
+                message=f'Contact submission sent: {subject[:30]}',
+            )
+
+        serializer = ContactMessageSerializer(contact_msg)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AdminStatsView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        from jobs.models import Job
+        from applications.models import Application
+
+        total_users = User.objects.count()
+        total_developers = User.objects.filter(role='developer').count()
+        total_companies = User.objects.filter(role='company').count()
+        total_admins = User.objects.filter(Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)).distinct().count()
+
+        total_jobs = Job.objects.count()
+        active_jobs = Job.objects.filter(is_active=True).count()
+        closed_jobs = Job.objects.filter(is_active=False).count()
+
+        total_applications = Application.objects.count()
+        pending_applications = Application.objects.filter(status='pending').count()
+        accepted_applications = Application.objects.filter(status='accepted').count()
+
+        total_contact_messages = ContactMessage.objects.count()
+        pending_contact_messages = ContactMessage.objects.filter(status='pending').count()
+
+        unread_direct_messages = DirectMessage.objects.filter(recipient=request.user, is_read=False).count()
+
+        return Response({
+            'total_users': total_users,
+            'total_developers': total_developers,
+            'total_companies': total_companies,
+            'total_admins': total_admins,
+            'total_jobs': total_jobs,
+            'active_jobs': active_jobs,
+            'closed_jobs': closed_jobs,
+            'total_applications': total_applications,
+            'pending_applications': pending_applications,
+            'accepted_applications': accepted_applications,
+            'total_contact_messages': total_contact_messages,
+            'pending_contact_messages': pending_contact_messages,
+            'unread_direct_messages': unread_direct_messages,
+        })
+
+
+class AdminUserListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        queryset = User.objects.all().order_by('-date_joined')
+        role = request.query_params.get('role')
+        search = request.query_params.get('search')
+        is_active = request.query_params.get('is_active')
+
+        if role:
+            queryset = queryset.filter(role=role)
+        if is_active is not None:
+            if is_active.lower() == 'true':
+                queryset = queryset.filter(is_active=True)
+            elif is_active.lower() == 'false':
+                queryset = queryset.filter(is_active=False)
+        if search:
+            queryset = queryset.filter(
+                Q(username__icontains=search) |
+                Q(email__icontains=search) |
+                Q(company_name__icontains=search) |
+                Q(headline__icontains=search)
+            )
+
+        serializer = UserSerializer(queryset, many=True)
+        return Response({'results': serializer.data, 'count': queryset.count()})
+
+
+class AdminUserDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk):
+        target_user = generics.get_object_or_404(User, pk=pk)
+        is_active = request.data.get('is_active')
+        role = request.data.get('role')
+
+        if is_active is not None:
+            target_user.is_active = bool(is_active)
+        if role in ['developer', 'company', 'admin']:
+            target_user.role = role
+            if role == 'admin':
+                target_user.is_staff = True
+
+        target_user.save()
+        serializer = UserSerializer(target_user)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        target_user = generics.get_object_or_404(User, pk=pk)
+        if target_user.pk == request.user.pk:
+            return Response({'detail': 'Cannot delete your own admin account.'}, status=status.HTTP_400_BAD_REQUEST)
+        target_user.delete()
+        return Response({'detail': 'User account deleted successfully.'}, status=status.HTTP_200_OK)
+
+
+class AdminJobListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        from jobs.models import Job
+        from jobs.serializers import JobSerializer
+
+        queryset = Job.objects.all().select_related('company').order_by('-created_at')
+        search = request.query_params.get('search')
+        is_active = request.query_params.get('is_active')
+
+        if is_active is not None:
+            if is_active.lower() == 'true':
+                queryset = queryset.filter(is_active=True)
+            elif is_active.lower() == 'false':
+                queryset = queryset.filter(is_active=False)
+        if search:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(company__company_name__icontains=search) |
+                Q(location__icontains=search)
+            )
+
+        serializer = JobSerializer(queryset, many=True)
+        return Response({'results': serializer.data, 'count': queryset.count()})
+
+
+class AdminJobDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk):
+        from jobs.models import Job
+        from jobs.serializers import JobSerializer
+
+        job = generics.get_object_or_404(Job, pk=pk)
+        is_active = request.data.get('is_active')
+        if is_active is not None:
+            job.is_active = bool(is_active)
+            job.save()
+
+        serializer = JobSerializer(job)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        from jobs.models import Job
+
+        job = generics.get_object_or_404(Job, pk=pk)
+        job.delete()
+        return Response({'detail': 'Job posting deleted.'}, status=status.HTTP_200_OK)
+
+
+class AdminContactMessageListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        queryset = ContactMessage.objects.all().select_related('user').order_by('-created_at')
+        category = request.query_params.get('category')
+        msg_status = request.query_params.get('status')
+        search = request.query_params.get('search')
+
+        if category:
+            queryset = queryset.filter(category=category)
+        if msg_status:
+            queryset = queryset.filter(status=msg_status)
+        if search:
+            queryset = queryset.filter(
+                Q(subject__icontains=search) |
+                Q(name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(description__icontains=search)
+            )
+
+        serializer = ContactMessageSerializer(queryset, many=True)
+        return Response({'results': serializer.data, 'count': queryset.count()})
+
+
+class AdminContactMessageDetailView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk):
+        msg = generics.get_object_or_404(ContactMessage, pk=pk)
+        msg_status = request.data.get('status')
+        admin_notes = request.data.get('admin_notes')
+        reply_body = (request.data.get('reply') or '').strip()
+
+        if msg_status:
+            msg.status = msg_status
+        if admin_notes is not None:
+            msg.admin_notes = admin_notes
+        msg.save()
+
+        if reply_body:
+            recipient_user = msg.user
+            if not recipient_user and msg.email:
+                recipient_user = User.objects.filter(email__iexact=msg.email).first()
+
+            if recipient_user:
+                DirectMessage.objects.create(
+                    sender=request.user,
+                    recipient=recipient_user,
+                    subject=f"Re: {msg.subject}",
+                    body=reply_body,
+                )
+
+        serializer = ContactMessageSerializer(msg)
+        return Response(serializer.data)
+
+
+class DirectMessageListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        target_user_id = request.query_params.get('user_id')
+
+        if target_user_id and (user.is_staff or user.is_superuser or user.role == 'admin'):
+            messages_qs = DirectMessage.objects.filter(
+                (Q(sender=user) & Q(recipient_id=target_user_id)) |
+                (Q(sender_id=target_user_id) & Q(recipient=user))
+            ).select_related('sender', 'recipient').order_by('created_at')
+        else:
+            messages_qs = DirectMessage.objects.filter(
+                Q(sender=user) | Q(recipient=user)
+            ).select_related('sender', 'recipient').order_by('-created_at')
+
+        serializer = DirectMessageSerializer(messages_qs, many=True)
+        return Response({'results': serializer.data, 'count': messages_qs.count()})
+
+    def post(self, request):
+        sender = request.user
+        recipient_id = request.data.get('recipient_id')
+        subject = (request.data.get('subject') or '').strip()
+        body = (request.data.get('body') or '').strip()
+
+        if not body:
+            return Response({'detail': 'Message body is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        recipient = None
+        if recipient_id:
+            recipient = User.objects.filter(pk=recipient_id).first()
+
+        if not recipient:
+            admin_user = User.objects.filter(
+                Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)
+            ).first()
+            if not admin_user:
+                return Response({'detail': 'No admin user found to receive your message.'}, status=status.HTTP_404_NOT_FOUND)
+            recipient = admin_user
+
+        message_obj = DirectMessage.objects.create(
+            sender=sender,
+            recipient=recipient,
+            subject=subject,
+            body=body,
+        )
+
+        serializer = DirectMessageSerializer(message_obj)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class MarkMessagesReadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request):
+        DirectMessage.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        return Response({'detail': 'Messages marked as read.'}, status=status.HTTP_200_OK)
+
 
 

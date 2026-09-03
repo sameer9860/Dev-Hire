@@ -30,4 +30,16 @@ urlpatterns = [
        path('company-photos/', views.CompanyPhotoUploadView.as_view()),
        path('activity/', views.ActivityLogListView.as_view()),
        path('activity/read-all/', views.MarkActivityReadView.as_view()),
+       path('contact/', views.ContactCreateView.as_view()),
+       path('messages/', views.DirectMessageListView.as_view()),
+       path('messages/read/', views.MarkMessagesReadView.as_view()),
+       # Admin endpoints
+       path('admin/stats/', views.AdminStatsView.as_view()),
+       path('admin/users/', views.AdminUserListView.as_view()),
+       path('admin/users/<int:pk>/', views.AdminUserDetailView.as_view()),
+       path('admin/jobs/', views.AdminJobListView.as_view()),
+       path('admin/jobs/<int:pk>/', views.AdminJobDetailView.as_view()),
+       path('admin/contact-messages/', views.AdminContactMessageListView.as_view()),
+       path('admin/contact-messages/<int:pk>/', views.AdminContactMessageDetailView.as_view()),
    ]
+
