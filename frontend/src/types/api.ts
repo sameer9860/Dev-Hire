@@ -1,4 +1,4 @@
-export type UserRole = 'developer' | 'company' | 'guest';
+export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
 
    export interface EducationItem {
      institution?: string;
@@ -36,6 +36,10 @@ export type UserRole = 'developer' | 'company' | 'guest';
      username: string;
      email: string;
      role: UserRole;
+     is_staff?: boolean;
+     is_superuser?: boolean;
+     is_active?: boolean;
+     date_joined?: string;
      bio: string;
      avatar_url: string;
      first_name?: string;
@@ -200,9 +204,10 @@ export type UserRole = 'developer' | 'company' | 'guest';
      email: string;
      password: string;
      password2: string;
-     role: 'developer' | 'company';
+     role: 'developer' | 'company' | 'admin';
      company_name?: string;
      company_website?: string;
+     avatar_url?: string;
    }
 
    // ─── Profile ──────────────────────────────────────────────────────
@@ -248,3 +253,47 @@ export type UserRole = 'developer' | 'company' | 'guest';
    }
 
    export type ProfileUpdate = DeveloperProfileUpdate | CompanyProfileUpdate;
+
+   export interface ContactMessage {
+     id: number;
+     user?: number | null;
+     user_detail?: User | null;
+     name: string;
+     email: string;
+     subject: string;
+     category: 'bug' | 'query' | 'others';
+     description: string;
+     attachment_url?: string;
+     status: 'pending' | 'in_progress' | 'resolved';
+     admin_notes?: string;
+     created_at: string;
+     updated_at: string;
+   }
+
+   export interface DirectMessage {
+     id: number;
+     sender: number;
+     sender_detail?: User;
+     recipient: number;
+     recipient_detail?: User;
+     subject?: string;
+     body: string;
+     is_read: boolean;
+     created_at: string;
+   }
+
+   export interface AdminStats {
+     total_users: number;
+     total_developers: number;
+     total_companies: number;
+     total_admins: number;
+     total_jobs: number;
+     active_jobs: number;
+     closed_jobs: number;
+     total_applications: number;
+     pending_applications: number;
+     accepted_applications: number;
+     total_contact_messages: number;
+     pending_contact_messages: number;
+     unread_direct_messages: number;
+   }
