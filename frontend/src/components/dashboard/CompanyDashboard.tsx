@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { UserAvatar } from '@/components/UserAvatar';
-import { MessagePanel } from '@/components/dashboard/MessagePanel';
+
 
 export function CompanyDashboard() {
   const { data: jobsData, isLoading: isLoadingJobs, error: jobsError } = useMyJobs();
@@ -630,12 +630,6 @@ export function CompanyDashboard() {
         </div>
       </div>
 
-      {/* Messages section */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-5">
-          <MessagePanel />
-        </div>
-      </div>
     </div>
   );
 }

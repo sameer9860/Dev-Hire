@@ -17,7 +17,7 @@ import {
   Clock3,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
-import { MessagePanel } from '@/components/dashboard/MessagePanel';
+
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   'full-time': 'Full Time',
@@ -291,12 +291,6 @@ export function DeveloperDashboard() {
         </section>
       </div>
 
-      {/* Messages sidebar */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <MessagePanel />
-        </div>
-      </div>
     </div>
   );
 }

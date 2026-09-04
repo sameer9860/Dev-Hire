@@ -15,6 +15,7 @@ import {
   ChevronDown,
   LayoutDashboard,
   ExternalLink,
+  MessageSquare,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -142,6 +143,14 @@ export default function Navbar() {
                     >
                       <LayoutDashboard className="h-4 w-4 text-zinc-500" />
                       Dashboard
+                    </Link>
+
+                    <Link
+                      href="/dashboard/messages"
+                      className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                    >
+                      <MessageSquare className="h-4 w-4 text-zinc-500" />
+                      Messages
                     </Link>
 
                     <Link
