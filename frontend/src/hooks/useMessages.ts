@@ -70,3 +70,16 @@ export function useSubmitContactMessage() {
     },
   });
 }
+
+export function useMessageableUsers(search?: string) {
+  return useQuery<{ results: import('@/types/api').User[]; count: number }>({
+    queryKey: ['messageableUsers', search],
+    queryFn: async () => {
+      const { data } = await api.get('/auth/messages/users/', {
+        params: search ? { search } : undefined,
+      });
+      return data;
+    },
+    staleTime: 30_000,
+  });
+}
