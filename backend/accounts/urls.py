@@ -33,6 +33,7 @@ urlpatterns = [
        path('contact/', views.ContactCreateView.as_view()),
        path('messages/', views.DirectMessageListView.as_view()),
        path('messages/read/', views.MarkMessagesReadView.as_view()),
+       path('messages/users/', views.MessageableUsersView.as_view()),
        # Admin endpoints
        path('admin/stats/', views.AdminStatsView.as_view()),
        path('admin/users/', views.AdminUserListView.as_view()),

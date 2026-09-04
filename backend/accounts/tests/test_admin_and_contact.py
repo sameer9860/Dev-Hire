@@ -53,3 +53,28 @@ class TestContactAndAdminAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data['body'] == 'Hello admin, I have a query about a job posting.'
         assert DirectMessage.objects.filter(sender=developer_user, recipient=admin).exists()
+
+    def test_messageable_users(self, auth_dev_client, auth_company_client, developer_user, company_user):
+        admin = User.objects.create_user(
+            username='siteadmin2',
+            email='admin2@devhire.com',
+            password='Password123!',
+            role='admin',
+            is_staff=True,
+        )
+
+        # Developer gets messageable users (should contain company & admin)
+        res_dev = auth_dev_client.get('/api/auth/messages/users/')
+        assert res_dev.status_code == status.HTTP_200_OK
+        returned_ids = [u['id'] for u in res_dev.data['results']]
+        assert company_user.id in returned_ids
+        assert admin.id in returned_ids
+
+        # Company gets messageable users (should contain developer & admin)
+        res_comp = auth_company_client.get('/api/auth/messages/users/')
+        assert res_comp.status_code == status.HTTP_200_OK
+        comp_returned_ids = [u['id'] for u in res_comp.data['results']]
+        assert developer_user.id in comp_returned_ids
+        assert admin.id in comp_returned_ids
+
+

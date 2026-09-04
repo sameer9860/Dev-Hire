@@ -1151,6 +1151,39 @@ class AdminContactMessageDetailView(APIView):
         return Response(serializer.data)
 
 
+class MessageableUsersView(APIView):
+    """Return users that the current user is allowed to message."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        is_admin = user.is_staff or user.is_superuser or user.role == 'admin'
+        search = request.query_params.get('search', '').strip()
+
+        if is_admin:
+            # Admin can message everyone except themselves
+            qs = User.objects.exclude(pk=user.pk)
+        elif user.role == 'company':
+            # Company can message admins and developers
+            qs = User.objects.filter(
+                Q(role='developer') | Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)
+            ).exclude(pk=user.pk)
+        else:
+            # Developer can message admins and companies
+            qs = User.objects.filter(
+                Q(role='company') | Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)
+            ).exclude(pk=user.pk)
+
+        if search:
+            qs = qs.filter(
+                Q(username__icontains=search) | Q(email__icontains=search)
+            )
+
+        qs = qs.filter(is_active=True).order_by('username')[:50]
+        serializer = UserSerializer(qs, many=True)
+        return Response({'results': serializer.data, 'count': len(serializer.data)})
+
+
 class DirectMessageListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1158,12 +1191,14 @@ class DirectMessageListView(APIView):
         user = request.user
         target_user_id = request.query_params.get('user_id')
 
-        if target_user_id and (user.is_staff or user.is_superuser or user.role == 'admin'):
+        if target_user_id:
+            # Filter conversation with a specific user
             messages_qs = DirectMessage.objects.filter(
                 (Q(sender=user) & Q(recipient_id=target_user_id)) |
                 (Q(sender_id=target_user_id) & Q(recipient=user))
             ).select_related('sender', 'recipient').order_by('created_at')
         else:
+            # Return all messages for this user
             messages_qs = DirectMessage.objects.filter(
                 Q(sender=user) | Q(recipient=user)
             ).select_related('sender', 'recipient').order_by('-created_at')
