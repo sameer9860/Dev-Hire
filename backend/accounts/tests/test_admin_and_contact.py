@@ -35,7 +35,7 @@ class TestContactAndAdminAPI:
         assert 'total_users' in response.data
         assert 'total_jobs' in response.data
 
-    def test_direct_messaging(self, auth_dev_client, developer_user, company_user):
+    def test_direct_messaging(self, auth_dev_client, auth_company_client, developer_user, company_user):
         admin = User.objects.create_user(
             username='siteadmin',
             email='admin@devhire.com',
@@ -44,15 +44,33 @@ class TestContactAndAdminAPI:
             is_staff=True,
         )
 
-        # Developer sends message to admin
-        response = auth_dev_client.post('/api/auth/messages/', {
+        # Developer attempting to send message is rejected (403 FORBIDDEN)
+        res_dev_send = auth_dev_client.post('/api/auth/messages/', {
             'recipient_id': admin.id,
             'subject': 'Question about my application',
             'body': 'Hello admin, I have a query about a job posting.',
         })
-        assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['body'] == 'Hello admin, I have a query about a job posting.'
-        assert DirectMessage.objects.filter(sender=developer_user, recipient=admin).exists()
+        assert res_dev_send.status_code == status.HTTP_403_FORBIDDEN
+
+        # Company sends message to developer
+        from jobs.models import Job
+        from applications.models import Application
+        job = Job.objects.create(
+            company=company_user,
+            title='Backend Engineer',
+            description='Django role',
+            requirements='Python',
+            location='Remote'
+        )
+        Application.objects.create(developer=developer_user, job=job)
+
+        res_comp_send = auth_company_client.post('/api/auth/messages/', {
+            'recipient_id': developer_user.id,
+            'subject': 'Interview Invitation',
+            'body': 'We would like to schedule an interview with you.',
+        })
+        assert res_comp_send.status_code == status.HTTP_201_CREATED
+        assert DirectMessage.objects.filter(sender=company_user, recipient=developer_user).exists()
 
     def test_messageable_users(self, auth_dev_client, auth_company_client, developer_user, company_user):
         from jobs.models import Job
@@ -66,31 +84,21 @@ class TestContactAndAdminAPI:
             is_staff=True,
         )
 
-        # Dev who hasn't applied to company job should NOT be messageable by company
-        res_comp_before = auth_company_client.get('/api/auth/messages/users/')
-        assert res_comp_before.status_code == status.HTTP_200_OK
-        comp_ids_before = [u['id'] for u in res_comp_before.data['results']]
-        assert developer_user.id not in comp_ids_before
-        assert admin.id in comp_ids_before
+        # Developers get empty list of messageable users (cannot initiate messages)
+        res_dev = auth_dev_client.get('/api/auth/messages/users/')
+        assert res_dev.status_code == status.HTTP_200_OK
+        assert len(res_dev.data['results']) == 0
 
-        # Create job & application
+        # Company gets messageable users (contains developer who applied & admin)
         job = Job.objects.create(
             company=company_user,
-            title='Backend Engineer',
-            description='Django role',
-            requirements='Python',
+            title='Fullstack Dev',
+            description='React/Python',
+            requirements='JS',
             location='Remote'
         )
         Application.objects.create(developer=developer_user, job=job)
 
-        # Developer gets messageable users (should contain applied company & admin)
-        res_dev = auth_dev_client.get('/api/auth/messages/users/')
-        assert res_dev.status_code == status.HTTP_200_OK
-        returned_ids = [u['id'] for u in res_dev.data['results']]
-        assert company_user.id in returned_ids
-        assert admin.id in returned_ids
-
-        # Company gets messageable users (should contain developer who applied & admin)
         res_comp = auth_company_client.get('/api/auth/messages/users/')
         assert res_comp.status_code == status.HTTP_200_OK
         comp_returned_ids = [u['id'] for u in res_comp.data['results']]

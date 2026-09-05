@@ -1174,26 +1174,8 @@ class MessageableUsersView(APIView):
                 Q(id__in=applied_dev_ids) | Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)
             ).exclude(pk=user.pk)
         else:
-            # Developers cannot message random devs/companies.
-            # Can message Admins + Companies whose jobs they applied to or have existing DM threads with.
-            from applications.models import Application
-            applied_company_ids = Application.objects.filter(
-                developer=user
-            ).values_list('job__company_id', flat=True)
-
-            existing_dm_partner_ids = DirectMessage.objects.filter(
-                Q(sender=user) | Q(recipient=user)
-            ).values_list('sender_id', 'recipient_id')
-            partner_ids = set()
-            for s_id, r_id in existing_dm_partner_ids:
-                if s_id != user.id:
-                    partner_ids.add(s_id)
-                if r_id != user.id:
-                    partner_ids.add(r_id)
-
-            qs = User.objects.filter(
-                Q(id__in=applied_company_ids) | Q(id__in=partner_ids) | Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)
-            ).exclude(pk=user.pk)
+            # Developers cannot initiate direct messages to anyone
+            return Response({'results': [], 'count': 0})
 
         if search:
             qs = qs.filter(
@@ -1236,6 +1218,13 @@ class DirectMessageListView(APIView):
         if not body:
             return Response({'detail': 'Message body is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Developers cannot send messages
+        if sender.role == 'developer' and not (sender.is_staff or sender.is_superuser):
+            return Response(
+                {'detail': 'Developers are not permitted to send direct messages. You can only receive messages from companies and admins.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         recipient = None
         if recipient_id:
             recipient = User.objects.filter(pk=recipient_id).first()
@@ -1248,7 +1237,7 @@ class DirectMessageListView(APIView):
                 return Response({'detail': 'No admin user found to receive your message.'}, status=status.HTTP_404_NOT_FOUND)
             recipient = admin_user
 
-        # Enforce recipient authorization rules
+        # Enforce recipient authorization rules for company
         if not (sender.is_staff or sender.is_superuser or sender.role == 'admin'):
             is_admin_recipient = recipient.is_staff or recipient.is_superuser or recipient.role == 'admin'
 
@@ -1258,18 +1247,6 @@ class DirectMessageListView(APIView):
                 if not (is_admin_recipient or applied):
                     return Response(
                         {'detail': 'Companies can only message candidates who applied to their job listings or system admins.'},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-            elif sender.role == 'developer':
-                from applications.models import Application
-                applied = Application.objects.filter(developer=sender, job__company=recipient).exists()
-                existing_thread = DirectMessage.objects.filter(
-                    (Q(sender=sender) & Q(recipient=recipient)) |
-                    (Q(sender=recipient) & Q(recipient=sender))
-                ).exists()
-                if not (is_admin_recipient or applied or existing_thread):
-                    return Response(
-                        {'detail': 'Developers can only message system admins or companies of jobs they applied to.'},
                         status=status.HTTP_403_FORBIDDEN
                     )
 
