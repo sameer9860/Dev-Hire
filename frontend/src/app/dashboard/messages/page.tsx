@@ -214,13 +214,15 @@ export default function MessagesPage() {
                 </span>
               )}
             </div>
-            <button
-              onClick={() => setShowNewMessage(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-white transition hover:bg-zinc-800"
-              title="New message"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            {me?.role !== 'developer' && (
+              <button
+                onClick={() => setShowNewMessage(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-950 text-white transition hover:bg-zinc-800"
+                title="New message"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
           {/* New message user search overlay */}
@@ -429,26 +431,36 @@ export default function MessagesPage() {
               </div>
 
               {/* Compose */}
-              <form onSubmit={handleSend} className="flex items-center gap-2.5 border-t border-zinc-100 px-5 py-3.5">
-                <input
-                  type="text"
-                  value={messageBody}
-                  onChange={(e) => setMessageBody(e.target.value)}
-                  placeholder="Type a message…"
-                  className="h-11 flex-1 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-950/5"
-                />
-                <button
-                  type="submit"
-                  disabled={!messageBody.trim() || sendMessageMutation.isPending}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white transition hover:bg-zinc-800 disabled:opacity-50"
-                >
-                  {sendMessageMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </button>
-              </form>
+              {me?.role === 'developer' ? (
+                <div className="border-t border-zinc-100 bg-zinc-50/80 px-5 py-3.5 text-center text-xs font-medium text-zinc-500">
+                  Developers can receive and view messages from Companies and Admins. Sending direct messages is disabled. Need help? Use{' '}
+                  <a href="/contact" className="font-semibold text-zinc-900 underline hover:text-zinc-700">
+                    Contact Us
+                  </a>
+                  .
+                </div>
+              ) : (
+                <form onSubmit={handleSend} className="flex items-center gap-2.5 border-t border-zinc-100 px-5 py-3.5">
+                  <input
+                    type="text"
+                    value={messageBody}
+                    onChange={(e) => setMessageBody(e.target.value)}
+                    placeholder="Type a message…"
+                    className="h-11 flex-1 rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:bg-white focus:ring-2 focus:ring-zinc-950/5"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!messageBody.trim() || sendMessageMutation.isPending}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white transition hover:bg-zinc-800 disabled:opacity-50"
+                  >
+                    {sendMessageMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </button>
+                </form>
+              )}
             </>
           )}
         </div>
