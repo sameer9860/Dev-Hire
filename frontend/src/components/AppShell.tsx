@@ -22,6 +22,7 @@ import {
   FileText,
   Bookmark,
   Mail,
+  MessageSquare,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -135,12 +136,26 @@ function UserDropdown() {
             </div>
           </div>
           <Link
-            href={user.role === 'company' ? '/dashboard/company' : '/dashboard/developer'}
+            href={
+              user.role === 'admin' || user.is_staff || user.is_superuser
+                ? '/dashboard/admin'
+                : user.role === 'company'
+                ? '/dashboard/company'
+                : '/dashboard/developer'
+            }
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
             onClick={() => setOpen(false)}
           >
             <LayoutDashboard className="h-4 w-4 text-zinc-500" />
             Dashboard
+          </Link>
+          <Link
+            href="/dashboard/messages"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            onClick={() => setOpen(false)}
+          >
+            <MessageSquare className="h-4 w-4 text-zinc-500" />
+            Messages
           </Link>
           <Link
             href="/profile"
@@ -202,6 +217,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
     if (path === '/applications') return pathname.startsWith('/applications');
     if (path === '/bookmarks') return pathname.startsWith('/bookmarks');
     if (path === '/contact') return pathname === '/contact';
+    if (path === '/dashboard/messages') return pathname.startsWith('/dashboard/messages');
     return pathname === path || pathname.startsWith(`${path}/`);
   };
 
@@ -254,20 +270,39 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           />
         )}
 
+        {mounted && user?.role === 'company' && (
+          <Item
+            href="/dashboard/company"
+            path="/dashboard/company"
+            icon={LayoutDashboard}
+            label="Dashboard"
+          />
+        )}
+
+        {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) && (
+          <Item
+            href="/dashboard/admin"
+            path="/dashboard/admin"
+            icon={LayoutDashboard}
+            label="Dashboard"
+          />
+        )}
+
+        {mounted && user && (
+          <Item
+            href="/dashboard/messages"
+            path="/dashboard/messages"
+            icon={MessageSquare}
+            label="Messages"
+          />
+        )}
+
         {(!mounted || !user || user.role !== 'company') && (
           <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
         )}
 
         {mounted && user?.role === 'company' && (
-          <>
-            <Item
-              href="/dashboard/company"
-              path="/dashboard/company"
-              icon={LayoutDashboard}
-              label="Dashboard"
-            />
-            <Item href="/jobs/post" path="/jobs/post" icon={PlusCircle} label="Post Job" />
-          </>
+          <Item href="/jobs/post" path="/jobs/post" icon={PlusCircle} label="Post Job" />
         )}
 
         {mounted && user && (
