@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   useAdminStats,
   useAdminUsers,
@@ -43,7 +44,17 @@ import {
 import Link from 'next/link';
 
 export function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'jobs' | 'contact' | 'messages'>('overview');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'jobs' | 'contact' | 'messages'>(
+    (tabParam as any) || 'overview'
+  );
+
+  useEffect(() => {
+    if (tabParam && ['overview', 'users', 'jobs', 'contact', 'messages'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [tabParam]);
 
   // Stats Query
   const { data: stats, isLoading: isLoadingStats } = useAdminStats();

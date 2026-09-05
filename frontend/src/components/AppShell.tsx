@@ -326,7 +326,16 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           </>
         )}
 
-        <Item href="/contact" path="/contact" icon={Mail} label="Contact Us" />
+        {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) ? (
+          <Item
+            href="/dashboard/admin?tab=contact"
+            path="/dashboard/admin?tab=contact"
+            icon={Mail}
+            label="Contact Submissions"
+          />
+        ) : (
+          <Item href="/contact" path="/contact" icon={Mail} label="Contact Us" />
+        )}
       </nav>
 
       <div className="mt-auto border-t border-zinc-100 px-2 py-3 sm:px-3">
