@@ -55,6 +55,9 @@ class TestContactAndAdminAPI:
         assert DirectMessage.objects.filter(sender=developer_user, recipient=admin).exists()
 
     def test_messageable_users(self, auth_dev_client, auth_company_client, developer_user, company_user):
+        from jobs.models import Job
+        from applications.models import Application
+
         admin = User.objects.create_user(
             username='siteadmin2',
             email='admin2@devhire.com',
@@ -63,18 +66,36 @@ class TestContactAndAdminAPI:
             is_staff=True,
         )
 
-        # Developer gets messageable users (should contain company & admin)
+        # Dev who hasn't applied to company job should NOT be messageable by company
+        res_comp_before = auth_company_client.get('/api/auth/messages/users/')
+        assert res_comp_before.status_code == status.HTTP_200_OK
+        comp_ids_before = [u['id'] for u in res_comp_before.data['results']]
+        assert developer_user.id not in comp_ids_before
+        assert admin.id in comp_ids_before
+
+        # Create job & application
+        job = Job.objects.create(
+            company=company_user,
+            title='Backend Engineer',
+            description='Django role',
+            requirements='Python',
+            location='Remote'
+        )
+        Application.objects.create(developer=developer_user, job=job)
+
+        # Developer gets messageable users (should contain applied company & admin)
         res_dev = auth_dev_client.get('/api/auth/messages/users/')
         assert res_dev.status_code == status.HTTP_200_OK
         returned_ids = [u['id'] for u in res_dev.data['results']]
         assert company_user.id in returned_ids
         assert admin.id in returned_ids
 
-        # Company gets messageable users (should contain developer & admin)
+        # Company gets messageable users (should contain developer who applied & admin)
         res_comp = auth_company_client.get('/api/auth/messages/users/')
         assert res_comp.status_code == status.HTTP_200_OK
         comp_returned_ids = [u['id'] for u in res_comp.data['results']]
         assert developer_user.id in comp_returned_ids
         assert admin.id in comp_returned_ids
+
 
 
