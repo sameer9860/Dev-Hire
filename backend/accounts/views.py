@@ -942,6 +942,26 @@ class ContactCreateView(APIView):
                 message=f'Contact submission sent: {subject[:30]}',
             )
 
+        # Notify all admins when a contact form is submitted
+        admin_users = User.objects.filter(
+            Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True)
+        ).distinct()
+        from .activity import log_activity
+        sender_label = name or (request.user.username if (request.user and request.user.is_authenticated) else email)
+        for admin in admin_users:
+            log_activity(
+                admin,
+                category='security',
+                action='contact_form_submitted',
+                message=f'Contact submission from {sender_label}: "{subject[:30]}"',
+                metadata={
+                    'contact_id': contact_msg.id,
+                    'email': email,
+                    'subject': subject,
+                    'category': category,
+                },
+            )
+
         serializer = ContactMessageSerializer(contact_msg)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -1255,6 +1275,20 @@ class DirectMessageListView(APIView):
             recipient=recipient,
             subject=subject,
             body=body,
+        )
+
+        # Notify recipient of incoming direct message
+        from .activity import log_activity
+        log_activity(
+            recipient,
+            category='security',
+            action='direct_message_received',
+            message=f'New message from {sender.username}: "{(subject or body)[:40]}"',
+            metadata={
+                'sender_id': sender.id,
+                'sender_username': sender.username,
+                'message_id': message_obj.id,
+            },
         )
 
         serializer = DirectMessageSerializer(message_obj)

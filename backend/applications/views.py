@@ -28,12 +28,26 @@ class ApplicationViewSet(viewsets.ModelViewSet):
        def perform_create(self, serializer):
            application = serializer.save(developer=self.request.user)
            from accounts.activity import log_activity
+           # Log for developer
            log_activity(
                self.request.user,
                category='application',
                action='application_submitted',
                message=f"Applied to {application.job.title}",
                metadata={'job_id': application.job_id, 'application_id': application.id},
+           )
+           # Log notification for Company when candidate applies
+           dev_name = self.request.user.username
+           log_activity(
+               application.job.company,
+               category='application',
+               action='candidate_applied',
+               message=f"{dev_name} applied for {application.job.title}",
+               metadata={
+                   'job_id': application.job_id,
+                   'application_id': application.id,
+                   'developer_name': dev_name,
+               },
            )
 
        @action(detail=True, methods=['patch'], url_path='status')
