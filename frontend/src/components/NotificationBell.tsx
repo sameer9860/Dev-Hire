@@ -46,7 +46,7 @@ export function NotificationBell() {
     return () => document.removeEventListener('mousedown', onPointer);
   }, [open]);
 
-  if (!user || user.role !== 'developer') return null;
+  if (!user) return null;
 
   return (
     <div className="relative" data-notification-bell>
@@ -94,7 +94,7 @@ export function NotificationBell() {
               <div className="px-4 py-10 text-center">
                 <p className="text-sm font-medium text-zinc-900">No notifications yet</p>
                 <p className="mt-1 text-xs text-zinc-500">
-                  Activity from applications, bookmarks, and profile updates will show here.
+                  Messages, applications, and support submissions will show here.
                 </p>
               </div>
             ) : (
