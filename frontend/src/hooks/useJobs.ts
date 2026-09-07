@@ -52,3 +52,22 @@ export function useMyJobs() {
     enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
   });
 }
+
+export function useToggleJobActive() {
+  const queryClient = useQueryClient();
+  return useMutation<Job, Error, { id: number; is_active: boolean }>({
+    mutationFn: async ({ id, is_active }) => {
+      const { data } = await api.patch(`/jobs/${id}/`, { is_active });
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['my-jobs'] });
+      toast.success(`Job status set to ${data.is_active ? 'Active' : 'Inactive'}.`);
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to update job status.";
+      toast.error(errMsg);
+    }
+  });
+}

@@ -194,8 +194,18 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   const queryClient = useQueryClient();
   const { closeMobile } = useShell();
   const [mounted, setMounted] = useState(false);
+  const [jobsExpanded, setJobsExpanded] = useState(true);
 
   useEffect(() => setMounted(true), []);
+
+  const isCompanyJobsRoute =
+    pathname.startsWith('/dashboard/company/jobs') || pathname.startsWith('/jobs/post');
+
+  useEffect(() => {
+    if (isCompanyJobsRoute) {
+      setJobsExpanded(true);
+    }
+  }, [isCompanyJobsRoute]);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -226,7 +236,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
       'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
       collapsed ? 'justify-center px-2' : '',
       isActive(path)
-        ? 'bg-zinc-100 text-zinc-950'
+        ? 'bg-zinc-100 text-zinc-950 font-semibold'
         : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900',
     ].join(' ');
 
@@ -302,7 +312,49 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
         )}
 
         {mounted && user?.role === 'company' && (
-          <Item href="/jobs/post" path="/jobs/post" icon={PlusCircle} label="Post Job" />
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setJobsExpanded((prev) => !prev)}
+              className={[
+                'flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                collapsed ? 'justify-center px-2' : '',
+                isCompanyJobsRoute
+                  ? 'bg-zinc-100/90 text-zinc-950 font-semibold'
+                  : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900',
+              ].join(' ')}
+              title={collapsed ? 'Jobs' : undefined}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Briefcase className="h-4 w-4 shrink-0" />
+                {!collapsed && <span className="truncate">Jobs</span>}
+              </div>
+              {!collapsed && (
+                <ChevronDown
+                  className={`h-3.5 w-3.5 shrink-0 text-zinc-400 transition-transform duration-200 ${
+                    jobsExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              )}
+            </button>
+
+            {jobsExpanded && !collapsed && (
+              <div className="ml-4 space-y-1 border-l border-zinc-200 pl-2 mt-1">
+                <Item
+                  href="/dashboard/company/jobs"
+                  path="/dashboard/company/jobs"
+                  icon={Briefcase}
+                  label="All Jobs"
+                />
+                <Item
+                  href="/jobs/post"
+                  path="/jobs/post"
+                  icon={PlusCircle}
+                  label="Post Job"
+                />
+              </div>
+            )}
+          </div>
         )}
 
         {mounted && user && (
