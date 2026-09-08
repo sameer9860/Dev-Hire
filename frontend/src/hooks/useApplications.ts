@@ -64,3 +64,14 @@ export function useCompanyApplications() {
     retry: false,
   });
 }
+
+export function useApplication(id: number) {
+  return useQuery<Application>({
+    queryKey: ['application', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/applications/${id}/`);
+      return data;
+    },
+    enabled: !!id && typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
+  });
+}
