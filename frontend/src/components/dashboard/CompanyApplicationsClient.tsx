@@ -188,14 +188,14 @@ export function CompanyApplicationsClient() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl">
-              Manage Applicants
+              Candidates & Applicants
             </h1>
             <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
-              {allApplications.length} Total Applications
+              {allApplications.length} Total Candidates
             </span>
           </div>
           <p className="mt-1 text-sm text-zinc-500">
-            Review applicant qualifications, update candidate pipeline status, and download resumes.
+            Review candidate qualifications, access detail pages, update pipeline status, and download resumes.
           </p>
         </div>
       </div>

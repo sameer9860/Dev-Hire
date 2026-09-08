@@ -364,7 +364,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
               )}
             </div>
 
-            {/* Manage Applicants Collapsible */}
+            {/* Candidates / Applicants Collapsible */}
             <div className="space-y-1">
               <button
                 type="button"
@@ -376,11 +376,11 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
                     ? 'bg-zinc-100/90 text-zinc-950 font-semibold'
                     : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900',
                 ].join(' ')}
-                title={collapsed ? 'Manage Applicants' : undefined}
+                title={collapsed ? 'Candidates' : undefined}
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <Users className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="truncate">Manage Applicants</span>}
+                  {!collapsed && <span className="truncate">Candidates</span>}
                 </div>
                 {!collapsed && (
                   <ChevronDown
@@ -397,7 +397,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
                     href="/dashboard/company/applications"
                     path="/dashboard/company/applications"
                     icon={FileText}
-                    label="All Applications"
+                    label="All Candidates"
                   />
                   <Item
                     href="/dashboard/company/applications?tab=shortlisted"
