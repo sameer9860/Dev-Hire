@@ -196,23 +196,14 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   const queryClient = useQueryClient();
   const { closeMobile } = useShell();
   const [mounted, setMounted] = useState(false);
-  const [jobsExpanded, setJobsExpanded] = useState(true);
-  const [applicantsExpanded, setApplicantsExpanded] = useState(true);
+  const [jobsExpanded, setJobsExpanded] = useState(false);
+  const [applicantsExpanded, setApplicantsExpanded] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   const isCompanyJobsRoute =
     pathname.startsWith('/dashboard/company/jobs') || pathname.startsWith('/jobs/post');
   const isCompanyApplicantsRoute = pathname.startsWith('/dashboard/company/applications');
-
-  useEffect(() => {
-    if (isCompanyJobsRoute) {
-      setJobsExpanded(true);
-    }
-    if (isCompanyApplicantsRoute) {
-      setApplicantsExpanded(true);
-    }
-  }, [isCompanyJobsRoute, isCompanyApplicantsRoute]);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
