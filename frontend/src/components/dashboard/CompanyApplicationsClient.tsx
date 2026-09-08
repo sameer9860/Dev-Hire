@@ -416,6 +416,12 @@ export function CompanyApplicationsClient() {
                       {/* Actions */}
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <Link
+                            href={`/dashboard/company/applications/${app.id}`}
+                            className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
+                          >
+                            Details
+                          </Link>
                           <button
                             type="button"
                             onClick={() => toggleSaveApp(app.id)}
