@@ -26,7 +26,7 @@ Many companies rely on generic job boards that are not optimized for technical h
 
 ### Solution
 
-DevHire provides a centralized hiring platform tailored for software developers and technology companies. The system streamlines job posting, application management, applicant tracking, and profile management within a single platform.
+DevHire provides a centralized hiring platform tailored for software developers and technology companies. The system streamlines job posting, application management, applicant tracking, candidate evaluation, and profile management within a single unified platform.
 
 ### Target Users
 
@@ -38,45 +38,40 @@ DevHire provides a centralized hiring platform tailored for software developers 
 
 ### Key Features
 
-- Role-based authentication for Companies and Developers
-- Advanced job search and filtering
-- Job application management system
-- Applicant tracking workflow
+- Role-based authentication for Companies, Developers, and Admin
+- Advanced job search, filtering, and pagination
+- Specialized **Candidates & Applicants Management** page with real-time status counts and filters (All, Pending, Reviewing, Shortlisted, Accepted, Rejected, Saved)
+- Dedicated **Candidate Application Detail Page** (`/dashboard/company/applications/[id]`) for candidate evaluation, resume viewing, and internal recruitment notes
+- Collapsible sidebar navigation for seamless access to jobs and applicants
 - Public company and developer profiles
-- Responsive mobile-first design
-- SEO-friendly job pages
-- Secure JWT authentication
-
+- Responsive mobile-first design with dark mode accents
+- SEO-friendly job pages with dynamic metadata
+- Secure JWT authentication with OTP password reset & email verification
 
 ### Business Value
 
 - Reduces recruitment management overhead
-- Improves candidate discovery and application tracking
+- Improves candidate discovery and structured application tracking
 - Provides a focused hiring experience for the tech industry
 - Creates a scalable foundation for future recruitment services
 
 ### Future Expansion Opportunities
 
-- Resume parsing and AI-powered candidate matching
-- Premium company subscriptions
-- Featured job postings
-- Interview scheduling tools
-- Email notification automation
-- Analytics dashboard for recruiters
+- AI-powered candidate resume parsing and job matching
+- Premium company subscriptions & featured job listings
+- Integrated interview scheduling calendar
+- Automated email notification triggers
+- Recruiter analytics dashboard
 
 ### Project Status
 
-✅ MVP Completed
-
-✅ Production Deployment Available
-
-✅ Responsive UI
-
-✅ Authentication & Authorization Implemented
-
-✅ PostgreSQL Database Integration
-
-✅ Ready for Portfolio Demonstration and Further Scaling
+✅ MVP Completed  
+✅ Production Deployment Available  
+✅ Responsive UI & Modern Layout  
+✅ Dedicated Candidate Detail & Pipeline Management  
+✅ Authentication & Authorization Implemented  
+✅ PostgreSQL Database Integration  
+✅ Ready for Portfolio Demonstration and Further Scaling  
 
 ---
 
@@ -85,44 +80,53 @@ DevHire provides a centralized hiring platform tailored for software developers 
 ### Authentication & Roles
 
 - JWT authentication with access + refresh tokens (`djangorestframework-simplejwt`)
-- Role-based accounts: **Company** and **Developer**
-- Protected routes and role-specific dashboards
+- Role-based accounts: **Company**, **Developer**, and **Admin**
+- Protected routes, auth state hydration, and role-specific dashboards
+- Email verification & password reset with Redis OTP caching
 
 ### Jobs
 
-- Public job listings with search, filters, and pagination
-- Filters: job type, experience level, remote, salary range
-- Companies can create, update, and manage their own listings
+- Public job listings with live search, filters, and pagination
+- Filters: job type, experience level, remote option, salary range
+- Companies can create, edit, toggle status, and manage their listings
 - Dynamic SEO metadata on job detail pages
 
-### Applications
+### Applications & Candidate Management
 
-- Developers apply to jobs with cover letter and resume URL
-- Duplicate application prevention
+- Developers apply to jobs with cover letters and attached resume URLs
+- Duplicate application prevention per job
 - Application status workflow: `pending` → `reviewing` → `shortlisted` → `accepted` / `rejected`
-- Company dashboard to review and update applicant status
-- Developer dashboard to track application history
+- Dedicated **Candidates & Applicants** view (`/dashboard/company/applications`) with search, sorting, bookmarking, and tab filtering
+- Standalone **Application Detail Page** (`/dashboard/company/applications/[id]`) with:
+  - Deep candidate profile inspection & skills overview
+  - Direct resume download / external document link
+  - Real-time status pipeline updates & saveable internal evaluation notes
+- Developer dashboard to track application status history
+
+### Navigation & UI Shell
+
+- Collapsible sidebar navigation with user-controlled expand/collapse behavior (`Jobs` and `Candidates`)
+- Notification bell & user account dropdown menu
+- Skeletons and empty state feedback for smooth user feedback
 
 ### Profiles
 
 - Public developer/company profile pages (`/profile/[username]`)
-- Role-based profile editing (skills, portfolio, company info)
+- Role-based profile editing (skills, bio, social links, company details)
 
-### Frontend
+### Frontend Architecture
 
 - Next.js App Router with Server + Client component split
-- TypeScript strict mode with shared API types
-- TanStack Query for data fetching and caching
-- React Hook Form + Zod validation
-- Route-level `loading.tsx` skeletons
-- Responsive design (mobile → desktop)
+- TypeScript strict mode with shared API interfaces
+- TanStack Query v5 for client-side data fetching and mutation caching
+- React Hook Form + Zod schema validation
 - Toast notifications with Sonner
 
-### Backend
+### Backend Architecture
 
 - Django REST Framework with filtering, search, and ordering
 - Pytest test suite for auth, jobs, and applications
-- Production deploy with Gunicorn + WhiteNoise on Railway
+- Production deployment with Gunicorn + WhiteNoise on Railway
 
 ---
 
@@ -130,11 +134,12 @@ DevHire provides a centralized hiring platform tailored for software developers 
 
 | Layer         | Technology                                                |
 | ------------- | --------------------------------------------------------- |
-| Frontend      | Next.js 16, React 19, TypeScript, Tailwind CSS, shadcn/ui |
+| Frontend      | Next.js 16, React 19, TypeScript, Tailwind CSS, Lucide icons |
 | Data fetching | TanStack Query v5, Axios                                  |
 | Forms         | React Hook Form + Zod                                     |
 | Backend       | Django 6, Django REST Framework                           |
 | Auth          | JWT (simplejwt)                                           |
+| Caching       | Redis (OTP caching)                                       |
 | Database      | PostgreSQL                                                |
 | Testing       | pytest, pytest-django                                     |
 | Local dev     | Docker Compose                                            |
@@ -147,9 +152,9 @@ DevHire provides a centralized hiring platform tailored for software developers 
 ```
 devhire/
 ├── backend/                    # Django REST API
-│   ├── accounts/               # Auth, users, profiles
-│   ├── jobs/                   # Job listings
-│   ├── applications/           # Job applications
+│   ├── accounts/               # Auth, users, profiles, OTP handlers
+│   ├── jobs/                   # Job listings & management
+│   ├── applications/           # Applications, candidate detail & status tracking
 │   ├── core/                   # Settings, URLs, WSGI
 │   ├── db_dump.sql             # Seed data for local Docker
 │   ├── Dockerfile              # Used by Railway + local Docker
@@ -160,9 +165,23 @@ devhire/
 ├── frontend/                   # Next.js app
 │   ├── src/
 │   │   ├── app/                # App Router pages
-│   │   ├── components/         # UI + feature components
-│   │   ├── hooks/              # React Query hooks
-│   │   ├── lib/                # API client, auth helpers
+│   │   │   └── dashboard/
+│   │   │       ├── company/
+│   │   │       │   ├── applications/
+│   │   │       │   │   ├── page.tsx          # Candidates list page
+│   │   │       │   │   └── [id]/page.tsx     # Candidate detail page
+│   │   │       │   └── jobs/
+│   │   │       ├── developer/
+│   │   │       ├── admin/
+│   │   │       └── messages/
+│   │   ├── components/         # UI & feature components
+│   │   │   ├── dashboard/
+│   │   │   │   ├── CompanyApplicationsClient.tsx
+│   │   │   │   ├── CompanyApplicationDetailClient.tsx
+│   │   │   │   └── CompanyDashboard.tsx
+│   │   │   └── AppShell.tsx
+│   │   ├── hooks/              # React Query hooks (useApplications, useAuth, etc.)
+│   │   ├── lib/                # API client, auth helpers, cookies
 │   │   ├── schemas/            # Zod schemas
 │   │   └── types/              # TypeScript interfaces
 │   ├── Dockerfile
@@ -215,12 +234,6 @@ cp docker-compose.example.yml docker-compose.yml
 docker compose up --build
 ```
 
-For local development, override the backend command in `docker-compose.yml`:
-
-```yaml
-command: python manage.py runserver 0.0.0.0:8000
-```
-
 ### 4. Open the app
 
 | Service           | URL                         |
@@ -229,8 +242,6 @@ command: python manage.py runserver 0.0.0.0:8000
 | Backend API       | http://localhost:8000/api   |
 | Django Admin      | http://localhost:8000/admin |
 | PostgreSQL (host) | localhost:5433              |
-
-> `db_dump.sql` loads automatically on first database startup. To reload seed data: `docker compose down -v` then `docker compose up --build`.
 
 ---
 
@@ -286,11 +297,12 @@ npm run dev
 
 ### Applications (`/api/applications/`)
 
-| Method | Endpoint              | Description                    |
-| ------ | --------------------- | ------------------------------ |
-| GET    | `/applications/`      | List applications (role-based) |
-| POST   | `/applications/`      | Apply to job (developer only)  |
-| PATCH  | `/applications/<id>/` | Update status (company only)   |
+| Method | Endpoint                    | Description                                  |
+| ------ | --------------------------- | -------------------------------------------- |
+| GET    | `/applications/`            | List applications (role-based filterable)    |
+| POST   | `/applications/`            | Apply to job (developer only)                |
+| GET    | `/applications/<id>/`       | Single application detail (company/applicant)|
+| PATCH  | `/applications/<id>/`       | Update status & internal notes (company only)|
 
 ### Health
 
@@ -311,7 +323,7 @@ Tests cover:
 
 - User registration and JWT login
 - Job CRUD permissions (company vs developer)
-- Application flow and status updates
+- Application flow, detail fetching, and status updates
 - Duplicate application prevention
 
 ---
@@ -333,10 +345,7 @@ CORS_ALLOWED_ORIGINS=https://your-app.vercel.app
 CSRF_TRUSTED_ORIGINS=https://your-app.vercel.app
 FRONTEND_URL=https://your-app.vercel.app
 
-# Required for forgot-password / change-email OTPs across workers
 REDIS_URL=<redis or upstash rediss://...>
-
-# Required in production (SMTP). Without these, codes never arrive.
 EMAIL_HOST=smtp.example.com
 EMAIL_PORT=587
 EMAIL_HOST_USER=...
@@ -371,32 +380,6 @@ NEXT_PUBLIC_API_URL=https://your-backend.up.railway.app/api
 | Utility types       | `Partial<JobFilters>`, `Record<ApplicationStatus, string>` |
 | Zod inference       | `z.infer<typeof schema>` in form schemas                   |
 | Type guards         | Role-based UI rendering (company vs developer)             |
-
----
-
-## Environment Variables
-
-### Backend (`.env`)
-
-| Variable                                                      | Description                           |
-| ------------------------------------------------------------- | ------------------------------------- |
-| `DJANGO_SECRET_KEY`                                           | Django secret key                     |
-| `DEBUG`                                                       | `True` locally, `False` in production |
-| `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_HOST` / `DB_PORT` | Local PostgreSQL                      |
-| `DATABASE_URL`                                                | Railway PostgreSQL (production)       |
-| `ALLOWED_HOSTS`                                               | Comma-separated allowed hosts         |
-| `CORS_ALLOWED_ORIGINS`                                        | Frontend origin(s)                    |
-| `CSRF_TRUSTED_ORIGINS`                                        | Trusted origins for CSRF (production) |
-| `FRONTEND_URL`                                                | Frontend origin (OAuth / links)       |
-| `REDIS_URL`                                                   | Shared OTP cache (Upstash/Redis)      |
-| `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` / `EMAIL_USE_TLS` / `DEFAULT_FROM_EMAIL` | SMTP for password reset & email change |
-
-### Frontend (`.env.local` / Vercel)
-
-| Variable               | Description                      |
-| ---------------------- | -------------------------------- |
-| `NEXT_PUBLIC_API_URL`  | Backend API base URL             |
-| `NEXT_PUBLIC_SITE_URL` | Site URL for metadata (optional) |
 
 ---
 
