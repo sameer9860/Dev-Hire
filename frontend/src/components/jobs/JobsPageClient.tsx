@@ -7,6 +7,8 @@ import { useJobs } from '@/hooks/useJobs';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobCardSkeleton } from '@/components/jobs/JobCardSkeleton';
 import { JobDetailClient } from '@/components/jobs/JobDetailClient';
+import { JobDetailSkeleton } from '@/components/jobs/JobDetailSkeleton';
+import { JobsPageSkeleton } from '@/components/jobs/JobsPageSkeleton';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
 import { Pagination } from '@/components/jobs/Pagination';
 import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
@@ -237,7 +239,18 @@ function JobsContent() {
           <div className="col-span-1">
             {/* Desktop master-detail list with Up/Down Slider Navigator */}
             <div className="hidden lg:block space-y-3">
-              {jobs.length > 0 && (
+              {isLoading && (
+                <>
+                  <div className="h-10 rounded-xl bg-zinc-50 border border-zinc-200 animate-pulse" />
+                  <div className="space-y-3 max-h-[calc(100vh-230px)] overflow-hidden">
+                    {[...Array(4)].map((_, i) => (
+                      <JobCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {!isLoading && jobs.length > 0 && (
                 <div className="flex items-center justify-between p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs shadow-xs">
                   <span className="font-semibold text-zinc-700">
                     Job {currentIndex >= 0 ? currentIndex + 1 : 0} of {jobs.length}
@@ -263,39 +276,51 @@ function JobsContent() {
                 </div>
               )}
 
-              <div className="space-y-3 max-h-[calc(100vh-230px)] overflow-y-auto pr-1 scroll-smooth">
-                {jobs.map((job, index) => (
-                  <div
-                    key={job.id}
-                    ref={(el) => { jobCardRefs.current[job.id] = el; }}
-                    onClick={() => setSelectedJobId(job.id)}
-                    className={`cursor-pointer transition-all ${selectedJobId === job.id ? 'ring-2 ring-blue-500 rounded-2xl shadow-sm' : ''}`}
-                  >
-                    <JobCard job={job} index={index} />
-                  </div>
-                ))}
-              </div>
+              {!isLoading && (
+                <div className="space-y-3 max-h-[calc(100vh-230px)] overflow-y-auto pr-1 scroll-smooth">
+                  {jobs.map((job, index) => (
+                    <div
+                      key={job.id}
+                      ref={(el) => { jobCardRefs.current[job.id] = el; }}
+                      onClick={() => setSelectedJobId(job.id)}
+                      className={`cursor-pointer transition-all ${selectedJobId === job.id ? 'ring-2 ring-blue-500 rounded-2xl shadow-sm' : ''}`}
+                    >
+                      <JobCard job={job} index={index} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Mobile: grid of cards as before */}
             <div className="block lg:hidden">
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {jobs.map((job, index) => (
-                  <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-[1.01] transition-transform duration-200">
-                    <JobCard job={job} index={index} />
-                  </Link>
-                ))}
-              </div>
+              {isLoading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {[...Array(4)].map((_, i) => (
+                    <JobCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {jobs.map((job, index) => (
+                    <Link href={`/jobs/${job.id}`} key={job.id} className="block hover:scale-[1.01] transition-transform duration-200">
+                      <JobCard job={job} index={index} />
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
             {/* Pagination (desktop & mobile) */}
-            <div className="mt-6">
-              <Pagination
-                currentPage={page}
-                totalCount={data?.count ?? 0}
-                pageSize={10}
-                onPageChange={handlePageChange}
-              />
-            </div>
+            {!isLoading && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={page}
+                  totalCount={data?.count ?? 0}
+                  pageSize={10}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            )}
           </div>
 
           {/* Right: Details (desktop) or below content (mobile) */}
@@ -317,12 +342,10 @@ function JobsContent() {
               </div>
             )}
 
-            {/* Loading */}
+            {/* Loading — same detail skeleton as JobDetailClient */}
             {isLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                  <JobCardSkeleton key={i} />
-                ))}
+              <div className="hidden lg:block">
+                <JobDetailSkeleton embedded />
               </div>
             )}
 
@@ -421,14 +444,7 @@ function JobsContent() {
 
 export default function JobsPageClient() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-white space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-          <p className="text-gray-500 text-sm font-medium">Loading search interface...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<JobsPageSkeleton />}>
       <JobsContent />
     </Suspense>
   );

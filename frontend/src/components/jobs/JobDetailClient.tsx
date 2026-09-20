@@ -8,6 +8,7 @@ import { useMe } from '@/hooks/useAuth';
 import { useMyApplications } from '@/hooks/useApplications';
 import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { ApplyModal } from '@/components/jobs/ApplyModal';
+import { JobDetailSkeleton } from '@/components/jobs/JobDetailSkeleton';
 import { Bookmark } from 'lucide-react';
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -41,18 +42,7 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
 
   /* ───── Loading ───── */
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50/50 flex items-center justify-center">
-        <div className="animate-pulse space-y-6 w-full max-w-5xl px-4 py-12">
-          <div className="h-6 bg-slate-200 rounded w-32 animate-pulse" />
-          <div className="bg-white rounded-2xl p-8 space-y-4 border border-slate-100 shadow-sm animate-pulse">
-            <div className="h-8 bg-slate-200 rounded w-2/3" />
-            <div className="h-4 bg-slate-100 rounded w-1/3" />
-            <div className="h-32 bg-slate-50 rounded w-full mt-6" />
-          </div>
-        </div>
-      </div>
-    );
+    return <JobDetailSkeleton embedded={showFullPageLink} />;
   }
 
   /* ───── Error ───── */
