@@ -370,6 +370,7 @@ export function AdminDashboard() {
                 <table className="w-full text-left text-sm">
                   <thead className="border-b border-zinc-100 bg-zinc-50/80 text-xs font-semibold uppercase text-zinc-500">
                     <tr>
+                      <th className="px-4 py-3.5 text-center">S.N</th>
                       <th className="px-6 py-3.5">User</th>
                       <th className="px-6 py-3.5">Role</th>
                       <th className="px-6 py-3.5">Status</th>
@@ -378,8 +379,11 @@ export function AdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
-                    {usersList.map((user) => (
+                    {usersList.map((user, idx) => (
                       <tr key={user.id} className="hover:bg-zinc-50/50 transition">
+                        <td className="px-4 py-4 text-center text-xs font-semibold text-zinc-400">
+                          {idx + 1}
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <UserAvatar src={user.avatar_url} name={user.username} size="md" />
@@ -695,7 +699,7 @@ export function AdminDashboard() {
                           const replyText = replyMessageState[msg.id];
                           if (!replyText) return;
                           updateContactMutation.mutate(
-                            { id: msg.id, reply: replyText, status: 'resolved' },
+                            { id: msg.id, reply: replyText },
                             {
                               onSuccess: () => {
                                 setReplyMessageState((prev) => ({ ...prev, [msg.id]: '' }));
