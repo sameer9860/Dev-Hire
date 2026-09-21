@@ -22,6 +22,8 @@ urlpatterns = [
     path('password-reset/', views.PasswordResetRequestView.as_view()),
     path('password-reset-verify-otp/', views.PasswordResetVerifyOTPView.as_view()),
     path('password-reset-confirm/', views.PasswordResetConfirmView.as_view()),
+    path('reactivate/request-otp/', views.ReactivateRequestOTPView.as_view()),
+    path('reactivate/verify-otp/', views.ReactivateVerifyOTPView.as_view()),
        path('delete-account/', views.DeleteAccountView.as_view()),
        # Day 16 — Profile endpoints
        path('profile/', views.ProfileUpdateView.as_view()),

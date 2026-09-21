@@ -1008,10 +1008,24 @@ class AdminStatsView(APIView):
         })
 
 
+def sync_inactive_users():
+    """Auto-disable non-superuser accounts inactive for > 30 days based on last_login or date_joined."""
+    from datetime import timedelta
+    from django.utils import timezone
+    cutoff = timezone.now() - timedelta(days=30)
+    User.objects.filter(
+        is_active=True,
+        is_superuser=False
+    ).filter(
+        Q(last_login__lt=cutoff) | Q(last_login__isnull=True, date_joined__lt=cutoff)
+    ).update(is_active=False)
+
+
 class AdminUserListView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        sync_inactive_users()
         queryset = User.objects.all().order_by('-date_joined')
         role = request.query_params.get('role')
         search = request.query_params.get('search')
@@ -1144,6 +1158,7 @@ class AdminContactMessageDetailView(APIView):
 
     def patch(self, request, pk):
         msg = generics.get_object_or_404(ContactMessage, pk=pk)
+        old_status = msg.status
         msg_status = request.data.get('status')
         admin_notes = request.data.get('admin_notes')
         reply_body = (request.data.get('reply') or '').strip()
@@ -1154,11 +1169,37 @@ class AdminContactMessageDetailView(APIView):
             msg.admin_notes = admin_notes
         msg.save()
 
-        if reply_body:
-            recipient_user = msg.user
-            if not recipient_user and msg.email:
-                recipient_user = User.objects.filter(email__iexact=msg.email).first()
+        recipient_user = msg.user
+        if not recipient_user and msg.email:
+            recipient_user = User.objects.filter(email__iexact=msg.email).first()
 
+        from .activity import log_activity
+
+        # Notify user via ActivityLog notification on status change
+        if recipient_user and msg_status and msg_status != old_status:
+            if msg_status == 'in_progress':
+                log_activity(
+                    recipient_user,
+                    category='support',
+                    action='contact_in_progress',
+                    message=f'Support Admin updated your contact submission "{msg.subject}" status to In Progress.'
+                )
+            elif msg_status == 'resolved':
+                log_activity(
+                    recipient_user,
+                    category='support',
+                    action='contact_resolved',
+                    message=f'Support Admin marked your contact submission "{msg.subject}" as Resolved.'
+                )
+            elif msg_status == 'pending':
+                log_activity(
+                    recipient_user,
+                    category='support',
+                    action='contact_pending',
+                    message=f'Support Admin updated your contact submission "{msg.subject}" status to Pending.'
+                )
+
+        if reply_body:
             if recipient_user:
                 DirectMessage.objects.create(
                     sender=request.user,
@@ -1166,9 +1207,107 @@ class AdminContactMessageDetailView(APIView):
                     subject=f"Re: {msg.subject}",
                     body=reply_body,
                 )
+                log_activity(
+                    recipient_user,
+                    category='support',
+                    action='contact_reply',
+                    message=f'Support Admin replied to your contact submission "{msg.subject}": {reply_body[:60]}...'
+                )
 
         serializer = ContactMessageSerializer(msg)
         return Response(serializer.data)
+
+
+class ReactivateRequestOTPView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        if not email:
+            return Response({'detail': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email__iexact=email).first()
+        if not user:
+            return Response({'detail': 'If an inactive account exists for this email, a verification code has been sent.'})
+
+        otp_code = f"{random.randint(100000, 999999)}"
+        cache_key = f"reactivate_otp:{email}"
+        cache.set(cache_key, {'otp': otp_code, 'user_id': user.id, 'attempts': 0}, timeout=600)
+
+        try:
+            send_mail(
+                subject="Reactivate your DevHire Account - Verification Code",
+                message=(
+                    f"Hello {user.username},\n\n"
+                    f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
+                    f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
+                    f"This code will expire in 10 minutes."
+                ),
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass
+
+        return Response({'detail': 'A new 6-digit verification code has been sent to your email.'})
+
+
+class ReactivateVerifyOTPView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        otp = (request.data.get('otp') or '').strip()
+
+        if not email or not otp:
+            return Response({'detail': 'Email and OTP verification code are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = f"reactivate_otp:{email}"
+        otp_data = cache.get(cache_key)
+
+        if not otp_data:
+            return Response({'detail': 'Verification code expired or invalid. Please request a new code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp_data.get('attempts', 0) >= 5:
+            cache.delete(cache_key)
+            return Response({'detail': 'Too many failed verification attempts. Please request a new code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if otp_data.get('otp') != otp:
+            otp_data['attempts'] = otp_data.get('attempts', 0) + 1
+            cache.set(cache_key, otp_data, timeout=600)
+            return Response({'detail': 'Invalid verification code. Please check your email and try again.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(pk=otp_data['user_id']).first()
+        if not user:
+            user = User.objects.filter(email__iexact=email).first()
+
+        if not user:
+            return Response({'detail': 'User account not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from django.utils import timezone
+        user.is_active = True
+        user.last_login = timezone.now()
+        user.save()
+
+        cache.delete(cache_key)
+
+        from .activity import log_activity
+        log_activity(
+            user,
+            category='security',
+            action='account_reactivated',
+            message='Account reactivated successfully via email OTP verification.'
+        )
+
+        tokens = issue_tokens_for_user(user)
+        user_data = UserSerializer(user).data
+        return Response({
+            'access': tokens['access'],
+            'refresh': tokens['refresh'],
+            'user': user_data,
+            'detail': 'Account reactivated and signed in successfully.'
+        })
 
 
 class MessageableUsersView(APIView):
