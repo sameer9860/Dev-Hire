@@ -53,9 +53,56 @@ export function useLogin() {
       router.push('/jobs');
     },
     onError: (error: any) => {
-      const errMsg = error.response?.data?.detail || error.response?.data?.non_field_errors?.[0] || error.message || "Failed to sign in.";
-      toast.error(errMsg);
+      const responseData = error.response?.data;
+      if (!responseData?.inactive_verification_required) {
+        const errMsg = responseData?.detail || responseData?.non_field_errors?.[0] || error.message || "Failed to sign in.";
+        toast.error(errMsg);
+      }
     }
+  });
+}
+
+export function useReactivateVerifyOTP() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: { email: string; otp: string }) => {
+      const { data } = await api.post('/auth/reactivate/verify-otp/', payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      localStorage.setItem('access_token', data.access);
+      localStorage.setItem('refresh_token', data.refresh);
+
+      const MAX_AGE = 30 * 24 * 60 * 60;
+      setCookie('access_token', data.access, MAX_AGE);
+      setCookie('refresh_token', data.refresh, MAX_AGE);
+
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success(data.detail || "Account reactivated! Welcome back.");
+      router.push('/jobs');
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || "Failed to verify OTP code.";
+      toast.error(errMsg);
+    },
+  });
+}
+
+export function useReactivateRequestOTP() {
+  return useMutation({
+    mutationFn: async (payload: { email: string }) => {
+      const { data } = await api.post('/auth/reactivate/request-otp/', payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.detail || "Verification code sent to your email.");
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || "Failed to send verification code.";
+      toast.error(errMsg);
+    },
   });
 }
 
