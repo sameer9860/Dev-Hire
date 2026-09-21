@@ -322,3 +322,39 @@ class TestAuthenticationAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert "https://testproject.supabase.co/storage/v1/object/public/test-bucket/uploads/" in response.data["url"]
 
+    def test_inactivity_autodisable_and_otp_reactivation(self, api_client, django_user_model):
+        from datetime import timedelta
+        from django.utils import timezone
+        from django.core.cache import cache
+
+        user = django_user_model.objects.create_user(
+            username="inactive_dev",
+            email="inactive@test.com",
+            password="Password1!",
+            role="developer"
+        )
+        user.last_login = timezone.now() - timedelta(days=35)
+        user.save()
+
+        resp = api_client.post("/api/auth/login/", {"email": "inactive@test.com", "password": "Password1!"})
+        assert resp.status_code == status.HTTP_400_BAD_REQUEST
+        assert bool(resp.data.get("inactive_verification_required")) is True
+
+        user.refresh_from_db()
+        assert user.is_active is False
+
+        cache_key = "reactivate_otp:inactive@test.com"
+        otp_data = cache.get(cache_key)
+        assert otp_data is not None
+        otp_code = otp_data["otp"]
+
+        reactivate_resp = api_client.post("/api/auth/reactivate/verify-otp/", {
+            "email": "inactive@test.com",
+            "otp": otp_code
+        })
+        assert reactivate_resp.status_code == status.HTTP_200_OK
+        assert "access" in reactivate_resp.data
+
+        user.refresh_from_db()
+        assert user.is_active is True
+
