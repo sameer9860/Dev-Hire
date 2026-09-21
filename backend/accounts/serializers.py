@@ -47,6 +47,48 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if user is None or not user.check_password(password):
             raise serializers.ValidationError({'detail': 'No active account found with the given credentials'})
 
+        # Check 30-day inactivity cutoff for non-superusers
+        if not user.is_superuser:
+            from datetime import timedelta
+            from django.utils import timezone
+            cutoff = timezone.now() - timedelta(days=30)
+            last_active = user.last_login or user.date_joined
+            if last_active and last_active < cutoff and user.is_active:
+                user.is_active = False
+                user.save(update_fields=['is_active'])
+
+        if not user.is_active:
+            import random
+            from django.core.cache import cache
+            from django.core.mail import send_mail
+            from django.conf import settings
+
+            otp_code = f"{random.randint(100000, 999999)}"
+            cache_key = f"reactivate_otp:{user.email.lower()}"
+            cache.set(cache_key, {'otp': otp_code, 'user_id': user.id, 'attempts': 0}, timeout=600)
+
+            try:
+                send_mail(
+                    subject="Reactivate your DevHire Account - Verification Code",
+                    message=(
+                        f"Hello {user.username},\n\n"
+                        f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
+                        f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
+                        f"This code will expire in 10 minutes."
+                    ),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+
+            raise serializers.ValidationError({
+                'detail': 'Your account has been deactivated due to 30 days of inactivity or administrator action. A 6-digit verification code has been sent to your email to reactivate your account.',
+                'inactive_verification_required': True,
+                'email': user.email,
+            })
+
         attrs['username'] = user.username
         return super().validate(attrs)
 
@@ -141,7 +183,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'bio', 'avatar_url',
+        fields = ['id', 'username', 'email', 'role', 'is_active', 'date_joined', 'last_login', 'bio', 'avatar_url',
                   'company_name', 'company_website', 'company_size',
                   'company_category', 'company_founded', 'company_location', 'company_address',
                   'company_photos', 'company_social_links',
@@ -150,7 +192,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'first_name', 'last_name', 'gender', 'date_of_birth',
                   'address', 'province', 'city', 'current_address', 'social_links',
                   'education', 'experience', 'projects', 'achievements', 'training', 'languages']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'date_joined', 'last_login']
 
 
 class DeveloperProfileSerializer(serializers.ModelSerializer):
