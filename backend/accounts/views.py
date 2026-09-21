@@ -1060,6 +1060,9 @@ class AdminUserDetailView(APIView):
 
         if is_active is not None:
             target_user.is_active = bool(is_active)
+            if target_user.is_active:
+                from django.utils import timezone
+                target_user.last_login = timezone.now()
         if role in ['developer', 'company', 'admin']:
             target_user.role = role
             if role == 'admin':
