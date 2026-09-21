@@ -71,6 +71,7 @@ class ActivityLog(models.Model):
         ('bookmark', 'Bookmark'),
         ('profile', 'Profile'),
         ('security', 'Security'),
+        ('support', 'Support'),
     ]
 
     user = models.ForeignKey(
