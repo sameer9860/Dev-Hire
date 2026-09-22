@@ -44,6 +44,7 @@ export function useUpdateApplicationStatus() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['company-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
       toast.success(`Application status updated to "${data.status}"`);
     },
     onError: (error: any) => {

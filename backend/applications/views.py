@@ -45,6 +45,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                message=f"{dev_name} applied for {application.job.title}",
                metadata={
                    'job_id': application.job_id,
+                   'job_title': application.job.title,
                    'application_id': application.id,
                    'developer_name': dev_name,
                },
@@ -64,6 +65,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                from accounts.activity import log_activity
                status_label = updated_app.get_status_display()
                company_name = updated_app.job.company.company_name or updated_app.job.company.username
+               developer_name = updated_app.developer.username
                log_activity(
                    user=updated_app.developer,
                    category='application',
@@ -75,6 +77,20 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                        'application_id': updated_app.id,
                        'status': updated_app.status,
                        'company_name': company_name,
+                   },
+               )
+               # Confirm pipeline change for the company inbox
+               log_activity(
+                   user=updated_app.job.company,
+                   category='application',
+                   action='application_status_updated',
+                   message=f"You marked {developer_name} as {status_label} for {updated_app.job.title}.",
+                   metadata={
+                       'job_id': updated_app.job_id,
+                       'job_title': updated_app.job.title,
+                       'application_id': updated_app.id,
+                       'status': updated_app.status,
+                       'developer_name': developer_name,
                    },
                )
 

@@ -11,6 +11,7 @@ export function useActivityLog() {
     },
     enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
     retry: false,
+    refetchInterval: 60_000,
   });
 }
 

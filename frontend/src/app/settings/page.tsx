@@ -42,10 +42,10 @@ export default function SettingsPage() {
     );
   }
 
-  return <SettingsContent username={user.username} />;
+  return <SettingsContent username={user.username} role={user.role} />;
 }
 
-function SettingsContent({ username }: { username: string }) {
+function SettingsContent({ username, role }: { username: string; role: string }) {
   const changePassword = useChangePassword();
   const deleteAccount = useDeleteAccount();
   const changeEmailRequest = useChangeEmailRequest();
@@ -62,6 +62,10 @@ function SettingsContent({ username }: { username: string }) {
     new_internship: true,
     preferred_internship: true,
     preferred_job: true,
+    new_applicants: true,
+    pipeline_updates: true,
+    messages: true,
+    account_alerts: true,
   });
   const [emailChangeEmail, setEmailChangeEmail] = useState('');
   const [emailChangeOtp, setEmailChangeOtp] = useState('');
@@ -371,11 +375,19 @@ function SettingsContent({ username }: { username: string }) {
             </div>
             <div className="min-w-0">
               <h2 className="text-lg font-semibold text-zinc-950">Notification settings</h2>
-              <p className="mt-0.5 text-sm text-zinc-500">Choose which notifications you&apos;d like to receive.</p>
+              <p className="mt-0.5 text-sm text-zinc-500">
+                {role === 'company'
+                  ? 'Choose which hiring and account alerts you want to receive.'
+                  : "Choose which notifications you'd like to receive."}
+              </p>
             </div>
           </div>
 
-          <NotificationSettings settings={notificationSettings} onToggle={toggleNotificationSetting} />
+          <NotificationSettings
+            role={role}
+            settings={notificationSettings}
+            onToggle={toggleNotificationSetting}
+          />
         </section>
 
         {/* Danger zone */}
@@ -458,18 +470,24 @@ function SettingsContent({ username }: { username: string }) {
 }
 
 function NotificationSettings({
+  role,
   settings,
   onToggle,
 }: {
+  role: string;
   settings: {
     all_notifications: boolean;
     new_internship: boolean;
     preferred_internship: boolean;
     preferred_job: boolean;
+    new_applicants: boolean;
+    pipeline_updates: boolean;
+    messages: boolean;
+    account_alerts: boolean;
   };
-  onToggle: (key: 'all_notifications' | 'new_internship' | 'preferred_internship' | 'preferred_job') => void;
+  onToggle: (key: keyof typeof settings) => void;
 }) {
-  const items = [
+  const developerItems = [
     {
       key: 'all_notifications' as const,
       title: 'All notifications',
@@ -491,6 +509,36 @@ function NotificationSettings({
       description: 'Alerts matching your saved job preferences and skills',
     },
   ];
+
+  const companyItems = [
+    {
+      key: 'all_notifications' as const,
+      title: 'All hiring alerts',
+      description: 'Receive applicants, pipeline, message, and account alerts',
+    },
+    {
+      key: 'new_applicants' as const,
+      title: 'New applicants',
+      description: 'Get notified when a developer applies to one of your jobs',
+    },
+    {
+      key: 'pipeline_updates' as const,
+      title: 'Pipeline updates',
+      description: 'Confirmations when you shortlist, accept, or reject candidates',
+    },
+    {
+      key: 'messages' as const,
+      title: 'Messages',
+      description: 'Alerts when candidates or contacts send you a direct message',
+    },
+    {
+      key: 'account_alerts' as const,
+      title: 'Account & security',
+      description: 'Password, email, and company profile security notices',
+    },
+  ];
+
+  const items = role === 'company' ? companyItems : developerItems;
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
