@@ -383,7 +383,7 @@ export function CompanyJobsClient() {
                       <td className="px-4 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
-                            href="/dashboard/company#manage-candidates"
+                            href={`/dashboard/company/applications?job=${job.id}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
                           >
                             <Users className="h-3.5 w-3.5 text-zinc-500" />

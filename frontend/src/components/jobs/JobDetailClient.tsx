@@ -31,13 +31,19 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
 
   const { data: job, isLoading, isError } = useJob(jobId);
   const { data: meData } = useMe();
+  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
+  const isDeveloper = meData?.role === 'developer';
+  const isCompany = meData?.role === 'company';
+
+  // Only developers have "my applications"; companies get all applicants for their jobs
+  // from the same endpoint, so never use it for already-applied checks.
   const { data: myApps } = useMyApplications();
   const toggleBookmark = useToggleBookmark();
 
-  const isLoggedIn = typeof window !== 'undefined' && !!localStorage.getItem('access_token');
-  const isDeveloper = meData?.role === 'developer';
-
-  const alreadyApplied = myApps?.results?.some((app) => app.job.id === jobId) ?? false;
+  const alreadyApplied =
+    isDeveloper && (myApps?.results?.some((app) => app.job.id === jobId) ?? false);
+  const isOwnCompanyJob =
+    isCompany && !!meData && !!job && job.company.username === meData.username;
   const isSaved = job?.is_saved ?? false;
 
   /* ───── Loading ───── */
@@ -163,11 +169,18 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
                   {isSaved ? 'Saved' : 'Save Job'}
                 </button>
               )}
-              {alreadyApplied ? (
+              {isDeveloper && alreadyApplied ? (
                 <div className="inline-flex items-center justify-center bg-emerald-50 border border-emerald-100/70 text-emerald-700 text-xs font-bold px-5 py-2.5 rounded-lg">
                   ✓ Already Applied
                 </div>
-              ) : (
+              ) : isOwnCompanyJob ? (
+                <Link
+                  href={`/dashboard/company/applications?job=${jobId}`}
+                  className="w-full md:w-auto inline-flex items-center justify-center bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white text-xs font-semibold px-6 py-2.5 rounded-lg hover:-translate-y-0.5 shadow-sm hover:shadow transition-all duration-200"
+                >
+                  View Applicants ({job.application_count})
+                </Link>
+              ) : !isCompany ? (
                 <button
                   onClick={() => {
                     if (!isLoggedIn) { router.push('/login'); return; }
@@ -178,7 +191,7 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
                 >
                   Apply Now
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -313,9 +326,9 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
               </div>
             </div>
 
-            {/* Apply CTA Card - Indigo Theme */}
+            {/* Apply CTA Card - Indigo Theme (developers) / Applicants (company owners) */}
             <div className="bg-indigo-50/15 border border-indigo-100/40 rounded-2xl p-6 shadow-sm hover:shadow-md hover:bg-indigo-50/35 hover:border-indigo-200 transition-all duration-300 text-center space-y-4">
-              {alreadyApplied ? (
+              {isDeveloper && alreadyApplied ? (
                 <div className="space-y-2 py-1">
                   <p className="font-bold text-indigo-950 text-sm">✓ You've Applied</p>
                   <p className="text-indigo-800/60 text-xs mb-3">Track your status in your dashboard.</p>
@@ -325,6 +338,24 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
                   >
                     View Dashboard
                   </Link>
+                </div>
+              ) : isOwnCompanyJob ? (
+                <div className="space-y-3 py-1">
+                  <p className="font-bold text-indigo-950 text-sm">Review applicants</p>
+                  <p className="text-indigo-800/60 text-xs">
+                    {job.application_count} candidate{job.application_count === 1 ? '' : 's'} applied for this role.
+                  </p>
+                  <Link
+                    href={`/dashboard/company/applications?job=${jobId}`}
+                    className="block w-full bg-indigo-650 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm hover:shadow transition-all duration-200 text-xs"
+                  >
+                    View Applicants
+                  </Link>
+                </div>
+              ) : isCompany ? (
+                <div className="space-y-2 py-1">
+                  <p className="font-bold text-indigo-950 text-sm">Company account</p>
+                  <p className="text-indigo-800/60 text-xs">Only developers can apply to job listings.</p>
                 </div>
               ) : (
                 <div className="space-y-3 py-1">

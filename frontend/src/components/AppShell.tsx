@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, Suspense } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMe } from '@/hooks/useAuth';
+import { useMyJobs } from '@/hooks/useJobs';
 import { deleteCookie } from '@/lib/cookies';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -192,18 +193,30 @@ function UserDropdown() {
 function SidebarNav({ collapsed }: { collapsed: boolean }) {
   const { data: user, isLoading } = useMe();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { closeMobile } = useShell();
   const [mounted, setMounted] = useState(false);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [applicantsExpanded, setApplicantsExpanded] = useState(false);
+  const { data: myJobsData } = useMyJobs(mounted && user?.role === 'company');
 
   useEffect(() => setMounted(true), []);
 
+  // Auto-expand Candidates when on applications routes
+  useEffect(() => {
+    if (pathname.startsWith('/dashboard/company/applications')) {
+      setApplicantsExpanded(true);
+    }
+  }, [pathname]);
+
+  const companyJobRoles = myJobsData?.results ?? [];
   const isCompanyJobsRoute =
     pathname.startsWith('/dashboard/company/jobs') || pathname.startsWith('/jobs/post');
   const isCompanyApplicantsRoute = pathname.startsWith('/dashboard/company/applications');
+  const selectedApplicantsJobId = searchParams.get('job');
+  const applicantsTab = searchParams.get('tab');
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -215,6 +228,23 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   };
 
   const isActive = (path: string) => {
+    if (path.includes('?')) {
+      const [base, query] = path.split('?');
+      if (pathname !== base && !pathname.startsWith(`${base}/`)) return false;
+      const wanted = new URLSearchParams(query);
+      for (const [key, value] of wanted.entries()) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      // "All Candidates" (no query) should not match when job/tab filters are set
+      return true;
+    }
+    if (path === '/dashboard/company/applications') {
+      return (
+        pathname.startsWith('/dashboard/company/applications') &&
+        !selectedApplicantsJobId &&
+        !applicantsTab
+      );
+    }
     if (path === '/jobs') {
       return (
         pathname === '/jobs' ||
@@ -402,6 +432,30 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
                     icon={Bookmark}
                     label="Saved"
                   />
+                  {companyJobRoles.length > 0 && (
+                    <div className="pt-2 mt-1 border-t border-zinc-100">
+                      <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                        By job role
+                      </p>
+                      {companyJobRoles.slice(0, 8).map((job) => (
+                        <Item
+                          key={job.id}
+                          href={`/dashboard/company/applications?job=${job.id}`}
+                          path={`/dashboard/company/applications?job=${job.id}`}
+                          icon={Briefcase}
+                          label={job.title}
+                        />
+                      ))}
+                      {companyJobRoles.length > 8 && (
+                        <Item
+                          href="/dashboard/company/applications"
+                          path="/dashboard/company/applications"
+                          icon={Users}
+                          label={`+${companyJobRoles.length - 8} more roles`}
+                        />
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -534,7 +588,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Brand compact={collapsed} />
           </div>
           <div className="min-h-0 flex-1">
-            <SidebarNav collapsed={collapsed} />
+            <Suspense fallback={<div className="px-3 py-6 text-xs text-zinc-400">Loading…</div>}>
+              <SidebarNav collapsed={collapsed} />
+            </Suspense>
           </div>
         </aside>
 
@@ -566,7 +622,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
           <div className="min-h-0 flex-1">
-            <SidebarNav collapsed={false} />
+            <Suspense fallback={<div className="px-3 py-6 text-xs text-zinc-400">Loading…</div>}>
+              <SidebarNav collapsed={false} />
+            </Suspense>
           </div>
         </aside>
 

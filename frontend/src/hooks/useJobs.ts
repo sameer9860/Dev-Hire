@@ -42,14 +42,17 @@ export function useCreateJob() {
   });
 }
 
-export function useMyJobs() {
+export function useMyJobs(enabled = true) {
   return useQuery<PaginatedResponse<Job>>({
     queryKey: ['my-jobs'],
     queryFn: async () => {
       const { data } = await api.get('/jobs/my_jobs/');
       return data;
     },
-    enabled: typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
+    enabled:
+      enabled &&
+      typeof window !== 'undefined' &&
+      !!localStorage.getItem('access_token'),
   });
 }
 
