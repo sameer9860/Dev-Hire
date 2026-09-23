@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { NotificationBell } from '@/components/NotificationBell';
+import { LogoutModal } from '@/components/LogoutModal';
 
 type ShellContextValue = {
   open: boolean;
@@ -67,6 +68,7 @@ function UserDropdown() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
@@ -178,7 +180,10 @@ function UserDropdown() {
           </Link>
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={() => {
+              setOpen(false);
+              setShowLogoutModal(true);
+            }}
             className="mt-1 flex w-full items-center gap-2 rounded-lg border-t border-zinc-100 px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
           >
             <LogOut className="h-4 w-4" />
@@ -186,6 +191,10 @@ function UserDropdown() {
           </button>
         </div>
       )}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }
@@ -200,6 +209,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   const [mounted, setMounted] = useState(false);
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [applicantsExpanded, setApplicantsExpanded] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { data: myJobsData } = useMyJobs(mounted && user?.role === 'company');
 
   useEffect(() => setMounted(true), []);
@@ -508,7 +518,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
             <Item href="/settings" path="/settings" icon={Settings} label="Settings" />
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => setShowLogoutModal(true)}
               title={collapsed ? 'Log out' : undefined}
               className={[
                 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-zinc-600 transition-colors hover:bg-red-50 hover:text-red-600',
@@ -535,6 +545,10 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           </div>
         ) : null}
       </div>
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+      />
     </div>
   );
 }

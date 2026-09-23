@@ -18,6 +18,8 @@ import {
   MessageSquare,
 } from 'lucide-react';
 
+import { LogoutModal } from '@/components/LogoutModal';
+
 export default function Navbar() {
   const { data: user, isLoading } = useMe();
   const pathname = usePathname();
@@ -28,6 +30,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -178,7 +181,10 @@ export default function Navbar() {
                     </Link>
 
                     <button
-                      onClick={handleLogout}
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setShowLogoutModal(true);
+                      }}
                       className="mt-1 flex w-full cursor-pointer items-center gap-2 rounded-lg border-t border-zinc-100 px-3 py-2 pt-2 text-left text-sm font-medium text-red-600 transition-colors hover:bg-red-50/50"
                     >
                       <LogOut className="h-4 w-4" />
@@ -245,6 +251,11 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+      />
     </nav>
   );
 }
