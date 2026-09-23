@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext, Suspense } from 'react';
+import { useState, useEffect, useRef, createContext, useContext, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMe } from '@/hooks/useAuth';
@@ -210,9 +210,17 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [applicantsExpanded, setApplicantsExpanded] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
   const { data: myJobsData } = useMyJobs(mounted && user?.role === 'company');
 
   useEffect(() => setMounted(true), []);
+
+  // Reset nav scroll to top on every route change so all items are visible
+  useEffect(() => {
+    if (navRef.current) {
+      navRef.current.scrollTop = 0;
+    }
+  }, [pathname]);
 
   // Auto-expand Candidates when on applications routes
   useEffect(() => {
@@ -302,7 +310,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
 
   return (
     <div className="flex h-full flex-col">
-      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3 sm:px-3">
+      <nav ref={navRef} className="flex-1 space-y-1 overflow-y-auto px-2 py-3 sm:px-3">
         {!collapsed && (
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
             Navigate
