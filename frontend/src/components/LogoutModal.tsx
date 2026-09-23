@@ -30,7 +30,7 @@ export function LogoutModal({ isOpen, onClose }: LogoutModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/50 backdrop-blur-md p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-md overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-2xl animate-in zoom-in-95 duration-150">
         {/* Main Content Area */}
         <div className="flex items-start gap-4 p-6 bg-white">
