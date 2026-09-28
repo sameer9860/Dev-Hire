@@ -43,7 +43,7 @@ export default function LoginPage() {
   useEffect(() => {
     const errorData = (login.error as any)?.response?.data;
     if (errorData?.inactive_verification_required) {
-      setOtpEmail(errorData.email || '');
+      setOtpEmail(errorData.email || errorData.username || '');
       setShowOTPModal(true);
     }
   }, [login.error]);
@@ -52,13 +52,15 @@ export default function LoginPage() {
 
   const handleVerifyOTP = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otpInput.trim() || !otpEmail) return;
-    verifyOTP.mutate({ email: otpEmail, otp: otpInput.trim() });
+    const targetIdentifier = otpEmail || (login.error as any)?.config?.data ? JSON.parse((login.error as any)?.config?.data)?.username : '';
+    if (!otpInput.trim()) return;
+    verifyOTP.mutate({ email: targetIdentifier || otpEmail, otp: otpInput.trim() });
   };
 
   const handleResendCode = () => {
-    if (!otpEmail) return;
-    resendOTP.mutate({ email: otpEmail });
+    const targetIdentifier = otpEmail || (login.error as any)?.config?.data ? JSON.parse((login.error as any)?.config?.data)?.username : '';
+    if (!targetIdentifier) return;
+    resendOTP.mutate({ email: targetIdentifier });
   };
 
   if (!mounted || isLoading || user) {
@@ -206,7 +208,25 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form onSubmit={handleVerifyOTP} className="mt-6 space-y-4">
+            {verifyOTP.isError && (
+              <p className="mt-3 text-xs font-medium text-red-600 text-center bg-red-50 p-2.5 rounded-lg border border-red-100">
+                {(verifyOTP.error as any)?.response?.data?.detail || 'Failed to verify OTP code.'}
+              </p>
+            )}
+
+            {resendOTP.isError && (
+              <p className="mt-3 text-xs font-medium text-red-600 text-center bg-red-50 p-2.5 rounded-lg border border-red-100">
+                {(resendOTP.error as any)?.response?.data?.detail || 'Failed to send verification code.'}
+              </p>
+            )}
+
+            {resendOTP.isSuccess && (
+              <p className="mt-3 text-xs font-medium text-emerald-700 text-center bg-emerald-50 p-2.5 rounded-lg border border-emerald-100">
+                {(resendOTP.data as any)?.detail || 'A new verification code has been sent to your email.'}
+              </p>
+            )}
+
+            <form onSubmit={handleVerifyOTP} className="mt-5 space-y-4">
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-zinc-500">
                   Enter 6-Digit OTP Code
@@ -218,7 +238,10 @@ export default function LoginPage() {
                     maxLength={6}
                     placeholder="123456"
                     value={otpInput}
-                    onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) => {
+                      setOtpInput(e.target.value.replace(/\D/g, ''));
+                      if (verifyOTP.isError) verifyOTP.reset();
+                    }}
                     className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-4 text-center font-mono text-lg tracking-[0.3em] text-zinc-900 outline-none focus:border-zinc-950 focus:bg-white focus:ring-1 focus:ring-zinc-950"
                   />
                 </div>

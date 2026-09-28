@@ -1225,49 +1225,82 @@ class ReactivateRequestOTPView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        email = (request.data.get('email') or '').strip().lower()
-        if not email:
-            return Response({'detail': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        identifier = (
+            request.data.get('email') or
+            request.data.get('username') or
+            request.data.get('identifier') or
+            ''
+        ).strip().lower()
 
-        user = User.objects.filter(email__iexact=email).first()
+        if not identifier:
+            return Response({'detail': 'Email or username is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email__iexact=identifier).first()
         if not user:
-            return Response({'detail': 'If an inactive account exists for this email, a verification code has been sent.'})
+            user = User.objects.filter(username__iexact=identifier).first()
 
+        if not user:
+            return Response({'detail': 'If an inactive account exists for this email or username, a verification code has been sent.'})
+
+        clean_email = (user.email or '').strip().lower()
         otp_code = f"{random.randint(100000, 999999)}"
-        cache_key = f"reactivate_otp:{email}"
-        cache.set(cache_key, {'otp': otp_code, 'user_id': user.id, 'attempts': 0}, timeout=600)
+        otp_payload = {'otp': otp_code, 'user_id': user.id, 'attempts': 0, 'email': user.email}
 
-        try:
-            send_mail(
-                subject="Reactivate your DevHire Account - Verification Code",
-                message=(
-                    f"Hello {user.username},\n\n"
-                    f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
-                    f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
-                    f"This code will expire in 10 minutes."
-                ),
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
-                recipient_list=[user.email],
-                fail_silently=True,
-            )
-        except Exception:
-            pass
+        cache_key = f"reactivate_otp:{clean_email}"
+        cache.set(cache_key, otp_payload, timeout=600)
+        if user.username:
+            cache.set(f"reactivate_otp:{user.username.lower()}", otp_payload, timeout=600)
 
-        return Response({'detail': 'A new 6-digit verification code has been sent to your email.'})
+        if user.email:
+            try:
+                send_mail(
+                    subject="Reactivate your DevHire Account - Verification Code",
+                    message=(
+                        f"Hello {user.username},\n\n"
+                        f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
+                        f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
+                        f"This code will expire in 10 minutes."
+                    ),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                pass
+
+        return Response({
+            'detail': f'A new 6-digit verification code has been sent to {user.email or "your registered email"}.',
+            'email': user.email or clean_email,
+            'username': user.username,
+        })
 
 
 class ReactivateVerifyOTPView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        email = (request.data.get('email') or '').strip().lower()
+        identifier = (
+            request.data.get('email') or
+            request.data.get('username') or
+            request.data.get('identifier') or
+            ''
+        ).strip().lower()
         otp = (request.data.get('otp') or '').strip()
 
-        if not email or not otp:
-            return Response({'detail': 'Email and OTP verification code are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not identifier or not otp:
+            return Response({'detail': 'Email/username and OTP verification code are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cache_key = f"reactivate_otp:{email}"
+        user = User.objects.filter(email__iexact=identifier).first()
+        if not user:
+            user = User.objects.filter(username__iexact=identifier).first()
+
+        cache_key = f"reactivate_otp:{identifier}"
         otp_data = cache.get(cache_key)
+
+        if not otp_data and user and user.email:
+            clean_email = user.email.strip().lower()
+            cache_key = f"reactivate_otp:{clean_email}"
+            otp_data = cache.get(cache_key)
 
         if not otp_data:
             return Response({'detail': 'Verification code expired or invalid. Please request a new code.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1281,9 +1314,8 @@ class ReactivateVerifyOTPView(APIView):
             cache.set(cache_key, otp_data, timeout=600)
             return Response({'detail': 'Invalid verification code. Please check your email and try again.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.filter(pk=otp_data['user_id']).first()
         if not user:
-            user = User.objects.filter(email__iexact=email).first()
+            user = User.objects.filter(pk=otp_data['user_id']).first()
 
         if not user:
             return Response({'detail': 'User account not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -1293,7 +1325,12 @@ class ReactivateVerifyOTPView(APIView):
         user.last_login = timezone.now()
         user.save()
 
+        # Clean up cache keys
         cache.delete(cache_key)
+        if user.email:
+            cache.delete(f"reactivate_otp:{user.email.strip().lower()}")
+        if user.username:
+            cache.delete(f"reactivate_otp:{user.username.strip().lower()}")
 
         from .activity import log_activity
         log_activity(
