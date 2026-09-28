@@ -210,7 +210,7 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   const [jobsExpanded, setJobsExpanded] = useState(false);
   const [applicantsExpanded, setApplicantsExpanded] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
   const { data: myJobsData } = useMyJobs(mounted && user?.role === 'company');
 
   useEffect(() => setMounted(true), []);
@@ -309,8 +309,8 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
   );
 
   return (
-    <div className="flex h-full flex-col">
-      <nav ref={navRef} className="flex-1 space-y-1 overflow-y-auto px-2 py-3 sm:px-3">
+    <div className="flex h-full flex-col overflow-y-auto" ref={navRef}>
+      <nav className="flex-1 space-y-1 px-2 py-3 sm:px-3">
         {!collapsed && (
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
             Navigate
@@ -511,13 +511,10 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
         ) : (
           <Item href="/contact" path="/contact" icon={Mail} label="Contact Us" />
         )}
-      </nav>
 
-      <div className="mt-auto border-t border-zinc-100 px-2 py-3 sm:px-3">
-        {!mounted || isLoading ? (
-          <div className="h-16 animate-pulse rounded-lg bg-zinc-100" />
-        ) : user ? (
-          <div className="space-y-1">
+        {/* Account section directly after Navigate ends */}
+        {mounted && user && (
+          <div className="pt-3 mt-3 border-t border-zinc-100 space-y-1">
             {!collapsed && (
               <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
                 Account
@@ -551,8 +548,9 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
               </div>
             )}
           </div>
-        ) : null}
-      </div>
+        )}
+      </nav>
+
       <LogoutModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
