@@ -533,20 +533,6 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
               <LogOut className="h-4 w-4 shrink-0" />
               {!collapsed && 'Log out'}
             </button>
-            {!collapsed && (
-              <div className="mt-2 flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2.5">
-                <UserAvatar src={user.avatar_url} name={user.username} size="md" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-zinc-900">{user.username}</p>
-                  <p className="truncate text-[11px] capitalize text-zinc-500">{user.role}</p>
-                </div>
-              </div>
-            )}
-            {collapsed && (
-              <div className="mt-2 flex justify-center">
-                <UserAvatar src={user.avatar_url} name={user.username} size="md" />
-              </div>
-            )}
           </div>
         )}
       </nav>
