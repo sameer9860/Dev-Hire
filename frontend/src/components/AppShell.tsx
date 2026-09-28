@@ -344,16 +344,11 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           />
         )}
 
-        {mounted && user && (
-          <Item
-            href="/dashboard/messages"
-            path="/dashboard/messages"
-            icon={MessageSquare}
-            label="Messages"
-          />
+        {mounted && user?.role === 'developer' && (
+          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
         )}
 
-        {(!mounted || !user || user.role !== 'company') && (
+        {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) && (
           <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
         )}
 
@@ -480,10 +475,6 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
           </>
         )}
 
-        {mounted && user && (
-          <Item href="/profile" path="/profile" icon={User} label="My Profile" />
-        )}
-
         {mounted && user?.role === 'developer' && (
           <>
             <Item
@@ -493,12 +484,40 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
               label="Applications"
             />
             <Item
+              href="/dashboard/messages"
+              path="/dashboard/messages"
+              icon={MessageSquare}
+              label="Messages"
+            />
+            <Item
               href="/bookmarks"
               path="/bookmarks"
               icon={Bookmark}
               label="Bookmarks"
             />
           </>
+        )}
+
+        {mounted && user?.role === 'company' && (
+          <Item
+            href="/dashboard/messages"
+            path="/dashboard/messages"
+            icon={MessageSquare}
+            label="Messages"
+          />
+        )}
+
+        {mounted && user && (
+          <Item href="/profile" path="/profile" icon={User} label="My Profile" />
+        )}
+
+        {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) && (
+          <Item
+            href="/dashboard/messages"
+            path="/dashboard/messages"
+            icon={MessageSquare}
+            label="Messages"
+          />
         )}
 
         {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) ? (
