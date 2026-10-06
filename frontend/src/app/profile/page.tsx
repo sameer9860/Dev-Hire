@@ -15,7 +15,8 @@ import {
 } from '@/schemas/profileSchema';
 import { TagInput } from '@/components/jobs/TagInput';
 import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton';
-import { ArrowLeft, Globe, Building } from 'lucide-react';
+import { ArrowLeft, Globe, Building, Plus, Upload, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import {
   COMPANY_CATEGORIES,
@@ -1024,13 +1025,18 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       bio: profile.bio || '',
       avatar_url: profile.avatar_url || '',
       company_name: profile.company_name || '',
+      contact_person: profile.contact_person || '',
       company_website: profile.company_website || '',
       company_size: profile.company_size || '',
       company_category: profile.company_category || '',
       company_founded: profile.company_founded || '',
+      company_province: profile.company_province || '',
+      company_district: profile.company_district || '',
       company_location: profile.company_location || '',
       company_address: profile.company_address || '',
       company_photos: Array.isArray(profile.company_photos) ? profile.company_photos : [],
+      company_email: profile.company_email || '',
+      company_phone: profile.company_phone || '',
       company_social_links: Array.isArray(profile.company_social_links) ? profile.company_social_links : [],
     },
   });
@@ -1067,15 +1073,8 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
     }
   };
 
-  const addCompanyPhoto = () => {
-    setValue('company_photos', [...companyPhotos, ''], { shouldDirty: true, shouldValidate: true });
-  };
-
-  const updateCompanyPhoto = (index: number, value: string) => {
-    const updated = [...companyPhotos];
-    updated[index] = value;
-    setValue('company_photos', updated, { shouldDirty: true, shouldValidate: true });
-  };
+  const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState<number | null>(null);
+  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
   const removeCompanyPhoto = (index: number) => {
     setValue('company_photos', companyPhotos.filter((_, photoIndex) => photoIndex !== index), {
@@ -1084,19 +1083,31 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
     });
   };
 
-  const onCompanyPhotoUpload = async (file: File, index: number) => {
+  const onCompanyPhotoUpload = async (file: File, index?: number) => {
     if (!file) return;
+    if (index !== undefined) {
+      setUploadingPhotoIndex(index);
+    } else {
+      setIsAddingPhoto(true);
+    }
     try {
       const formData = new FormData();
       formData.append('file', file);
+      if (index !== undefined) {
+        formData.append('index', index.toString());
+      }
       const { data } = await api.post('/auth/company-photos/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const photos = data.company_photos || [...companyPhotos];
       setValue('company_photos', photos, { shouldDirty: true, shouldValidate: true });
+      toast.success('Photo uploaded successfully.');
     } catch (err: any) {
       const message = err.response?.data?.detail || 'Failed to upload photo. Please try again.';
-      console.error(message);
+      toast.error(message);
+    } finally {
+      setUploadingPhotoIndex(null);
+      setIsAddingPhoto(false);
     }
   };
 
@@ -1160,6 +1171,17 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
           className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
         />
         {errors.company_name && <p className="text-red-500 text-xs mt-1.5">{errors.company_name.message}</p>}
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Contact Person Full Name</label>
+        <input
+          {...register('contact_person')}
+          type="text"
+          placeholder="e.g. John Doe"
+          className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+        />
+        {errors.contact_person && <p className="text-red-500 text-xs mt-1.5">{errors.contact_person.message}</p>}
       </div>
 
       <div>
@@ -1235,6 +1257,29 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
         </div>
 
         <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Province</label>
+          <select
+            {...register('company_province')}
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          >
+            <option value="">Select province...</option>
+            {NEPAL_PROVINCES.map((prov) => (
+              <option key={prov} value={prov}>{prov}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">District</label>
+          <input
+            {...register('company_district')}
+            type="text"
+            placeholder="e.g. Kathmandu"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Location</label>
           <input
             {...register('company_location')}
@@ -1257,46 +1302,144 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-semibold text-zinc-800">Company Photos</label>
-          <button type="button" onClick={addCompanyPhoto} className="text-xs font-semibold text-zinc-700 hover:text-zinc-900">
-            + Add photo
-          </button>
+          <div>
+            <label className="block text-sm font-semibold text-zinc-800">Company Photos</label>
+            <p className="text-xs text-zinc-500">Upload workplace photos directly from your computer (max 5 photos).</p>
+          </div>
+          {companyPhotos.filter(Boolean).length < 5 && (
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                id="company-photo-header-upload"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    onCompanyPhotoUpload(file);
+                    event.target.value = '';
+                  }
+                }}
+              />
+              <label
+                htmlFor="company-photo-header-upload"
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+              >
+                {isAddingPhoto ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
+                Add photo
+              </label>
+            </div>
+          )}
         </div>
-        <div className="space-y-3">
-          {companyPhotos.length === 0 ? (
-            <p className="text-xs text-zinc-500 italic">Add up to 5 company photos.</p>
-          ) : (
-            companyPhotos.map((photo, index) => (
-              <div key={`company-photo-${index}`} className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={photo}
-                  onChange={(event) => updateCompanyPhoto(index, event.target.value)}
-                  placeholder="https://example.com/photo.jpg"
-                  className="flex-1 border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
-                />
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {companyPhotos.filter(Boolean).map((photo, index) => (
+            <div
+              key={`company-photo-${index}`}
+              className="group relative h-28 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 shadow-2xs"
+            >
+              <img
+                src={photo}
+                alt={`Company photo ${index + 1}`}
+                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+              />
+              {uploadingPhotoIndex === index && (
+                <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs">
+                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                </div>
+              )}
+              {/* Overlay Actions */}
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-zinc-950/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100 p-2">
                 <input
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  id={`company-photo-upload-${index}`}
+                  id={`company-photo-replace-${index}`}
                   onChange={(event) => {
                     const file = event.target.files?.[0];
-                    if (file) onCompanyPhotoUpload(file, index);
+                    if (file) {
+                      onCompanyPhotoUpload(file, index);
+                      event.target.value = '';
+                    }
                   }}
                 />
                 <label
-                  htmlFor={`company-photo-upload-${index}`}
-                  className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50"
+                  htmlFor={`company-photo-replace-${index}`}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/90 text-zinc-700 hover:bg-white hover:text-zinc-950 shadow-xs"
+                  title="Replace photo from computer"
                 >
-                  Upload
+                  <Upload className="h-4 w-4" />
                 </label>
-                <button type="button" onClick={() => removeCompanyPhoto(index)} className="px-2 py-1 text-xs text-red-600 hover:underline">
-                  Remove
+                <button
+                  type="button"
+                  onClick={() => removeCompanyPhoto(index)}
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-red-600/90 text-white hover:bg-red-600 shadow-xs"
+                  title="Remove photo"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-            ))
+            </div>
+          ))}
+
+          {companyPhotos.filter(Boolean).length < 5 && (
+            <div>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                id="company-photo-grid-upload"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) {
+                    onCompanyPhotoUpload(file);
+                    event.target.value = '';
+                  }
+                }}
+              />
+              <label
+                htmlFor="company-photo-grid-upload"
+                className="flex h-28 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-300 bg-zinc-50/50 text-zinc-500 transition-colors hover:border-zinc-400 hover:bg-zinc-100/60"
+              >
+                {isAddingPhoto ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-zinc-700" />
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 text-zinc-500" />
+                    <span className="text-[11px] font-semibold text-zinc-600">Upload Photo</span>
+                  </>
+                )}
+              </label>
+            </div>
           )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Company Email</label>
+          <input
+            {...register('company_email')}
+            type="email"
+            placeholder="contact@company.com"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+          {errors.company_email && <p className="text-red-500 text-xs mt-1.5">{errors.company_email.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-zinc-800 mb-1.5">Company Phone Number</label>
+          <input
+            {...register('company_phone')}
+            type="text"
+            placeholder="e.g. +977-1-4000000 or 9800000000"
+            className="w-full border border-zinc-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-zinc-950 focus:border-transparent outline-none bg-zinc-50/50 hover:bg-zinc-50"
+          />
+          {errors.company_phone && <p className="text-red-500 text-xs mt-1.5">{errors.company_phone.message}</p>}
         </div>
       </div>
 
