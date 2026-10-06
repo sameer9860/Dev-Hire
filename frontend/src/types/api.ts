@@ -53,13 +53,18 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
      social_links?: SocialLink[];
      // Company fields
      company_name: string;
+     contact_person?: string;
      company_website: string;
      company_size: string;
      company_category?: string;
      company_founded?: string;
+     company_province?: string;
+     company_district?: string;
      company_location?: string;
      company_address?: string;
      company_photos?: string[];
+     company_email?: string;
+     company_phone?: string;
      company_social_links?: SocialLink[];
      recent_jobs?: Job[];
      // Developer fields
