@@ -19,13 +19,18 @@ class User(AbstractUser):
        avatar_url = models.CharField(max_length=500, blank=True)
        # Company-specific
        company_name = models.CharField(max_length=200, blank=True)
+       contact_person = models.CharField(max_length=200, blank=True)
        company_website = models.CharField(max_length=500, blank=True)
        company_size = models.CharField(max_length=50, blank=True)
        company_category = models.CharField(max_length=100, blank=True)
        company_founded = models.CharField(max_length=10, blank=True)
+       company_province = models.CharField(max_length=100, blank=True)
+       company_district = models.CharField(max_length=100, blank=True)
        company_location = models.CharField(max_length=255, blank=True)
        company_address = models.CharField(max_length=500, blank=True)
        company_photos = models.JSONField(default=list, blank=True)
+       company_email = models.CharField(max_length=254, blank=True)
+       company_phone = models.CharField(max_length=50, blank=True)
        company_social_links = models.JSONField(default=list, blank=True)
        # Developer-specific
        resume_url = models.CharField(max_length=500, blank=True)
