@@ -196,9 +196,9 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'role', 'is_active', 'date_joined', 'last_login', 'bio', 'avatar_url',
-                  'company_name', 'company_website', 'company_size',
-                  'company_category', 'company_founded', 'company_location', 'company_address',
-                  'company_photos', 'company_social_links',
+                  'company_name', 'contact_person', 'company_website', 'company_size',
+                  'company_category', 'company_founded', 'company_province', 'company_district', 'company_location', 'company_address',
+                  'company_photos', 'company_email', 'company_phone', 'company_social_links',
                   'resume_url', 'skills', 'github_url', 'portfolio_url',
                   'headline', 'location', 'phone_number',
                   'first_name', 'last_name', 'gender', 'date_of_birth',
@@ -242,9 +242,9 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'role', 'bio', 'avatar_url',
-            'company_name', 'company_website', 'company_size',
-            'company_category', 'company_founded', 'company_location', 'company_address',
-            'company_photos', 'company_social_links',
+            'company_name', 'contact_person', 'company_website', 'company_size',
+            'company_category', 'company_founded', 'company_province', 'company_district', 'company_location', 'company_address',
+            'company_photos', 'company_email', 'company_phone', 'company_social_links',
         ]
         read_only_fields = ['id', 'username', 'email', 'role']
 
@@ -320,9 +320,9 @@ class PublicProfileSerializer(serializers.ModelSerializer):
             'education',
             'experience', 'projects', 'achievements', 'training', 'languages',
             # Company fields
-            'company_name', 'company_website', 'company_size',
-            'company_category', 'company_founded', 'company_location', 'company_address',
-            'company_photos', 'company_social_links', 'recent_jobs',
+            'company_name', 'contact_person', 'company_website', 'company_size',
+            'company_category', 'company_founded', 'company_province', 'company_district', 'company_location', 'company_address',
+            'company_photos', 'company_email', 'company_phone', 'company_social_links', 'recent_jobs',
         ]
 
     def get_recent_jobs(self, obj):
