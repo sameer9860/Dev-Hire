@@ -107,22 +107,32 @@ class TestAuthenticationAPI:
 
     def test_company_profile_supports_metadata_and_gallery(self, auth_company_client, company_user):
         response = auth_company_client.patch('/api/auth/profile/', {
+            'contact_person': 'Jane Doe',
             'company_category': 'Technology',
             'company_founded': '2020',
+            'company_province': 'Bagmati',
+            'company_district': 'Kathmandu',
             'company_location': 'Kathmandu, Nepal',
             'company_address': '123 Tech Plaza',
             'company_photos': ['https://example.com/1.jpg', 'https://example.com/2.jpg'],
+            'company_email': 'info@techcorp.com',
+            'company_phone': '+977-1-4000000',
             'company_social_links': [
                 {'platform': 'linkedin', 'url': 'https://linkedin.com/company/example'},
                 {'platform': 'github', 'url': 'https://github.com/example'},
             ],
         }, format='json')
         assert response.status_code == status.HTTP_200_OK
+        assert response.data['contact_person'] == 'Jane Doe'
         assert response.data['company_category'] == 'Technology'
         assert response.data['company_founded'] == '2020'
+        assert response.data['company_province'] == 'Bagmati'
+        assert response.data['company_district'] == 'Kathmandu'
         assert response.data['company_location'] == 'Kathmandu, Nepal'
         assert response.data['company_address'] == '123 Tech Plaza'
         assert len(response.data['company_photos']) == 2
+        assert response.data['company_email'] == 'info@techcorp.com'
+        assert response.data['company_phone'] == '+977-1-4000000'
         assert response.data['company_social_links'][0]['platform'] == 'linkedin'
 
     def test_public_company_profile_includes_recent_jobs(self, api_client, company_user, sample_job):
