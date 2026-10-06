@@ -36,6 +36,7 @@ export const companyProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be under 500 characters'),
   avatar_url: z.string().or(z.literal('')),
   company_name: z.string().min(1, 'Company name is required'),
+  contact_person: z.string().optional(),
   company_website: z.string().refine((v) => {
     if (!v) return true;
     const valToTest = v.includes('://') ? v : `https://${v}`;
@@ -46,9 +47,15 @@ export const companyProfileSchema = z.object({
   company_size: z.string(),
   company_category: z.string().optional(),
   company_founded: z.string().optional(),
+  company_province: z.string().optional(),
+  company_district: z.string().optional(),
   company_location: z.string().optional(),
   company_address: z.string().optional(),
   company_photos: z.array(z.string()).max(5, 'Maximum 5 photos allowed').optional(),
+  company_email: z.string().optional().refine((v) => !v || z.string().email().safeParse(v).success, {
+    message: 'Enter a valid email address',
+  }),
+  company_phone: z.string().optional(),
   company_social_links: z.array(socialLinkSchema).optional(),
 });
 
