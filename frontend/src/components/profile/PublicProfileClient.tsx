@@ -129,11 +129,20 @@ export function PublicProfileClient({ username }: { username: string }) {
               <p className="mt-1 text-sm font-semibold text-blue-600">{profile.headline}</p>
             )}
             {profile.location && <p className="mt-0.5 text-xs text-zinc-500">{profile.location}</p>}
-            {profile.role === 'company' && profile.company_name && (
-              <p className="mt-1 flex items-center gap-1.5 text-lg font-medium text-zinc-800">
-                <Building2 className="h-4 w-4 text-zinc-500" />
-                {profile.company_name}
-              </p>
+            {profile.role === 'company' && (
+              <div className="mt-1 space-y-0.5">
+                {profile.company_name && (
+                  <p className="flex items-center gap-1.5 text-lg font-medium text-zinc-800">
+                    <Building2 className="h-4 w-4 text-zinc-500" />
+                    {profile.company_name}
+                  </p>
+                )}
+                {profile.contact_person && (
+                  <p className="text-xs text-zinc-500">
+                    Contact Person: <span className="font-semibold text-zinc-700">{profile.contact_person}</span>
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -417,6 +426,18 @@ export function PublicProfileClient({ username }: { username: string }) {
                       <p className="mt-1 text-sm font-semibold text-zinc-800">{profile.company_founded}</p>
                     </div>
                   )}
+                  {profile.company_province && (
+                    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                      <p className="text-[10px] font-semibold tracking-[0.12em] text-zinc-400 uppercase">Province</p>
+                      <p className="mt-1 text-sm font-semibold text-zinc-800">{profile.company_province}</p>
+                    </div>
+                  )}
+                  {profile.company_district && (
+                    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                      <p className="text-[10px] font-semibold tracking-[0.12em] text-zinc-400 uppercase">District</p>
+                      <p className="mt-1 text-sm font-semibold text-zinc-800">{profile.company_district}</p>
+                    </div>
+                  )}
                   {profile.company_location && (
                     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
                       <p className="text-[10px] font-semibold tracking-[0.12em] text-zinc-400 uppercase">Location</p>
@@ -525,6 +546,28 @@ export function PublicProfileClient({ username }: { username: string }) {
                             className="h-32 w-full rounded-xl object-cover border border-zinc-200"
                           />
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(profile.company_email || profile.company_phone) && (
+                    <div className="mt-6 border-t border-zinc-100 pt-5">
+                      <h3 className="mb-3 text-sm font-bold text-zinc-900">Contact Information</h3>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {profile.company_email && (
+                          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                            <p className="text-[10px] font-semibold tracking-[0.12em] text-zinc-400 uppercase">Email</p>
+                            <a href={`mailto:${profile.company_email}`} className="mt-1 block text-sm font-semibold text-blue-600 hover:underline">
+                              {profile.company_email}
+                            </a>
+                          </div>
+                        )}
+                        {profile.company_phone && (
+                          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                            <p className="text-[10px] font-semibold tracking-[0.12em] text-zinc-400 uppercase">Phone Number</p>
+                            <p className="mt-1 text-sm font-semibold text-zinc-800">{profile.company_phone}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
