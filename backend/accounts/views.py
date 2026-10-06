@@ -232,9 +232,19 @@ class CompanyPhotoUploadView(APIView):
         from .storage import save_file_to_supabase_or_local
         photo_url = save_file_to_supabase_or_local(uploaded_file, request=request, folder='company-photos')
         photos = list(request.user.company_photos or [])
-        if len(photos) >= 5:
-            return Response({'detail': 'A company can have at most 5 photos.'}, status=status.HTTP_400_BAD_REQUEST)
-        photos.append(photo_url)
+
+        replace_index = request.POST.get('index')
+        if replace_index is not None and str(replace_index).isdigit():
+            idx = int(replace_index)
+            if 0 <= idx < len(photos):
+                photos[idx] = photo_url
+            else:
+                photos.append(photo_url)
+        else:
+            if len(photos) >= 5:
+                return Response({'detail': 'A company can have at most 5 photos.'}, status=status.HTTP_400_BAD_REQUEST)
+            photos.append(photo_url)
+
         request.user.company_photos = photos
         request.user.save(update_fields=['company_photos'])
         return Response({'url': photo_url, 'company_photos': photos}, status=status.HTTP_201_CREATED)
