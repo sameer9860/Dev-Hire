@@ -189,6 +189,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = User(**validated_data)
         user.set_password(password)
+        # Auto-populate company_email from registration email for company accounts
+        if user.role == 'company' and not user.company_email and user.email:
+            user.company_email = user.email
         user.save()
         return user
 
