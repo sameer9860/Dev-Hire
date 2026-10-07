@@ -28,13 +28,16 @@ export function getProfileCompletionInfo(user: User | null | undefined) {
     fields.push({ label: 'Company Email', isFilled: Boolean(user.company_email) });
     fields.push({ label: 'Company Phone', isFilled: Boolean(user.company_phone) });
   } else if (user.role === 'developer') {
-    fields.push({ label: 'Profile Photo', isFilled: Boolean(user.avatar_url) });
-    fields.push({ label: 'Headline', isFilled: Boolean(user.headline) });
-    fields.push({ label: 'Bio / Description', isFilled: Boolean(user.bio) });
+    fields.push({ label: 'About', isFilled: Boolean(user.bio) });
+    fields.push({ label: 'Address & Links', isFilled: Boolean(user.location || user.city || user.address || user.github_url || user.portfolio_url || (user.social_links && user.social_links.length > 0)) });
+    fields.push({ label: 'Education', isFilled: Boolean(user.education && user.education.length > 0) });
+    fields.push({ label: 'Projects', isFilled: Boolean(user.projects && user.projects.length > 0) });
+    fields.push({ label: 'Experience', isFilled: Boolean(user.experience && user.experience.length > 0) });
     fields.push({ label: 'Skills & Tech Stack', isFilled: Boolean(user.skills && user.skills.length > 0) });
-    fields.push({ label: 'Phone Number', isFilled: Boolean(user.phone_number) });
-    fields.push({ label: 'Resume / CV', isFilled: Boolean(user.resume_url) });
-    fields.push({ label: 'Location / Address', isFilled: Boolean(user.location || user.city || user.address) });
+    fields.push({ label: 'Achievements', isFilled: Boolean(user.achievements && user.achievements.length > 0) });
+    fields.push({ label: 'Training', isFilled: Boolean(user.training && user.training.length > 0) });
+    fields.push({ label: 'Languages', isFilled: Boolean(user.languages && user.languages.length > 0) });
+    fields.push({ label: 'Email & Phone', isFilled: Boolean(user.email && user.phone_number) });
   }
 
   if (fields.length === 0) {

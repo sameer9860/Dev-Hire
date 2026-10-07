@@ -43,6 +43,7 @@ function seedSocialLinks(profile: {
 
 const PROFILE_SECTIONS = [
   { id: 'about', label: 'About' },
+  { id: 'address-links', label: 'Address & Links' },
   { id: 'education', label: 'Education' },
   { id: 'projects', label: 'Projects' },
   { id: 'experience', label: 'Experience' },
@@ -516,7 +517,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
+        <div id="address-links" className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
           <div className="mb-5 border-b border-zinc-100 pb-4">
             <h2 className="text-lg font-bold text-zinc-900">Address &amp; links</h2>
             <p className="mt-1 text-sm text-zinc-500">Location, social profiles, and resume or CV.</p>
