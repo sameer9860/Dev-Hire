@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { UserAvatar } from '@/components/UserAvatar';
+import { ProfileIncompleteBanner } from '@/components/dashboard/ProfileIncompleteBanner';
 
 function formatRelativeTime(value: string) {
   const date = new Date(value);
@@ -128,6 +129,8 @@ export function CompanyDashboard() {
           </button>
         </Link>
       </div>
+
+      <ProfileIncompleteBanner user={me} />
 
       {/* 4 Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
