@@ -44,6 +44,7 @@ function seedSocialLinks(profile: {
 const PROFILE_SECTIONS = [
   { id: 'about', label: 'About' },
   { id: 'address-links', label: 'Address & Links' },
+  { id: 'resume', label: 'Resume / CV' },
   { id: 'education', label: 'Education' },
   { id: 'projects', label: 'Projects' },
   { id: 'experience', label: 'Experience' },
@@ -520,7 +521,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
         <div id="address-links" className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
           <div className="mb-5 border-b border-zinc-100 pb-4">
             <h2 className="text-lg font-bold text-zinc-900">Address &amp; links</h2>
-            <p className="mt-1 text-sm text-zinc-500">Location, social profiles, and resume or CV.</p>
+            <p className="mt-1 text-sm text-zinc-500">Location and social profiles.</p>
           </div>
           <div className="space-y-5">
             <div>
@@ -616,49 +617,55 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
                 </div>
               )}
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-4 rounded-2xl border border-zinc-200 bg-zinc-50/30 p-5">
-              <label className="flex items-center justify-between text-sm font-bold text-zinc-900">
-                <span>Resume / CV</span>
-                {resumeUrlWatch && (
-                  <a
-                    href={resumeUrlWatch}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold text-blue-600 hover:underline"
-                  >
-                    Open in full window
-                  </a>
-                )}
-              </label>
-              <input type="hidden" {...register('resume_url')} />
-              <div className="flex items-center gap-3">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={onResumeFileChange}
-                  className="hidden"
-                  id="resume-file-upload"
-                />
-                <label
-                  htmlFor="resume-file-upload"
-                  className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-xs font-semibold text-zinc-800 transition-colors hover:bg-zinc-100"
-                >
-                  {uploadingResume ? 'Uploading...' : resumeUrlWatch ? 'Replace resume' : 'Upload from device'}
-                </label>
-                {resumeUploadError && <p className="text-xs text-red-500">{resumeUploadError}</p>}
-              </div>
+        <div id="resume" className="scroll-mt-24 rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
+          <div className="mb-5 border-b border-zinc-100 pb-4">
+            <h2 className="text-lg font-bold text-zinc-900">Resume / CV</h2>
+            <p className="mt-1 text-sm text-zinc-500">Upload your resume or curriculum vitae in PDF or Word format.</p>
+          </div>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between text-sm font-bold text-zinc-900">
+              <span>Resume File</span>
               {resumeUrlWatch && (
-                <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
-                  <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-700">
-                    <span>Resume Preview</span>
-                  </div>
-                  <div className="relative h-96 w-full bg-zinc-900">
-                    <iframe src={resumeUrlWatch} className="h-full w-full border-0" title="Resume Preview" />
-                  </div>
-                </div>
+                <a
+                  href={resumeUrlWatch}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-semibold text-blue-600 hover:underline"
+                >
+                  Open in full window
+                </a>
               )}
+            </label>
+            <input type="hidden" {...register('resume_url')} />
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={onResumeFileChange}
+                className="hidden"
+                id="resume-file-upload"
+              />
+              <label
+                htmlFor="resume-file-upload"
+                className="inline-flex cursor-pointer items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-3 text-xs font-semibold text-zinc-800 transition-colors hover:bg-zinc-100"
+              >
+                {uploadingResume ? 'Uploading...' : resumeUrlWatch ? 'Replace resume' : 'Upload from device'}
+              </label>
+              {resumeUploadError && <p className="text-xs text-red-500">{resumeUploadError}</p>}
             </div>
+            {resumeUrlWatch && (
+              <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
+                <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-700">
+                  <span>Resume Preview</span>
+                </div>
+                <div className="relative h-96 w-full bg-zinc-900">
+                  <iframe src={resumeUrlWatch} className="h-full w-full border-0" title="Resume Preview" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
