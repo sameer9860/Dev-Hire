@@ -1035,7 +1035,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       company_location: profile.company_location || '',
       company_address: profile.company_address || '',
       company_photos: Array.isArray(profile.company_photos) ? profile.company_photos : [],
-      company_email: profile.company_email || '',
+      company_email: profile.company_email || profile.email || '',
       company_phone: profile.company_phone || '',
       company_social_links: Array.isArray(profile.company_social_links) ? profile.company_social_links : [],
     },
