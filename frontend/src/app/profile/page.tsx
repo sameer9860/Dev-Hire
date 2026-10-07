@@ -32,7 +32,7 @@ function seedSocialLinks(profile: {
   github_url?: string;
   portfolio_url?: string;
 }): SocialLink[] {
-  if (profile.social_links && profile.social_links.length > 0) {
+  if (Array.isArray(profile.social_links)) {
     return profile.social_links;
   }
   const seeded: SocialLink[] = [];
