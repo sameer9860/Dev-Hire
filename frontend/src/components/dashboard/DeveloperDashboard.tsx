@@ -17,6 +17,7 @@ import {
   Clock3,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
+import { ProfileIncompleteBanner } from '@/components/dashboard/ProfileIncompleteBanner';
 
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -111,6 +112,8 @@ export function DeveloperDashboard() {
           Keep your profile strong, and move toward the opportunities that fit you best.
         </p>
       </div>
+
+      <ProfileIncompleteBanner user={user} />
 
       <Link
         href="/jobs"
