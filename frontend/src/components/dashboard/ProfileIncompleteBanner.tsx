@@ -24,12 +24,18 @@ export function getProfileCompletionInfo(user: User | null | undefined) {
     fields.push({ label: 'About Company', isFilled: Boolean(user.bio) });
     fields.push({ label: 'Website', isFilled: Boolean(user.company_website) });
     fields.push({ label: 'Company Size', isFilled: Boolean(user.company_size) });
+    fields.push({ label: 'Category & Founded Year', isFilled: Boolean(user.company_category || user.company_founded) });
     fields.push({ label: 'Province & District', isFilled: Boolean(user.company_province || user.company_district) });
+    fields.push({ label: 'Company Location', isFilled: Boolean(user.company_location) });
+    fields.push({ label: 'Company Address', isFilled: Boolean(user.company_address) });
+    fields.push({ label: 'Company Photos', isFilled: Boolean(user.company_photos && user.company_photos.length > 0) });
+    fields.push({ label: 'Company Social Links', isFilled: Boolean(user.company_social_links && user.company_social_links.length > 0) });
     fields.push({ label: 'Company Email', isFilled: Boolean(user.company_email) });
     fields.push({ label: 'Company Phone', isFilled: Boolean(user.company_phone) });
   } else if (user.role === 'developer') {
     fields.push({ label: 'About', isFilled: Boolean(user.bio) });
     fields.push({ label: 'Address & Links', isFilled: Boolean(user.location || user.city || user.address || user.github_url || user.portfolio_url || (user.social_links && user.social_links.length > 0)) });
+    fields.push({ label: 'Resume / CV', isFilled: Boolean(user.resume_url) });
     fields.push({ label: 'Education', isFilled: Boolean(user.education && user.education.length > 0) });
     fields.push({ label: 'Projects', isFilled: Boolean(user.projects && user.projects.length > 0) });
     fields.push({ label: 'Experience', isFilled: Boolean(user.experience && user.experience.length > 0) });
