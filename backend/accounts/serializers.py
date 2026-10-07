@@ -232,10 +232,8 @@ class DeveloperProfileSerializer(serializers.ModelSerializer):
                 for item in social_links
                 if isinstance(item, dict)
             }
-            if 'github' in by_platform:
-                validated_data['github_url'] = by_platform['github']
-            if 'portfolio' in by_platform:
-                validated_data['portfolio_url'] = by_platform['portfolio']
+            validated_data['github_url'] = by_platform.get('github', '')
+            validated_data['portfolio_url'] = by_platform.get('portfolio', '')
         return super().update(instance, validated_data)
 
 
