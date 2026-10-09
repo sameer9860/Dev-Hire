@@ -242,6 +242,9 @@ SUPABASE_URL = config('SUPABASE_URL', default='')
 SUPABASE_KEY = config('SUPABASE_KEY', default='')
 SUPABASE_STORAGE_BUCKET = config('SUPABASE_STORAGE_BUCKET', default='devhire-media')
 
+# Google Gemini AI configuration
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+
 # Cache — use Redis (Upstash) when REDIS_URL is set (production); fall back to
 # in-process LocMemCache for local development.  OTPs for password reset and
 # email change are stored in the cache, so a shared backend is required when
