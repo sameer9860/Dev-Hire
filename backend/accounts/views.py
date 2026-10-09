@@ -681,6 +681,76 @@ class FileUploadView(APIView):
         return Response({'url': file_url}, status=status.HTTP_201_CREATED)
 
 
+class ResumeParserView(APIView):
+    """
+    POST /api/auth/resume/parse/
+    Accepts a multipart PDF resume file, uploads it to storage, extracts its text,
+    and uses Gemini AI to parse structured developer profile fields.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        if request.user.role not in ('developer', 'admin'):
+            return Response(
+                {'detail': 'Only developer accounts can parse resumes.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        name = uploaded_file.name.lower()
+        if not name.endswith('.pdf'):
+            return Response(
+                {'detail': 'Only PDF files are currently supported for AI parsing.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if uploaded_file.size > 10 * 1024 * 1024:
+            return Response(
+                {'detail': 'File size must be under 10MB.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        gemini_api_key = getattr(settings, 'GEMINI_API_KEY', '')
+        if not gemini_api_key:
+            return Response(
+                {'detail': 'AI API key is not configured on the server. Please set GEMINI_API_KEY in backend/.env.'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        from .storage import save_file_to_supabase_or_local
+        from .resume_parser import extract_text_from_pdf, parse_resume_with_gemini
+
+        try:
+            resume_text = extract_text_from_pdf(uploaded_file)
+            if not resume_text or len(resume_text.strip()) < 20:
+                return Response(
+                    {'detail': 'Could not extract readable text from the uploaded PDF. Please ensure the PDF is not an image-only scan.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            parsed_data = parse_resume_with_gemini(resume_text, api_key=gemini_api_key)
+
+            file_url = save_file_to_supabase_or_local(uploaded_file, request=request, folder='resumes')
+
+            return Response({
+                'resume_url': file_url,
+                'parsed_data': parsed_data,
+            }, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Error parsing resume: {e}", exc_info=True)
+            return Response(
+                {'detail': f'AI parsing failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class ActivityLogListView(generics.ListAPIView):
     """GET /api/auth/activity/ — recent account activity for the current user."""
     permission_classes = [permissions.IsAuthenticated]
