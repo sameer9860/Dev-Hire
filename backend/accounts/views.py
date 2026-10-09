@@ -717,7 +717,7 @@ class ResumeParserView(APIView):
         gemini_api_key = getattr(settings, 'GEMINI_API_KEY', '')
         if not gemini_api_key:
             return Response(
-                {'detail': 'AI API key is not configured on the server. Please set GEMINI_API_KEY in backend/.env.'},
+                {'detail': 'AI service is temporarily unavailable. Please try again later.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
