@@ -15,7 +15,8 @@ import {
 } from '@/schemas/profileSchema';
 import { TagInput } from '@/components/jobs/TagInput';
 import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton';
-import { ArrowLeft, Globe, Building, Plus, Upload, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Globe, Building, Plus, Upload, Trash2, Loader2, Sparkles } from 'lucide-react';
+import { ResumeParserModal } from '@/components/profile/ResumeParserModal';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import {
@@ -265,6 +266,94 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
   const [avatarUploadError, setAvatarUploadError] = useState('');
   const [uploadingResume, setUploadingResume] = useState(false);
   const [resumeUploadError, setResumeUploadError] = useState('');
+  const [isAiResumeModalOpen, setIsAiResumeModalOpen] = useState(false);
+
+  const handleResumeParsed = (result: {
+    resume_url: string;
+    parsed_data: any;
+  }) => {
+    const { parsed_data, resume_url } = result;
+    if (resume_url) {
+      setValue('resume_url', resume_url, { shouldValidate: true, shouldDirty: true });
+    }
+    if (parsed_data.first_name) {
+      setValue('first_name', parsed_data.first_name, { shouldDirty: true });
+    }
+    if (parsed_data.last_name) {
+      setValue('last_name', parsed_data.last_name, { shouldDirty: true });
+    }
+    if (parsed_data.headline) {
+      setValue('headline', parsed_data.headline, { shouldDirty: true });
+    }
+    if (parsed_data.bio) {
+      setValue('bio', parsed_data.bio, { shouldDirty: true });
+    }
+    if (parsed_data.phone_number) {
+      setValue('phone_number', parsed_data.phone_number, { shouldDirty: true });
+    }
+    if (parsed_data.location) {
+      setValue('location', parsed_data.location, { shouldDirty: true });
+    }
+    if (parsed_data.address) {
+      setValue('address', parsed_data.address, { shouldDirty: true });
+    }
+    if (parsed_data.github_url) {
+      setValue('github_url', parsed_data.github_url, { shouldDirty: true });
+    }
+    if (parsed_data.portfolio_url) {
+      setValue('portfolio_url', parsed_data.portfolio_url, { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.skills) && parsed_data.skills.length > 0) {
+      const combinedSkills = Array.from(new Set([...skillsValue, ...parsed_data.skills]));
+      setValue('skills', combinedSkills, { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.languages) && parsed_data.languages.length > 0) {
+      const combinedLangs = Array.from(new Set([...languagesValue, ...parsed_data.languages]));
+      setValue('languages', combinedLangs, { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.education) && parsed_data.education.length > 0) {
+      setValue('education', [...educationWatch, ...parsed_data.education], { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.experience) && parsed_data.experience.length > 0) {
+      setValue('experience', [...experienceWatch, ...parsed_data.experience], { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.projects) && parsed_data.projects.length > 0) {
+      setValue('projects', [...projectsWatch, ...parsed_data.projects], { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.achievements) && parsed_data.achievements.length > 0) {
+      const formattedAch = parsed_data.achievements
+        .map((item: any) => (typeof item === 'string' ? item : item.title || ''))
+        .filter(Boolean);
+      setValue('achievements', [...achievementsWatch, ...formattedAch], { shouldDirty: true });
+    }
+    if (Array.isArray(parsed_data.training) && parsed_data.training.length > 0) {
+      setValue('training', [...trainingWatch, ...parsed_data.training], { shouldDirty: true });
+    }
+
+    // Handle social links including LinkedIn
+    let updatedSocial = [...socialLinksWatch];
+    if (parsed_data.linkedin_url) {
+      const hasLinkedIn = updatedSocial.some(
+        (link) => link.platform === 'linkedin'
+      );
+      if (!hasLinkedIn) {
+        updatedSocial = [...updatedSocial, { platform: 'linkedin', url: parsed_data.linkedin_url }];
+      }
+    }
+    if (Array.isArray(parsed_data.social_links) && parsed_data.social_links.length > 0) {
+      parsed_data.social_links.forEach((link: any) => {
+        if (link?.platform && link?.url) {
+          const exists = updatedSocial.some((item) => item.platform === link.platform);
+          if (!exists) {
+            updatedSocial.push({ platform: link.platform, url: link.url });
+          }
+        }
+      });
+    }
+    if (updatedSocial.length !== socialLinksWatch.length) {
+      setValue('social_links', updatedSocial, { shouldDirty: true });
+    }
+  };
 
   const onAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -410,6 +499,42 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
       )}
       className="space-y-6"
     >
+      <ResumeParserModal
+        isOpen={isAiResumeModalOpen}
+        onClose={() => setIsAiResumeModalOpen(false)}
+        onParsed={handleResumeParsed}
+      />
+
+      {/* AI Resume Auto-Fill Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-violet-200/80 bg-gradient-to-r from-violet-50/80 via-indigo-50/40 to-white p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3.5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-200">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-zinc-950">AI Resume Auto-Fill</h3>
+                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700 uppercase tracking-wide border border-violet-200/60">
+                  AI Powered
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-zinc-600 leading-relaxed max-w-xl">
+                Upload your PDF resume to instantly extract and pre-fill skills, experience, education, projects, and contact info.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAiResumeModalOpen(true)}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 transition"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-violet-300" />
+            <span>Auto-fill from Resume</span>
+          </button>
+        </div>
+      </div>
+
       <nav className="sticky top-16 z-20 -mx-1 overflow-x-auto rounded-2xl border border-zinc-200 bg-white/95 px-3 py-3 shadow-sm backdrop-blur-md">
         <div className="flex min-w-max gap-1.5">
           {PROFILE_SECTIONS.map((section) => (
@@ -640,7 +765,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
               )}
             </label>
             <input type="hidden" {...register('resume_url')} />
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
@@ -654,6 +779,14 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
               >
                 {uploadingResume ? 'Uploading...' : resumeUrlWatch ? 'Replace resume' : 'Upload from device'}
               </label>
+              <button
+                type="button"
+                onClick={() => setIsAiResumeModalOpen(true)}
+                className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-violet-600 px-4 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-violet-700"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-violet-200" />
+                Auto-fill with AI Resume
+              </button>
               {resumeUploadError && <p className="text-xs text-red-500">{resumeUploadError}</p>}
             </div>
             {resumeUrlWatch && (
