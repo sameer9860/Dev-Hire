@@ -9,6 +9,7 @@ import { useMyApplications } from '@/hooks/useApplications';
 import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { ApplyModal } from '@/components/jobs/ApplyModal';
 import { JobDetailSkeleton } from '@/components/jobs/JobDetailSkeleton';
+import { MatchScoreBadge } from '@/components/jobs/MatchScoreBadge';
 import { Bookmark } from 'lucide-react';
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -109,6 +110,7 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-3">
+                <MatchScoreBadge jobId={job.id} />
                 {job.is_remote && (
                   <span className="inline-flex items-center bg-emerald-50 border border-emerald-100/70 text-emerald-700 text-[11px] font-bold px-2 py-0.5 rounded">
                     Remote
