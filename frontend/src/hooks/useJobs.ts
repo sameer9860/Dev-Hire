@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import type { Job, JobFormData, JobFilters, PaginatedResponse } from '@/types/api';
+import type { Job, JobFormData, JobFilters, PaginatedResponse, MatchScoreResult, RankedApplicantsResponse } from '@/types/api';
 import { toast } from 'sonner';
 
 export function useJobs(filters: JobFilters = {}) {
@@ -72,5 +72,39 @@ export function useToggleJobActive() {
       const errMsg = error.response?.data?.detail || error.message || "Failed to update job status.";
       toast.error(errMsg);
     }
+  });
+}
+
+export function useJobMatch(jobId?: number, enabled = true) {
+  return useQuery<MatchScoreResult>({
+    queryKey: ['job-match', jobId],
+    queryFn: async () => {
+      const { data } = await api.get(`/jobs/${jobId}/match/`);
+      return data;
+    },
+    enabled:
+      enabled &&
+      !!jobId &&
+      typeof window !== 'undefined' &&
+      !!localStorage.getItem('access_token'),
+    staleTime: 1000 * 60 * 30, // 30 mins
+    retry: false,
+  });
+}
+
+export function useRankedApplicants(jobId?: number | null, enabled = true) {
+  return useQuery<RankedApplicantsResponse>({
+    queryKey: ['ranked-applicants', jobId],
+    queryFn: async () => {
+      const { data } = await api.get(`/jobs/${jobId}/applicants-ranked/`);
+      return data;
+    },
+    enabled:
+      enabled &&
+      !!jobId &&
+      typeof window !== 'undefined' &&
+      !!localStorage.getItem('access_token'),
+    staleTime: 1000 * 60 * 5, // 5 mins
+    retry: false,
   });
 }
