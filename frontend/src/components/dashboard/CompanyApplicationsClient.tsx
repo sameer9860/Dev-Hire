@@ -15,14 +15,16 @@ import {
   FileDown,
   Briefcase,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { useCompanyApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
-import { useMyJobs } from '@/hooks/useJobs';
+import { useMyJobs, useRankedApplicants } from '@/hooks/useJobs';
 import { UserAvatar } from '@/components/UserAvatar';
-import type { ApplicationStatus } from '@/types/api';
+import { MatchScoreBadge } from '@/components/jobs/MatchScoreBadge';
+import type { ApplicationStatus, MatchScoreResult } from '@/types/api';
 
 type FilterTab = 'all' | ApplicationStatus | 'saved';
-type SortOption = 'newest' | 'oldest' | 'name';
+type SortOption = 'match' | 'newest' | 'oldest' | 'name';
 
 const TABS: { key: FilterTab; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -44,12 +46,31 @@ export function CompanyApplicationsClient() {
 
   const { data: appsData, isLoading, error } = useCompanyApplications();
   const { data: jobsData, isLoading: jobsLoading } = useMyJobs();
+  const { data: rankedData, isLoading: rankedLoading } = useRankedApplicants(selectedJobId, !!selectedJobId);
   const updateStatusMutation = useUpdateApplicationStatus();
+
+  const rankedMap = useMemo(() => {
+    const map: Record<number, MatchScoreResult> = {};
+    if (rankedData?.applicants) {
+      rankedData.applicants.forEach((item) => {
+        map[item.application_id] = item.match;
+      });
+    }
+    return map;
+  }, [rankedData]);
 
   const [activeTab, setActiveTab] = useState<FilterTab>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [sortBy, setSortBy] = useState<SortOption>(selectedJobId ? 'match' : 'newest');
   const [savedApps, setSavedApps] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    if (selectedJobId) {
+      setSortBy('match');
+    } else if (sortBy === 'match') {
+      setSortBy('newest');
+    }
+  }, [selectedJobId]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab') as FilterTab;
@@ -175,6 +196,14 @@ export function CompanyApplicationsClient() {
     });
 
     result = [...result].sort((a, b) => {
+      if (sortBy === 'match') {
+        const scoreA = rankedMap[a.id]?.score ?? -1;
+        const scoreB = rankedMap[b.id]?.score ?? -1;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime();
+      }
       if (sortBy === 'newest') {
         return new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime();
       }
@@ -190,7 +219,7 @@ export function CompanyApplicationsClient() {
     });
 
     return result;
-  }, [applicationsForJob, activeTab, searchQuery, sortBy, savedApps]);
+  }, [applicationsForJob, activeTab, searchQuery, sortBy, savedApps, rankedMap]);
 
   const handleStatusChange = (appId: number, newStatus: ApplicationStatus) => {
     updateStatusMutation.mutate({ id: appId, status: newStatus });
@@ -361,16 +390,20 @@ export function CompanyApplicationsClient() {
 
         <div className="space-y-4 lg:col-span-3">
           {selectedJob && (
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5">
-              <div className="flex min-w-0 items-center gap-2 text-sm">
-                <Users className="h-4 w-4 shrink-0 text-zinc-500" />
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/40 px-4 py-2.5">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Users className="h-4 w-4 shrink-0 text-indigo-600" />
                 <span className="truncate font-semibold text-zinc-900">{selectedJob.title}</span>
                 <span className="shrink-0 text-zinc-500">· {selectedJob.count} applicants</span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-indigo-100/70 border border-indigo-200/80 px-2 py-0.5 text-[11px] font-semibold text-indigo-800">
+                  <Sparkles className="h-3 w-3 text-indigo-600" />
+                  AI Compatibility Ranking
+                </span>
               </div>
               <button
                 type="button"
                 onClick={() => handleJobSelect(null)}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 hover:bg-zinc-50"
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
                 Clear
@@ -443,6 +476,9 @@ export function CompanyApplicationsClient() {
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
                 className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 shadow-sm focus:border-zinc-900 focus:outline-none"
               >
+                {selectedJobId && (
+                  <option value="match">🎯 AI Compatibility Match</option>
+                )}
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
                 <option value="name">Candidate Name (A-Z)</option>
@@ -487,6 +523,14 @@ export function CompanyApplicationsClient() {
                       <th scope="col" className="px-5 py-3.5">
                         Candidate
                       </th>
+                      {selectedJobId && (
+                        <th scope="col" className="px-4 py-3.5 text-center">
+                          <span className="inline-flex items-center gap-1">
+                            <Sparkles className="h-3 w-3 text-indigo-500" />
+                            AI Match
+                          </span>
+                        </th>
+                      )}
                       {!selectedJobId && (
                         <th scope="col" className="px-4 py-3.5">
                           Applied For
@@ -543,6 +587,25 @@ export function CompanyApplicationsClient() {
                               </div>
                             </div>
                           </td>
+
+                          {selectedJobId && (
+                            <td className="px-4 py-4 text-center">
+                              {rankedMap[app.id] ? (
+                                <MatchScoreBadge
+                                  jobId={selectedJobId}
+                                  initialMatch={rankedMap[app.id]}
+                                  size="sm"
+                                />
+                              ) : rankedLoading ? (
+                                <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400">
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                  <span>Scoring...</span>
+                                </span>
+                              ) : (
+                                <span className="text-xs text-zinc-400">—</span>
+                              )}
+                            </td>
+                          )}
 
                           {!selectedJobId && (
                             <td className="px-4 py-4">
