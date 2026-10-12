@@ -1,34 +1,38 @@
 import type { Job } from '@/types/api';
-   import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
+import { MatchScoreBadge } from '@/components/jobs/MatchScoreBadge';
 
-   interface JobCardProps {
-     job: Job;
-     index?: number;
-   }
+interface JobCardProps {
+  job: Job;
+  index?: number;
+}
 
-   export function JobCard({ job, index = 0 }: JobCardProps) {
-     const salaryDisplay = job.salary_min && job.salary_max
-       ? `$${job.salary_min.toLocaleString()} – $${job.salary_max.toLocaleString()}`
-       : 'Salary not disclosed';
+export function JobCard({ job, index = 0 }: JobCardProps) {
+  const salaryDisplay = job.salary_min && job.salary_max
+    ? `$${job.salary_min.toLocaleString()} – $${job.salary_max.toLocaleString()}`
+    : 'Salary not disclosed';
 
-     const colors = [
-       'bg-blue-50 hover:bg-blue-100 border-blue-200',
-       'bg-purple-50 hover:bg-purple-100 border-purple-200',
-       'bg-green-50 hover:bg-green-100 border-green-200',
-       'bg-amber-50 hover:bg-amber-100 border-amber-200',
-       'bg-pink-50 hover:bg-pink-100 border-pink-200',
-     ];
-     const colorClass = colors[index % colors.length];
+  const colors = [
+    'bg-blue-50 hover:bg-blue-100 border-blue-200',
+    'bg-purple-50 hover:bg-purple-100 border-purple-200',
+    'bg-green-50 hover:bg-green-100 border-green-200',
+    'bg-amber-50 hover:bg-amber-100 border-amber-200',
+    'bg-pink-50 hover:bg-pink-100 border-pink-200',
+  ];
+  const colorClass = colors[index % colors.length];
 
-     return (
-       <div className={`${colorClass} border rounded-lg p-5 hover:shadow-lg transition-all cursor-pointer`}>
-         <div className="flex items-start justify-between gap-4">
-           <div className="flex-1">
-             <h3 className="font-semibold text-gray-900">{job.title}</h3>
-             <p className="text-sm text-gray-600 mt-0.5">{job.company.company_name} · {job.location}</p>
-           </div>
-           {job.is_remote && <Badge variant="secondary">Remote</Badge>}
-         </div>
+  return (
+    <div className={`${colorClass} border rounded-lg p-5 hover:shadow-lg transition-all cursor-pointer`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900">{job.title}</h3>
+          <p className="text-sm text-gray-600 mt-0.5">{job.company.company_name} · {job.location}</p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+          <MatchScoreBadge jobId={job.id} size="sm" />
+          {job.is_remote && <Badge variant="secondary">Remote</Badge>}
+        </div>
+      </div>
          <div className="flex flex-wrap gap-1.5 mt-3">
            {job.tech_stack.slice(0, 5).map((tech) => (
              <span key={tech} className="text-xs bg-white/60 text-gray-700 px-2 py-0.5 rounded-md border border-gray-200">
