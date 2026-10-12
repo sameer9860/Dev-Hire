@@ -302,3 +302,38 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
      pending_contact_messages: number;
      unread_direct_messages: number;
    }
+
+   // ─── Match Score & AI Ranking ────────────────────────────────────
+   export interface MatchScoreResult {
+     score: number;
+     label: 'Excellent' | 'Good' | 'Fair' | 'Low' | string;
+     matching_skills: string[];
+     missing_skills: string[];
+     bonus_skills: string[];
+     ai_enhanced: boolean;
+   }
+
+   export interface RankedApplicant {
+     application_id: number;
+     status: ApplicationStatus;
+     applied_at: string;
+     developer: {
+       id: number;
+       username: string;
+       first_name: string;
+       last_name: string;
+       email: string;
+       headline?: string;
+       avatar_url?: string;
+       skills: string[];
+       github_url?: string;
+       portfolio_url?: string;
+     };
+     match: MatchScoreResult;
+   }
+
+   export interface RankedApplicantsResponse {
+     job_id: number;
+     job_title: string;
+     applicants: RankedApplicant[];
+   }
