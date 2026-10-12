@@ -8,6 +8,10 @@ from rest_framework.response import Response
 from .models import Job, SavedJob
 from .serializers import JobSerializer, JobCreateSerializer, SavedJobSerializer
 from .filters import JobFilter
+from .match_score import compute_match
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class IsCompanyOrReadOnly(permissions.BasePermission):
@@ -56,6 +60,90 @@ class JobViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = JobSerializer(jobs, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def match(self, request, pk=None):
+        """
+        GET /api/jobs/jobs/{id}/match/
+        Returns the AI match score between the logged-in developer and this job.
+        Only accessible by developers.
+        """
+        if request.user.role != 'developer':
+            return Response(
+                {'detail': 'Only developer accounts can get match scores.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        job = self.get_object()
+        try:
+            result = compute_match(request.user, job, use_ai=True)
+            return Response(result.to_dict(), status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error('Match score error: %s', e, exc_info=True)
+            return Response(
+                {'detail': 'Could not compute match score.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated], url_path='applicants-ranked')
+    def applicants_ranked(self, request, pk=None):
+        """
+        GET /api/jobs/jobs/{id}/applicants-ranked/
+        Returns applicants for the job sorted by AI match score (highest first).
+        Only accessible by the company that owns the job.
+        """
+        job = self.get_object()
+        if request.user.role not in ('company', 'admin'):
+            return Response(
+                {'detail': 'Only company accounts can view ranked applicants.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if request.user.role == 'company' and job.company != request.user:
+            return Response(
+                {'detail': 'You do not own this job posting.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        applications = (
+            job.applications
+            .select_related('developer')
+            .prefetch_related()
+        )
+
+        results = []
+        for app in applications:
+            try:
+                match = compute_match(app.developer, job, use_ai=True)
+                score_data = match.to_dict()
+            except Exception as e:
+                logger.warning('Match failed for applicant %s: %s', app.developer_id, e)
+                score_data = {
+                    'score': 0, 'label': 'N/A',
+                    'matching_skills': [], 'missing_skills': [],
+                    'bonus_skills': [], 'ai_enhanced': False,
+                }
+
+            results.append({
+                'application_id': app.id,
+                'status': app.status,
+                'applied_at': app.applied_at,
+                'developer': {
+                    'id': app.developer.id,
+                    'username': app.developer.username,
+                    'first_name': app.developer.first_name,
+                    'last_name': app.developer.last_name,
+                    'email': app.developer.email,
+                    'headline': getattr(app.developer, 'headline', ''),
+                    'avatar_url': getattr(app.developer, 'avatar_url', ''),
+                    'skills': list(app.developer.skills or []),
+                    'github_url': getattr(app.developer, 'github_url', ''),
+                    'portfolio_url': getattr(app.developer, 'portfolio_url', ''),
+                },
+                'match': score_data,
+            })
+
+        # Sort by score descending
+        results.sort(key=lambda x: x['match']['score'], reverse=True)
+        return Response({'job_id': job.id, 'job_title': job.title, 'applicants': results})
 
     @action(detail=True, methods=['post', 'delete'], permission_classes=[permissions.IsAuthenticated])
     def save(self, request, pk=None):
