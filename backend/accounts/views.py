@@ -751,6 +751,57 @@ class ResumeParserView(APIView):
             )
 
 
+class EnhanceBioView(APIView):
+    """
+    POST /api/auth/enhance-bio/
+    Accepts:
+      - bio (optional draft notes)
+      - headline (optional)
+      - skills (optional list)
+    Returns:
+      - enhanced_bio: str
+      - ai_enhanced: bool
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        if request.user.role not in ('developer', 'admin'):
+            return Response(
+                {'detail': 'Only developer accounts can enhance their bio.'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        bio = request.data.get('bio', '')
+        headline = request.data.get('headline') or getattr(request.user, 'headline', '')
+        skills = request.data.get('skills')
+        if skills is None:
+            skills = getattr(request.user, 'skills', [])
+
+        if not bio and not headline and not skills:
+            return Response(
+                {'detail': 'Please provide bio notes, a headline, or skills to enhance.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        gemini_api_key = getattr(settings, 'GEMINI_API_KEY', '')
+
+        from .bio_enhancer import enhance_developer_bio
+        try:
+            result = enhance_developer_bio(
+                bio=bio,
+                headline=headline,
+                skills=skills,
+                api_key=gemini_api_key,
+            )
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Error enhancing bio: %s", e, exc_info=True)
+            return Response(
+                {'detail': f'Bio enhancement failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 class ActivityLogListView(generics.ListAPIView):
     """GET /api/auth/activity/ — recent account activity for the current user."""
     permission_classes = [permissions.IsAuthenticated]
