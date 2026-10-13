@@ -28,9 +28,9 @@ export function JobCard({ job, index = 0 }: JobCardProps) {
           <h3 className="font-semibold text-gray-900">{job.title}</h3>
           <p className="text-sm text-gray-600 mt-0.5">{job.company.company_name} · {job.location}</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           <MatchScoreBadge jobId={job.id} size="sm" />
-          {job.is_remote && <Badge variant="secondary">Remote</Badge>}
+          {job.is_remote && <Badge variant="secondary" className="whitespace-nowrap">Remote</Badge>}
         </div>
       </div>
          <div className="flex flex-wrap gap-1.5 mt-3">
