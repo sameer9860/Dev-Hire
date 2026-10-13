@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useMe } from '@/hooks/useAuth';
-import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { useProfile, useUpdateProfile, useEnhanceBio } from '@/hooks/useProfile';
 import api from '@/lib/api';
 import {
   developerProfileSchema,
@@ -219,6 +219,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
     register,
     handleSubmit,
     setValue,
+    getValues,
     watch,
     formState: { errors },
   } = useForm<DeveloperProfileFormData>({
@@ -258,6 +259,50 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
   const educationWatch = watch('education') || [];
   const experienceWatch = watch('experience') || [];
   const projectsWatch = watch('projects') || [];
+
+  const enhanceBioMutation = useEnhanceBio();
+  const [previousBio, setPreviousBio] = useState<string | null>(null);
+
+  const handleEnhanceBio = () => {
+    const currentBio = getValues('bio') || '';
+    const headline = getValues('headline') || '';
+    const skills = getValues('skills') || [];
+
+    if (!currentBio.trim() && !headline.trim() && skills.length === 0) {
+      toast.info('Tip: Enter rough notes in your bio, headline, or add skills first so AI can craft a tailored summary!');
+      return;
+    }
+
+    enhanceBioMutation.mutate(
+      {
+        bio: currentBio,
+        headline,
+        skills,
+      },
+      {
+        onSuccess: (data) => {
+          setPreviousBio(currentBio);
+          setValue('bio', data.enhanced_bio, { shouldDirty: true, shouldValidate: true });
+          toast.success(
+            data.ai_enhanced
+              ? 'Bio enhanced with Gemini AI! ✨'
+              : 'Bio generated from your profile! ✨'
+          );
+        },
+        onError: (err) => {
+          toast.error(err.message || 'Failed to enhance bio.');
+        },
+      }
+    );
+  };
+
+  const handleUndoBio = () => {
+    if (previousBio !== null) {
+      setValue('bio', previousBio, { shouldDirty: true });
+      setPreviousBio(null);
+      toast.info('Reverted to previous bio.');
+    }
+  };
   const achievementsWatch = watch('achievements') || [];
   const trainingWatch = watch('training') || [];
   const socialLinksWatch = watch('social_links') || [];
@@ -599,7 +644,39 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
               </div>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-semibold text-zinc-800">About / Bio</label>
+              <div className="mb-1.5 flex items-center justify-between">
+                <label className="block text-sm font-semibold text-zinc-800">About / Bio</label>
+                <div className="flex items-center gap-2">
+                  {previousBio !== null && (
+                    <button
+                      type="button"
+                      onClick={handleUndoBio}
+                      className="text-xs font-semibold text-zinc-500 hover:text-zinc-800 transition cursor-pointer"
+                    >
+                      Undo
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleEnhanceBio}
+                    disabled={enhanceBioMutation.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50/70 px-2.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
+                    title="Let AI rewrite rough notes into a professional tech summary"
+                  >
+                    {enhanceBioMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" />
+                        <span>Polishing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                        <span>Sparkle ✨ Enhance Bio</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
               <textarea
                 {...register('bio')}
                 placeholder="Tell employers about yourself, your technical summary, background, and goals..."
