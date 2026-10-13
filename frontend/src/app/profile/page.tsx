@@ -671,7 +671,7 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
                     ) : (
                       <>
                         <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
-                        <span>Sparkle ✨ Enhance Bio</span>
+                        <span> Enhance Bio </span>
                       </>
                     )}
                   </button>
