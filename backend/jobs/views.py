@@ -9,6 +9,7 @@ from .models import Job, SavedJob
 from .serializers import JobSerializer, JobCreateSerializer, SavedJobSerializer
 from .filters import JobFilter
 from .match_score import compute_match
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,49 @@ class JobViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = JobSerializer(jobs, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='generate-post')
+    def generate_post(self, request):
+        """
+        POST /api/jobs/jobs/generate-post/
+        Generates job description, requirements, and tech stack from title.
+        """
+        if request.user.role not in ('company', 'admin'):
+            return Response(
+                {'detail': 'Only company accounts can use the AI Job Post Assistant.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        title = (request.data.get('title') or '').strip()
+        if not title:
+            return Response(
+                {'detail': 'Job title is required to generate a job post.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        experience_level = request.data.get('experience_level', '')
+        job_type = request.data.get('job_type', '')
+        location = request.data.get('location', '')
+        company_name = getattr(request.user, 'company_name', '') or request.user.username
+        gemini_api_key = getattr(settings, 'GEMINI_API_KEY', '')
+
+        from .job_generator import generate_job_post
+        try:
+            result = generate_job_post(
+                title=title,
+                experience_level=experience_level,
+                job_type=job_type,
+                location=location,
+                company_name=company_name,
+                api_key=gemini_api_key,
+            )
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("Job post generation failed: %s", e, exc_info=True)
+            return Response(
+                {'detail': f'Job generation failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def match(self, request, pk=None):
