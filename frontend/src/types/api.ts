@@ -337,3 +337,29 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
      job_title: string;
      applicants: RankedApplicant[];
    }
+
+   // ─── AI Content Assistants ────────────────────────────────────────
+   export interface EnhanceBioRequest {
+     bio?: string;
+     headline?: string;
+     skills?: string[];
+   }
+
+   export interface EnhanceBioResponse {
+     enhanced_bio: string;
+     ai_enhanced: boolean;
+   }
+
+   export interface GenerateJobPostRequest {
+     title: string;
+     experience_level?: string;
+     job_type?: string;
+     location?: string;
+   }
+
+   export interface GenerateJobPostResponse {
+     description: string;
+     requirements: string;
+     tech_stack: string[];
+     ai_enhanced: boolean;
+   }
