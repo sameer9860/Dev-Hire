@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import type { Job, JobFormData, JobFilters, PaginatedResponse, MatchScoreResult, RankedApplicantsResponse } from '@/types/api';
+import type { Job, JobFormData, JobFilters, PaginatedResponse, MatchScoreResult, RankedApplicantsResponse, GenerateJobPostRequest, GenerateJobPostResponse } from '@/types/api';
 import { toast } from 'sonner';
 
 export function useJobs(filters: JobFilters = {}) {
@@ -106,5 +106,18 @@ export function useRankedApplicants(jobId?: number | null, enabled = true) {
       !!localStorage.getItem('access_token'),
     staleTime: 1000 * 60 * 5, // 5 mins
     retry: false,
+  });
+}
+
+export function useGenerateJobPost() {
+  return useMutation<GenerateJobPostResponse, Error, GenerateJobPostRequest>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/jobs/generate-post/', payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to generate job post with AI.";
+      toast.error(errMsg);
+    }
   });
 }
