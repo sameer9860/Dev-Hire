@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import type { User } from '@/types/api';
+import type { User, EnhanceBioRequest, EnhanceBioResponse } from '@/types/api';
 
 function extractApiError(error: any): string {
   if (axios.isAxiosError(error)) {
@@ -68,5 +68,21 @@ export function usePublicProfile(username: string) {
       return data;
     },
     enabled: !!username,
+  });
+}
+
+/**
+ * AI Assistant to polish and rewrite rough developer notes into professional bio.
+ */
+export function useEnhanceBio() {
+  return useMutation<EnhanceBioResponse, Error, EnhanceBioRequest>({
+    mutationFn: async (payload) => {
+      try {
+        const { data } = await api.post('/auth/enhance-bio/', payload);
+        return data;
+      } catch (err: any) {
+        throw new Error(extractApiError(err));
+      }
+    },
   });
 }
