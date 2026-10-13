@@ -4,14 +4,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { jobSchema, type JobFormData } from '@/schemas/jobSchema';
-import { useCreateJob } from '@/hooks/useJobs';
+import { useCreateJob, useGenerateJobPost } from '@/hooks/useJobs';
 import { useMe } from '@/hooks/useAuth';
 import { TagInput } from '@/components/jobs/TagInput';
+import { Sparkles, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function PostJobPage() {
   const router = useRouter();
   const { data: user, isLoading: userLoading } = useMe();
   const createJob = useCreateJob();
+  const generatePostMutation = useGenerateJobPost();
 
   const {
     register,
@@ -40,6 +43,37 @@ export default function PostJobPage() {
   const descriptionValue = watch('description');
   const requirementsValue = watch('requirements');
 
+  const handleGenerateJobPost = () => {
+    const title = watch('title')?.trim();
+    if (!title) {
+      toast.info('Please enter a Job Title first (e.g., "Senior React Developer") to auto-generate!');
+      return;
+    }
+
+    generatePostMutation.mutate(
+      {
+        title,
+        experience_level: watch('experience_level'),
+        job_type: watch('job_type'),
+        location: watch('location'),
+      },
+      {
+        onSuccess: (data) => {
+          setValue('description', data.description, { shouldDirty: true, shouldValidate: true });
+          setValue('requirements', data.requirements, { shouldDirty: true, shouldValidate: true });
+          if (data.tech_stack && data.tech_stack.length > 0) {
+            setValue('tech_stack', data.tech_stack, { shouldDirty: true });
+          }
+          toast.success(
+            data.ai_enhanced
+              ? 'Job description & tech stack auto-generated with Gemini AI! ✨'
+              : 'Job description & tech stack generated from template! ✨'
+          );
+        },
+      }
+    );
+  };
+
   // Route protection - only run on client side
   useEffect(() => {
     if (!user && !userLoading) {
@@ -66,12 +100,63 @@ export default function PostJobPage() {
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-xl shadow-sm border p-6 sm:p-8">
           <h1 className="text-3xl font-bold mb-2">Post a New Job</h1>
-          <p className="text-gray-600 mb-8">Fill out the form below to post a job listing for your company.</p>
+          <p className="text-gray-600 mb-6">Fill out the form below to post a job listing for your company.</p>
+
+          {/* AI Assistant Banner */}
+          <div className="mb-6 rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50/70 via-purple-50/40 to-blue-50/50 p-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
+                    AI Job Post Assistant
+                    <span className="rounded-full bg-indigo-100 px-2 py-0.2 text-[10px] font-semibold text-indigo-700">
+                      Smart Auto-Fill
+                    </span>
+                  </h3>
+                  <p className="text-[12px] text-zinc-600 mt-0.5">
+                    Enter a job title below, then click to auto-generate description, responsibilities, and recommended skills.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateJobPost}
+                disabled={generatePostMutation.isPending}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition disabled:opacity-50 cursor-pointer"
+              >
+                {generatePostMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>Generating with AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>Auto-fill with AI ✨</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">Job Title *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-900">Job Title *</label>
+                <button
+                  type="button"
+                  onClick={handleGenerateJobPost}
+                  disabled={generatePostMutation.isPending}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                >
+                  <Sparkles className="h-3 w-3" />
+                  Generate Post ✨
+                </button>
+              </div>
               <input
                 {...register('title')}
                 type="text"
