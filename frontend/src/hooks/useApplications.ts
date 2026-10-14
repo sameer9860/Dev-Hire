@@ -76,3 +76,22 @@ export function useApplication(id: number) {
     enabled: !!id && typeof window !== 'undefined' && !!localStorage.getItem('access_token'),
   });
 }
+
+/**
+ * Fetches a short-lived signed resume URL from the backend.
+ * The raw Supabase URL stored in the DB is never exposed to the UI directly.
+ * Set `enabled` to false until the user actually clicks "Preview" or "Download".
+ */
+export function useResumeUrl(applicationId: number | null, enabled: boolean = false) {
+  return useQuery<{ resume_url: string | null; expires_in: number; source: string }>({
+    queryKey: ['resume-url', applicationId],
+    queryFn: async () => {
+      const { data } = await api.get(`/applications/${applicationId}/resume-url/`);
+      return data;
+    },
+    enabled: !!applicationId && enabled,
+    staleTime: 50 * 60 * 1000, // 50 min — refresh before 1-hour expiry
+    gcTime: 60 * 60 * 1000,
+    retry: false,
+  });
+}
