@@ -95,3 +95,31 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                )
 
            return Response(serializer.data)
+       @action(detail=True, methods=['get'], url_path='resume-url')
+       def resume_url(self, request, pk=None):
+        """
+        Returns a short-lived signed URL (1 hour) for the candidate's resume.
+        Only accessible by the developer who applied or the hiring company.
+        """
+        application = self.get_object()
+        user = request.user
+
+        is_applicant = application.developer == user
+        is_company = application.job.company == user
+
+        if not (is_applicant or is_company):
+            return Response({'error': 'Not authorized.'}, status=status.HTTP_403_FORBIDDEN)
+
+        raw_url = application.resume_url or getattr(application.developer, 'resume_url', '') or ''
+
+        if not raw_url:
+            return Response({'resume_url': None, 'message': 'No resume on file.'})
+
+        from accounts.storage import generate_supabase_signed_url
+        signed_url = generate_supabase_signed_url(raw_url, expires_in=3600)
+
+        return Response({
+            'resume_url': signed_url,
+            'expires_in': 3600,
+            'source': 'application' if application.resume_url else 'profile',
+        })
