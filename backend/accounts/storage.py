@@ -67,12 +67,34 @@ def extract_supabase_path(stored_url: str) -> str | None:
 
     Returns None if the URL is not a recognised Supabase storage URL (e.g. local).
     """
+    if not stored_url:
+        return None
+
     supabase_url = getattr(settings, "SUPABASE_URL", "").strip().rstrip("/")
     bucket_name = getattr(settings, "SUPABASE_STORAGE_BUCKET", "devhire-media").strip()
 
-    prefix = f"{supabase_url}/storage/v1/object/public/{bucket_name}/"
-    if stored_url and stored_url.startswith(prefix):
-        return stored_url[len(prefix):]
+    # Case 1: Full public URL
+    prefix_public = f"{supabase_url}/storage/v1/object/public/{bucket_name}/"
+    if stored_url.startswith(prefix_public):
+        path = stored_url[len(prefix_public):]
+        return path.split("?")[0]
+
+    # Case 2: Full signed URL (to re-sign / refresh)
+    prefix_sign = f"{supabase_url}/storage/v1/object/sign/{bucket_name}/"
+    if stored_url.startswith(prefix_sign):
+        path = stored_url[len(prefix_sign):]
+        return path.split("?")[0]
+
+    # Case 3: Relative path starting with /storage/v1/object/public/
+    rel_prefix = f"/storage/v1/object/public/{bucket_name}/"
+    if stored_url.startswith(rel_prefix):
+        path = stored_url[len(rel_prefix):]
+        return path.split("?")[0]
+
+    # Case 4: Plain path inside bucket, e.g. "resumes/..."
+    if stored_url.startswith("resumes/") or stored_url.startswith("avatars/"):
+        return stored_url.split("?")[0]
+
     return None
 
 
@@ -115,9 +137,14 @@ def generate_supabase_signed_url(stored_url: str, expires_in: int = 3600) -> str
             data = resp.json()
             signed_path = data.get("signedURL") or data.get("signedUrl") or ""
             if signed_path:
-                # signedURL can be relative (/storage/v1/...) or absolute
                 if signed_path.startswith("http"):
                     return signed_path
+                # Supabase returns relative path "/object/sign/...", which MUST have the "/storage/v1" prefix!
+                if not signed_path.startswith("/storage/v1"):
+                    if signed_path.startswith("/"):
+                        signed_path = f"/storage/v1{signed_path}"
+                    else:
+                        signed_path = f"/storage/v1/{signed_path}"
                 return f"{supabase_url}{signed_path}"
         logger.warning(
             f"Failed to generate Supabase signed URL (status {resp.status_code}): {resp.text}"
