@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Eye, FileDown, Loader2 } from 'lucide-react';
 import { useResumeUrl } from '@/hooks/useApplications';
 import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
+import { downloadFile } from '@/lib/downloadFile';
 
 interface ResumeCellProps {
   applicationId: number;
@@ -14,23 +15,27 @@ interface ResumeCellProps {
 
 /**
  * Renders Preview + Download buttons for a resume in a table row.
- * Fetches the signed URL lazily only when the user clicks Preview.
- * The raw Supabase URL is never used in the browser.
+ * Fetches the signed URL lazily only when the user clicks Preview or Download.
+ * Downloads the resume directly to the user's local disk without navigating or opening new tabs.
  */
 export function ResumeCell({ applicationId, hasResume, candidateName }: ResumeCellProps) {
   const [open, setOpen] = useState(false);
   const [fetchEnabled, setFetchEnabled] = useState(false);
   const [pendingDownload, setPendingDownload] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const { data, isLoading } = useResumeUrl(applicationId, fetchEnabled);
 
-  // If download was requested before the signed URL was ready, open it once it arrives
+  // If download was requested before the signed URL was ready, trigger download once it arrives
   React.useEffect(() => {
     if (pendingDownload && data?.resume_url) {
       setPendingDownload(false);
-      window.open(data.resume_url, '_blank', 'noopener,noreferrer');
+      setDownloading(true);
+      downloadFile(data.resume_url, `${candidateName || 'candidate'}-resume.pdf`).finally(() => {
+        setDownloading(false);
+      });
     }
-  }, [pendingDownload, data?.resume_url]);
+  }, [pendingDownload, data?.resume_url, candidateName]);
 
   if (!hasResume) {
     return <span className="text-xs text-zinc-400">N/A</span>;
@@ -41,9 +46,14 @@ export function ResumeCell({ applicationId, hasResume, candidateName }: ResumeCe
     setOpen(true);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (data?.resume_url) {
-      window.open(data.resume_url, '_blank', 'noopener,noreferrer');
+      setDownloading(true);
+      try {
+        await downloadFile(data.resume_url, `${candidateName || 'candidate'}-resume.pdf`);
+      } finally {
+        setDownloading(false);
+      }
     } else {
       setPendingDownload(true);
       setFetchEnabled(true);
@@ -71,11 +81,11 @@ export function ResumeCell({ applicationId, hasResume, candidateName }: ResumeCe
         <button
           type="button"
           onClick={handleDownload}
-          disabled={isLoading && pendingDownload}
+          disabled={(isLoading && pendingDownload) || downloading}
           className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950 disabled:opacity-60"
           title="Download resume"
         >
-          {isLoading && pendingDownload ? (
+          {(isLoading && pendingDownload) || downloading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-600" />
           ) : (
             <FileDown className="h-3.5 w-3.5 text-zinc-500" />
