@@ -102,19 +102,8 @@ export function ResumePreviewModal({
           </div>
           <div className="flex items-center gap-2">
             {resumeUrl && (
-              <>
-                <a
-                  href={resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Open in new tab"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Open
-                </a>
-                <button
-                  type="button"
+              <button
+                type="button"
                   onClick={async () => {
                     if (!resumeUrl || downloading) return;
                     setDownloading(true);
@@ -134,7 +123,6 @@ export function ResumePreviewModal({
                   )}
                   Download
                 </button>
-              </>
             )}
             <button
               type="button"
