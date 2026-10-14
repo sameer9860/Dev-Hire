@@ -27,7 +27,7 @@ import {
   Eye,
   FileText,
 } from 'lucide-react';
-import { useApplication, useUpdateApplicationStatus } from '@/hooks/useApplications';
+import { useApplication, useUpdateApplicationStatus, useResumeUrl } from '@/hooks/useApplications';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
 import type { ApplicationStatus } from '@/types/api';
@@ -48,6 +48,8 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
   const [notes, setNotes] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [resumePreviewOpen, setResumePreviewOpen] = useState(false);
+  const hasResume = Boolean(application?.resume_url || application?.developer?.resume_url);
+  const { data: resumeData, isLoading: isResumeLoading } = useResumeUrl(application?.id ?? null, hasResume);
 
   useEffect(() => {
     if (application) {
@@ -184,16 +186,15 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
 
               {/* External Links & Resume */}
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                {application.resume_url && (
-                  <a
-                    href={application.resume_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                {hasResume && (
+                  <button
+                    type="button"
+                    onClick={() => setResumePreviewOpen(true)}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
                   >
-                    <FileDown className="h-3.5 w-3.5" />
-                    Download Resume PDF
-                  </a>
+                    <Eye className="h-3.5 w-3.5" />
+                    View Resume
+                  </button>
                 )}
                 {dev?.github_url && (
                   <a
@@ -233,10 +234,11 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
 
       {/* Resume Section */}
       {(() => {
-        const resumeUrl = application.resume_url || dev?.resume_url || '';
+        if (!hasResume) return null;
+        const signedUrl = resumeData?.resume_url || '';
         const isProfileResume = !application.resume_url && !!dev?.resume_url;
-        if (!resumeUrl) return null;
-        const isPdf = resumeUrl.toLowerCase().includes('.pdf');
+        const isPdf = signedUrl ? signedUrl.toLowerCase().includes('.pdf') : true;
+
         return (
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/60 px-6 py-4">
@@ -245,12 +247,17 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                   <FileText className="h-4 w-4 text-zinc-600" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900">Resume</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-zinc-900">Resume</h3>
+                    <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200/60">
+                      Encrypted Link
+                    </span>
+                  </div>
                   {isProfileResume && (
                     <p className="text-[11px] text-amber-600 font-medium">From candidate's profile — no resume submitted with application</p>
                   )}
                   {!isProfileResume && (
-                    <p className="text-[11px] text-zinc-500">Submitted with this application</p>
+                    <p className="text-[11px] text-zinc-500">Submitted with this application · Signed secure link</p>
                   )}
                 </div>
               </div>
@@ -263,20 +270,27 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                   <Eye className="h-3.5 w-3.5" />
                   Preview Resume
                 </button>
-                <a
-                  href={resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
-                >
-                  <FileDown className="h-3.5 w-3.5" />
-                  Download PDF
-                </a>
+                {signedUrl && (
+                  <a
+                    href={signedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    Download PDF
+                  </a>
+                )}
               </div>
             </div>
 
             {/* Inline iframe preview for PDFs */}
-            {isPdf && (
+            {isResumeLoading ? (
+              <div className="flex flex-col items-center justify-center gap-3 bg-zinc-50/60 py-20" style={{ height: '400px' }}>
+                <Loader2 className="h-7 w-7 animate-spin text-zinc-500" />
+                <p className="text-xs font-medium text-zinc-500">Generating short-lived secure link for preview…</p>
+              </div>
+            ) : signedUrl && isPdf ? (
               <div className="relative bg-zinc-100" style={{ height: '560px' }}>
                 <div
                   id="resume-inline-loading"
@@ -287,7 +301,7 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                   <p className="text-xs text-zinc-500">Loading PDF preview…</p>
                 </div>
                 <iframe
-                  src={`${resumeUrl}#toolbar=1&navpanes=0`}
+                  src={`${signedUrl}#toolbar=1&navpanes=0`}
                   className="h-full w-full border-0"
                   title={`Resume of ${dev?.username || 'candidate'}`}
                   onLoad={() => {
@@ -296,10 +310,7 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                   }}
                 />
               </div>
-            )}
-
-            {/* Non-PDF: show download card */}
-            {!isPdf && (
+            ) : !isPdf ? (
               <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
                   <FileText className="h-8 w-8 text-zinc-400" />
@@ -308,7 +319,7 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                   This file type can't be previewed inline. Use the buttons above to open or download it.
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
         );
       })()}
@@ -505,18 +516,15 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
       </div>
 
       {/* Resume Preview Modal */}
-      {(() => {
-        const resumeUrl = application.resume_url || dev?.resume_url || '';
-        if (!resumeUrl) return null;
-        return (
-          <ResumePreviewModal
-            isOpen={resumePreviewOpen}
-            onClose={() => setResumePreviewOpen(false)}
-            resumeUrl={resumeUrl}
-            candidateName={dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username}
-          />
-        );
-      })()}
+      {hasResume && (
+        <ResumePreviewModal
+          isOpen={resumePreviewOpen}
+          onClose={() => setResumePreviewOpen(false)}
+          resumeUrl={resumeData?.resume_url}
+          isLoading={isResumeLoading}
+          candidateName={dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username}
+        />
+      )}
     </div>
   );
 }
