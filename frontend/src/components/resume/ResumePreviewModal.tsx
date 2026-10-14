@@ -10,6 +10,7 @@ import {
   Loader2,
   FileText,
 } from 'lucide-react';
+import { downloadFile } from '@/lib/downloadFile';
 
 interface ResumePreviewModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ export function ResumePreviewModal({
   const [mounted, setMounted] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,16 +113,27 @@ export function ResumePreviewModal({
                   <ExternalLink className="h-3.5 w-3.5" />
                   Open
                 </a>
-                <a
-                  href={resumeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  download
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!resumeUrl || downloading) return;
+                    setDownloading(true);
+                    try {
+                      await downloadFile(resumeUrl, `${candidateName || 'candidate'}-resume.pdf`);
+                    } finally {
+                      setDownloading(false);
+                    }
+                  }}
+                  disabled={downloading}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60"
                 >
-                  <FileDown className="h-3.5 w-3.5" />
+                  {downloading ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FileDown className="h-3.5 w-3.5" />
+                  )}
                   Download
-                </a>
+                </button>
               </>
             )}
             <button
