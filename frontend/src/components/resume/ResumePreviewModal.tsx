@@ -113,6 +113,8 @@ export function ResumePreviewModal({
                 </a>
                 <a
                   href={resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   download
                   className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
                 >
