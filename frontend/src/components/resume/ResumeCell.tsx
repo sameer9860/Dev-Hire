@@ -20,8 +20,17 @@ interface ResumeCellProps {
 export function ResumeCell({ applicationId, hasResume, candidateName }: ResumeCellProps) {
   const [open, setOpen] = useState(false);
   const [fetchEnabled, setFetchEnabled] = useState(false);
+  const [pendingDownload, setPendingDownload] = useState(false);
 
   const { data, isLoading } = useResumeUrl(applicationId, fetchEnabled);
+
+  // If download was requested before the signed URL was ready, open it once it arrives
+  React.useEffect(() => {
+    if (pendingDownload && data?.resume_url) {
+      setPendingDownload(false);
+      window.open(data.resume_url, '_blank', 'noopener,noreferrer');
+    }
+  }, [pendingDownload, data?.resume_url]);
 
   if (!hasResume) {
     return <span className="text-xs text-zinc-400">N/A</span>;
@@ -32,17 +41,26 @@ export function ResumeCell({ applicationId, hasResume, candidateName }: ResumeCe
     setOpen(true);
   };
 
+  const handleDownload = () => {
+    if (data?.resume_url) {
+      window.open(data.resume_url, '_blank', 'noopener,noreferrer');
+    } else {
+      setPendingDownload(true);
+      setFetchEnabled(true);
+    }
+  };
+
   return (
     <>
       <div className="flex items-center justify-center gap-1.5">
         <button
           type="button"
           onClick={handlePreview}
-          disabled={isLoading}
+          disabled={isLoading && !pendingDownload}
           className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100 disabled:opacity-60"
           title="Preview resume"
         >
-          {isLoading ? (
+          {isLoading && !pendingDownload ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
             <Eye className="h-3.5 w-3.5" />
@@ -50,27 +68,19 @@ export function ResumeCell({ applicationId, hasResume, candidateName }: ResumeCe
           Preview
         </button>
 
-        {/* Download: also needs signed URL — fetch on demand */}
-        {data?.resume_url ? (
-          <a
-            href={data.resume_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
-            title="Download resume"
-          >
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={isLoading && pendingDownload}
+          className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950 disabled:opacity-60"
+          title="Download resume"
+        >
+          {isLoading && pendingDownload ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-600" />
+          ) : (
             <FileDown className="h-3.5 w-3.5 text-zinc-500" />
-          </a>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setFetchEnabled(true)}
-            className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
-            title="Load download link"
-          >
-            <FileDown className="h-3.5 w-3.5 text-zinc-500" />
-          </button>
-        )}
+          )}
+        </button>
       </div>
 
       <ResumePreviewModal
