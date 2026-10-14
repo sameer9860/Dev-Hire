@@ -25,11 +25,12 @@ import {
   Building,
   Sparkles,
   Eye,
+  EyeOff,
+  ChevronDown,
   FileText,
 } from 'lucide-react';
 import { useApplication, useUpdateApplicationStatus, useResumeUrl } from '@/hooks/useApplications';
 import { UserAvatar } from '@/components/UserAvatar';
-import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
 import { downloadFile } from '@/lib/downloadFile';
 import type { ApplicationStatus } from '@/types/api';
 
@@ -48,7 +49,8 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
 
   const [notes, setNotes] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [resumePreviewOpen, setResumePreviewOpen] = useState(false);
+  const [inlinePreviewOpen, setInlinePreviewOpen] = useState(true);
+  const [downloadingResume, setDownloadingResume] = useState(false);
   const hasResume = Boolean(application?.resume_url || application?.developer?.resume_url);
   const { data: resumeData, isLoading: isResumeLoading } = useResumeUrl(application?.id ?? null, hasResume);
 
@@ -190,7 +192,10 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                 {hasResume && (
                   <button
                     type="button"
-                    onClick={() => setResumePreviewOpen(true)}
+                    onClick={() => {
+                      setInlinePreviewOpen(true);
+                      document.getElementById('resume-section-card')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
                   >
                     <Eye className="h-3.5 w-3.5" />
@@ -241,7 +246,7 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
         const isPdf = signedUrl ? signedUrl.toLowerCase().includes('.pdf') : true;
 
         return (
-          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div id="resume-section-card" className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all duration-200">
             <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/60 px-6 py-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100">
@@ -265,64 +270,97 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setResumePreviewOpen(true)}
+                  onClick={() => setInlinePreviewOpen((prev) => !prev)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
                 >
-                  <Eye className="h-3.5 w-3.5" />
-                  Preview Resume
+                  {inlinePreviewOpen ? (
+                    <>
+                      <EyeOff className="h-3.5 w-3.5" />
+                      Hide Preview
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3.5 w-3.5" />
+                      Preview Resume
+                    </>
+                  )}
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                      inlinePreviewOpen ? 'rotate-180' : ''
+                    }`}
+                  />
                 </button>
                 {signedUrl && (
                   <button
                     type="button"
+                    disabled={downloadingResume}
                     onClick={async () => {
-                      const name = dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username;
-                      await downloadFile(signedUrl, `${name || 'candidate'}-resume.pdf`);
+                      if (downloadingResume) return;
+                      setDownloadingResume(true);
+                      try {
+                        const name = dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username;
+                        await downloadFile(signedUrl, `${name || 'candidate'}-resume.pdf`);
+                      } finally {
+                        setDownloadingResume(false);
+                      }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 disabled:opacity-60"
                   >
-                    <FileDown className="h-3.5 w-3.5" />
+                    {downloadingResume ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileDown className="h-3.5 w-3.5" />
+                    )}
                     Download PDF
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Inline iframe preview for PDFs */}
-            {isResumeLoading ? (
-              <div className="flex flex-col items-center justify-center gap-3 bg-zinc-50/60 py-20" style={{ height: '400px' }}>
-                <Loader2 className="h-7 w-7 animate-spin text-zinc-500" />
-                <p className="text-xs font-medium text-zinc-500">Generating short-lived secure link for preview…</p>
+            {/* Sliding Collapsible Resume Preview Container */}
+            <div
+              className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                inlinePreviewOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+              }`}
+            >
+              <div className="overflow-hidden">
+                {isResumeLoading ? (
+                  <div className="flex flex-col items-center justify-center gap-3 bg-zinc-50/60 py-20" style={{ height: '400px' }}>
+                    <Loader2 className="h-7 w-7 animate-spin text-zinc-500" />
+                    <p className="text-xs font-medium text-zinc-500">Generating short-lived secure link for preview…</p>
+                  </div>
+                ) : signedUrl && isPdf ? (
+                  <div className="relative bg-zinc-100" style={{ height: '620px' }}>
+                    <div
+                      id="resume-inline-loading"
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-100"
+                      style={{ transition: 'opacity 0.3s' }}
+                    >
+                      <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                      <p className="text-xs text-zinc-500">Loading PDF preview…</p>
+                    </div>
+                    <iframe
+                      src={`${signedUrl}#toolbar=1&navpanes=0`}
+                      className="h-full w-full border-0"
+                      title={`Resume of ${dev?.username || 'candidate'}`}
+                      onLoad={() => {
+                        const loader = document.getElementById('resume-inline-loading');
+                        if (loader) loader.style.opacity = '0';
+                      }}
+                    />
+                  </div>
+                ) : !isPdf ? (
+                  <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
+                      <FileText className="h-8 w-8 text-zinc-400" />
+                    </div>
+                    <p className="text-sm text-zinc-600">
+                      This file type can't be previewed inline. Use the Download button above to save it.
+                    </p>
+                  </div>
+                ) : null}
               </div>
-            ) : signedUrl && isPdf ? (
-              <div className="relative bg-zinc-100" style={{ height: '560px' }}>
-                <div
-                  id="resume-inline-loading"
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-100"
-                  style={{ transition: 'opacity 0.3s' }}
-                >
-                  <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
-                  <p className="text-xs text-zinc-500">Loading PDF preview…</p>
-                </div>
-                <iframe
-                  src={`${signedUrl}#toolbar=1&navpanes=0`}
-                  className="h-full w-full border-0"
-                  title={`Resume of ${dev?.username || 'candidate'}`}
-                  onLoad={() => {
-                    const loader = document.getElementById('resume-inline-loading');
-                    if (loader) loader.style.opacity = '0';
-                  }}
-                />
-              </div>
-            ) : !isPdf ? (
-              <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
-                  <FileText className="h-8 w-8 text-zinc-400" />
-                </div>
-                <p className="text-sm text-zinc-600">
-                  This file type can't be previewed inline. Use the buttons above to open or download it.
-                </p>
-              </div>
-            ) : null}
+            </div>
           </div>
         );
       })()}
@@ -517,17 +555,6 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
           </div>
         )}
       </div>
-
-      {/* Resume Preview Modal */}
-      {hasResume && (
-        <ResumePreviewModal
-          isOpen={resumePreviewOpen}
-          onClose={() => setResumePreviewOpen(false)}
-          resumeUrl={resumeData?.resume_url}
-          isLoading={isResumeLoading}
-          candidateName={dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username}
-        />
-      )}
     </div>
   );
 }
