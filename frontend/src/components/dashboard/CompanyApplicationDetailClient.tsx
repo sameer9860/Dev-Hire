@@ -30,6 +30,7 @@ import {
 import { useApplication, useUpdateApplicationStatus, useResumeUrl } from '@/hooks/useApplications';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
+import { downloadFile } from '@/lib/downloadFile';
 import type { ApplicationStatus } from '@/types/api';
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string; color: string }[] = [
@@ -271,15 +272,17 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                   Preview Resume
                 </button>
                 {signedUrl && (
-                  <a
-                    href={signedUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const name = dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username;
+                      await downloadFile(signedUrl, `${name || 'candidate'}-resume.pdf`);
+                    }}
                     className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
                   >
                     <FileDown className="h-3.5 w-3.5" />
                     Download PDF
-                  </a>
+                  </button>
                 )}
               </div>
             </div>
