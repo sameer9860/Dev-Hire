@@ -16,7 +16,9 @@ import {
   Briefcase,
   X,
   Sparkles,
+  Eye,
 } from 'lucide-react';
+import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
 import { useCompanyApplications, useUpdateApplicationStatus } from '@/hooks/useApplications';
 import { useMyJobs, useRankedApplicants } from '@/hooks/useJobs';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -63,6 +65,7 @@ export function CompanyApplicationsClient() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>(selectedJobId ? 'match' : 'newest');
   const [savedApps, setSavedApps] = useState<Record<number, boolean>>({});
+  const [previewResume, setPreviewResume] = useState<{ url: string; name?: string } | null>(null);
 
   useEffect(() => {
     if (selectedJobId) {
@@ -646,19 +649,39 @@ export function CompanyApplicationsClient() {
                           </td>
 
                           <td className="px-4 py-4 text-center">
-                            {app.resume_url ? (
-                              <a
-                                href={app.resume_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
-                              >
-                                <FileDown className="h-3.5 w-3.5 text-zinc-500" />
-                                Resume
-                              </a>
-                            ) : (
-                              <span className="text-xs text-zinc-400">N/A</span>
-                            )}
+                            {(() => {
+                              const resumeUrl = app.resume_url || dev?.resume_url || '';
+                              if (!resumeUrl) {
+                                return <span className="text-xs text-zinc-400">N/A</span>;
+                              }
+                              return (
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setPreviewResume({
+                                        url: resumeUrl,
+                                        name: dev?.username,
+                                      })
+                                    }
+                                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
+                                    title="Preview resume"
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                    Preview
+                                  </button>
+                                  <a
+                                    href={resumeUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
+                                    title="Download resume"
+                                  >
+                                    <FileDown className="h-3.5 w-3.5 text-zinc-500" />
+                                  </a>
+                                </div>
+                              );
+                            })()}
                           </td>
 
                           <td className="px-4 py-4 text-right">
@@ -700,6 +723,16 @@ export function CompanyApplicationsClient() {
           )}
         </div>
       </div>
+
+      {/* Resume Preview Modal */}
+      {previewResume && (
+        <ResumePreviewModal
+          isOpen={!!previewResume}
+          onClose={() => setPreviewResume(null)}
+          resumeUrl={previewResume.url}
+          candidateName={previewResume.name}
+        />
+      )}
     </div>
   );
 }

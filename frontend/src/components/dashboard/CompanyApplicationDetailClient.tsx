@@ -24,9 +24,12 @@ import {
   UserCheck,
   Building,
   Sparkles,
+  Eye,
+  FileText,
 } from 'lucide-react';
 import { useApplication, useUpdateApplicationStatus } from '@/hooks/useApplications';
 import { UserAvatar } from '@/components/UserAvatar';
+import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
 import type { ApplicationStatus } from '@/types/api';
 
 const STATUS_OPTIONS: { value: ApplicationStatus; label: string; color: string }[] = [
@@ -44,6 +47,7 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
 
   const [notes, setNotes] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [resumePreviewOpen, setResumePreviewOpen] = useState(false);
 
   useEffect(() => {
     if (application) {
@@ -226,6 +230,88 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
           </div>
         </div>
       </div>
+
+      {/* Resume Section */}
+      {(() => {
+        const resumeUrl = application.resume_url || dev?.resume_url || '';
+        const isProfileResume = !application.resume_url && !!dev?.resume_url;
+        if (!resumeUrl) return null;
+        const isPdf = resumeUrl.toLowerCase().includes('.pdf');
+        return (
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/60 px-6 py-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100">
+                  <FileText className="h-4 w-4 text-zinc-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900">Resume</h3>
+                  {isProfileResume && (
+                    <p className="text-[11px] text-amber-600 font-medium">From candidate's profile — no resume submitted with application</p>
+                  )}
+                  {!isProfileResume && (
+                    <p className="text-[11px] text-zinc-500">Submitted with this application</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResumePreviewOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Preview Resume
+                </button>
+                <a
+                  href={resumeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800"
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  Download PDF
+                </a>
+              </div>
+            </div>
+
+            {/* Inline iframe preview for PDFs */}
+            {isPdf && (
+              <div className="relative bg-zinc-100" style={{ height: '560px' }}>
+                <div
+                  id="resume-inline-loading"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-100"
+                  style={{ transition: 'opacity 0.3s' }}
+                >
+                  <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+                  <p className="text-xs text-zinc-500">Loading PDF preview…</p>
+                </div>
+                <iframe
+                  src={`${resumeUrl}#toolbar=1&navpanes=0`}
+                  className="h-full w-full border-0"
+                  title={`Resume of ${dev?.username || 'candidate'}`}
+                  onLoad={() => {
+                    const loader = document.getElementById('resume-inline-loading');
+                    if (loader) loader.style.opacity = '0';
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Non-PDF: show download card */}
+            {!isPdf && (
+              <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-100">
+                  <FileText className="h-8 w-8 text-zinc-400" />
+                </div>
+                <p className="text-sm text-zinc-600">
+                  This file type can't be previewed inline. Use the buttons above to open or download it.
+                </p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Applied Job & Pipeline Status Banner */}
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
@@ -417,6 +503,20 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
           </div>
         )}
       </div>
+
+      {/* Resume Preview Modal */}
+      {(() => {
+        const resumeUrl = application.resume_url || dev?.resume_url || '';
+        if (!resumeUrl) return null;
+        return (
+          <ResumePreviewModal
+            isOpen={resumePreviewOpen}
+            onClose={() => setResumePreviewOpen(false)}
+            resumeUrl={resumeUrl}
+            candidateName={dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username}
+          />
+        );
+      })()}
     </div>
   );
 }
