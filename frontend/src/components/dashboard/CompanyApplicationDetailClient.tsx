@@ -27,10 +27,12 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
+  Maximize2,
   FileText,
 } from 'lucide-react';
 import { useApplication, useUpdateApplicationStatus, useResumeUrl } from '@/hooks/useApplications';
 import { UserAvatar } from '@/components/UserAvatar';
+import { ResumePreviewModal } from '@/components/resume/ResumePreviewModal';
 import { downloadFile } from '@/lib/downloadFile';
 import type { ApplicationStatus } from '@/types/api';
 
@@ -50,6 +52,7 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
   const [notes, setNotes] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [inlinePreviewOpen, setInlinePreviewOpen] = useState(true);
+  const [fullModalOpen, setFullModalOpen] = useState(false);
   const [downloadingResume, setDownloadingResume] = useState(false);
   const hasResume = Boolean(application?.resume_url || application?.developer?.resume_url);
   const { data: resumeData, isLoading: isResumeLoading } = useResumeUrl(application?.id ?? null, hasResume);
@@ -290,6 +293,15 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                     }`}
                   />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setFullModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 hover:text-zinc-950"
+                  title="Open full screen preview modal"
+                >
+                  <Maximize2 className="h-3.5 w-3.5 text-zinc-500" />
+                  Full Preview
+                </button>
                 {signedUrl && (
                   <button
                     type="button"
@@ -330,7 +342,16 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                     <p className="text-xs font-medium text-zinc-500">Generating short-lived secure link for preview…</p>
                   </div>
                 ) : signedUrl && isPdf ? (
-                  <div className="relative bg-zinc-100" style={{ height: '620px' }}>
+                  <div className="relative bg-zinc-100" style={{ height: '640px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFullModalOpen(true)}
+                      className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-xl border border-zinc-200/80 bg-white/95 px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-md backdrop-blur transition hover:bg-white hover:text-zinc-950"
+                      title="Expand to Fullscreen Modal"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5 text-zinc-600" />
+                      Fullscreen
+                    </button>
                     <div
                       id="resume-inline-loading"
                       className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-zinc-100"
@@ -555,6 +576,17 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
           </div>
         )}
       </div>
+
+      {/* Full Preview Modal */}
+      {hasResume && (
+        <ResumePreviewModal
+          isOpen={fullModalOpen}
+          onClose={() => setFullModalOpen(false)}
+          resumeUrl={resumeData?.resume_url}
+          isLoading={isResumeLoading}
+          candidateName={dev?.first_name && dev?.last_name ? `${dev.first_name} ${dev.last_name}` : dev?.username}
+        />
+      )}
     </div>
   );
 }
