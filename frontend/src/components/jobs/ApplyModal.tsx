@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useApply } from '@/hooks/useApplications';
+import { useApply, useGeneratePitch } from '@/hooks/useApplications';
 import { useMe } from '@/hooks/useAuth';
 import type { Job, User, SocialLink } from '@/types/api';
 import {
@@ -18,6 +18,8 @@ import {
   MapPin,
   Mail,
   Phone,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { socialPlatformLabel } from '@/lib/profileOptions';
@@ -308,12 +310,15 @@ function ProfileSnapshot({ user }: { user: User }) {
 
 export function ApplyModal({ job, onClose }: ApplyModalProps) {
   const apply = useApply();
+  const generatePitchMutation = useGeneratePitch();
+  const [pitchGenerated, setPitchGenerated] = useState(false);
   const { data: user } = useMe();
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<ApplyFormData>({
@@ -322,6 +327,23 @@ export function ApplyModal({ job, onClose }: ApplyModalProps) {
   });
 
   const coverLetterValue = watch('cover_letter') || '';
+
+  const handleGeneratePitch = () => {
+    generatePitchMutation.mutate(
+      {
+        job_id: job.id,
+      },
+      {
+        onSuccess: (data) => {
+          const generatedText = data.cover_letter || data.pitch;
+          if (generatedText) {
+            setValue('cover_letter', generatedText, { shouldValidate: true });
+            setPitchGenerated(true);
+          }
+        },
+      }
+    );
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -410,22 +432,50 @@ export function ApplyModal({ job, onClose }: ApplyModalProps) {
 
               {/* Cover letter */}
               <div>
-                <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-slate-700">
-                  <FileText className="h-4 w-4 text-slate-400" />
-                  Cover Letter
-                  <span className="text-xs font-normal text-slate-400">(Optional)</span>
-                </label>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <FileText className="h-4 w-4 text-slate-400" />
+                    Cover Letter / Pitch
+                    <span className="text-xs font-normal text-slate-400">(Optional)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleGeneratePitch}
+                    disabled={generatePitchMutation.isPending}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-gradient-to-r from-blue-50 to-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700 shadow-xs transition-all hover:border-indigo-300 hover:from-blue-100 hover:to-indigo-100 hover:text-indigo-800 disabled:opacity-60 cursor-pointer"
+                  >
+                    {generatePitchMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" />
+                        Generating pitch...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                        {pitchGenerated ? 'Regenerate Pitch' : '✨ AI Generate Pitch'}
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {pitchGenerated && (
+                  <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-indigo-50/70 border border-indigo-100 px-3 py-1.5 text-xs text-indigo-700">
+                    <Sparkles className="h-3.5 w-3.5 flex-shrink-0 text-indigo-500" />
+                    <span>Tailored with AI connecting your skills to this role · Feel free to edit</span>
+                  </div>
+                )}
+
                 <textarea
                   {...register('cover_letter')}
-                  rows={4}
-                  placeholder="Optionally add notes or a cover letter for the hiring team..."
+                  rows={6}
+                  placeholder="Optionally add notes or click '✨ AI Generate Pitch' to draft a tailored 2-paragraph note..."
                   className="w-full resize-none rounded-xl border border-slate-200 p-3.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-500/30"
                 />
                 {errors.cover_letter && (
                   <p className="mt-1 text-xs text-red-500">{errors.cover_letter.message}</p>
                 )}
                 <div className="mt-1 flex justify-between text-xs text-slate-400">
-                  <span>Optional</span>
+                  <span>Optional · 2 paragraphs recommended</span>
                   <span>{coverLetterValue.length} / 2000</span>
                 </div>
               </div>
