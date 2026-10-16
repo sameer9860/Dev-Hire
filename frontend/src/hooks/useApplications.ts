@@ -95,3 +95,40 @@ export function useResumeUrl(applicationId: number | null, enabled: boolean = fa
     retry: false,
   });
 }
+
+export interface GeneratePitchPayload {
+  job_id?: number;
+  job_title?: string;
+  company_name?: string;
+  description?: string;
+  requirements?: string;
+  tech_stack?: string[];
+  user_profile?: {
+    name?: string;
+    headline?: string;
+    skills?: string[];
+    projects?: any[];
+    experience?: any[];
+    bio?: string;
+  };
+}
+
+export interface GeneratePitchResponse {
+  cover_letter: string;
+  pitch?: string;
+  ai_enhanced: boolean;
+}
+
+export function useGeneratePitch() {
+  return useMutation<GeneratePitchResponse, Error, GeneratePitchPayload>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/applications/generate-pitch/', payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to generate pitch.";
+      toast.error(errMsg);
+    }
+  });
+}
+
