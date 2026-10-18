@@ -48,6 +48,7 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),
     path('api/', include('jobs.urls')),
     path('api/', include('applications.urls')),
+    path('api/', include('career.urls')),
 ]
 
 from django.conf.urls.static import static
