@@ -156,7 +156,7 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
    }
 
    // ─── Activity ─────────────────────────────────────────────────────
-   export type ActivityCategory = 'application' | 'bookmark' | 'profile' | 'security' | 'support';
+   export type ActivityCategory = 'application' | 'bookmark' | 'profile' | 'security' | 'support' | 'career';
 
    export interface ActivityLog {
      id: number;
