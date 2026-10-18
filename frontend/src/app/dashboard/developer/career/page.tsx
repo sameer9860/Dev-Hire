@@ -196,12 +196,7 @@ export default function CareerCoachPage() {
       {(showCreateForm || roadmaps.length === 0) && (
         <section className="relative overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/30 p-6 shadow-sm sm:p-8">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50/80 px-3 py-1 text-xs font-semibold text-indigo-700">
-              <Sparkles className="h-3.5 w-3.5" />
-              Powered by Google Gemini 2.0 Flash
-            </div>
-
-            <h2 className="mt-4 text-2xl font-bold text-zinc-900">
+            <h2 className="text-2xl font-bold text-zinc-900">
               Where do you want your career to go next?
             </h2>
             <p className="mt-1 text-sm text-zinc-600">
