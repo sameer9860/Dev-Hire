@@ -15,6 +15,8 @@ import {
   MapPin,
   Briefcase,
   Clock3,
+  Compass,
+  Sparkles,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ProfileIncompleteBanner } from '@/components/dashboard/ProfileIncompleteBanner';
@@ -134,6 +136,34 @@ export function DeveloperDashboard() {
         </div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-950 px-3.5 py-2 text-sm font-medium text-white transition-colors group-hover:bg-zinc-800">
           Find Jobs
+          <ArrowRight className="h-4 w-4" />
+        </span>
+      </Link>
+
+      <Link
+        href="/dashboard/developer/career"
+        className="group flex items-center justify-between gap-4 rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50/70 via-white to-purple-50/50 p-5 shadow-[0_8px_30px_rgb(99,102,241,0.06)] transition-all hover:border-indigo-300 hover:shadow-md sm:p-6"
+      >
+        <div className="flex min-w-0 items-start gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-600 text-white shadow-xs">
+            <Compass className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-zinc-900 sm:text-lg">
+                AI Career Coach & Learning Roadmap
+              </h2>
+              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                <Sparkles className="h-2.5 w-2.5" /> AI
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-zinc-600">
+              Analyze your skill gaps for your target role and get a personalized 30/60-day action roadmap.
+            </p>
+          </div>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white transition-colors group-hover:bg-indigo-700 shadow-xs">
+          Open Coach
           <ArrowRight className="h-4 w-4" />
         </span>
       </Link>
