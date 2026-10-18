@@ -118,6 +118,22 @@ class CareerViewSet(viewsets.ViewSet):
         ]
         RoadmapTask.objects.bulk_create(task_objs)
 
+        try:
+            from accounts.activity import log_activity
+            log_activity(
+                user=user,
+                category='career',
+                action='roadmap_started',
+                message=f'Started {roadmap.duration_days}-day career roadmap for {roadmap.target_role}',
+                metadata={
+                    'roadmap_id': roadmap.id,
+                    'target_role': roadmap.target_role,
+                    'duration_days': roadmap.duration_days,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Failed to log activity for roadmap start: %s", exc)
+
         serializer = RoadmapSerializer(roadmap)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -190,6 +206,57 @@ class CareerViewSet(viewsets.ViewSet):
         task.completed_at = timezone.now()
         task.save(update_fields=['is_completed', 'completed_at'])
 
+        try:
+            from accounts.activity import log_activity
+            roadmap = task.roadmap
+            week_tasks = roadmap.tasks.filter(week=task.week)
+            week_completed = not week_tasks.filter(is_completed=False).exists()
+            total_count = roadmap.tasks.count()
+            completed_count = roadmap.tasks.filter(is_completed=True).count()
+            all_completed = (total_count > 0 and completed_count == total_count)
+
+            if all_completed:
+                log_activity(
+                    user=request.user,
+                    category='career',
+                    action='roadmap_completed',
+                    message=f'🎉 Completed entire career roadmap for {roadmap.target_role}!',
+                    metadata={
+                        'roadmap_id': roadmap.id,
+                        'target_role': roadmap.target_role,
+                        'completion_percent': 100,
+                    },
+                )
+            elif week_completed:
+                log_activity(
+                    user=request.user,
+                    category='career',
+                    action='week_completed',
+                    message=f'Completed all Week {task.week} milestones for {roadmap.target_role}!',
+                    metadata={
+                        'roadmap_id': roadmap.id,
+                        'target_role': roadmap.target_role,
+                        'week': task.week,
+                        'completion_percent': roadmap.completion_percent,
+                    },
+                )
+            else:
+                log_activity(
+                    user=request.user,
+                    category='career',
+                    action='task_completed',
+                    message=f'Completed milestone: {task.title}',
+                    metadata={
+                        'roadmap_id': roadmap.id,
+                        'target_role': roadmap.target_role,
+                        'task_id': task.id,
+                        'week': task.week,
+                        'completion_percent': roadmap.completion_percent,
+                    },
+                )
+        except Exception as exc:
+            logger.warning("Failed to log activity for task complete: %s", exc)
+
         serializer = RoadmapTaskSerializer(task)
         return Response(serializer.data)
 
@@ -212,6 +279,25 @@ class CareerViewSet(viewsets.ViewSet):
         task.is_completed = False
         task.completed_at = None
         task.save(update_fields=['is_completed', 'completed_at'])
+
+        try:
+            from accounts.activity import log_activity
+            roadmap = task.roadmap
+            log_activity(
+                user=request.user,
+                category='career',
+                action='task_uncompleted',
+                message=f'Reopened milestone: {task.title}',
+                metadata={
+                    'roadmap_id': roadmap.id,
+                    'target_role': roadmap.target_role,
+                    'task_id': task.id,
+                    'week': task.week,
+                    'completion_percent': roadmap.completion_percent,
+                },
+            )
+        except Exception as exc:
+            logger.warning("Failed to log activity for task uncomplete: %s", exc)
 
         serializer = RoadmapTaskSerializer(task)
         return Response(serializer.data)
