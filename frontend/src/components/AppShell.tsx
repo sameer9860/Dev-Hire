@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Users,
   CheckCircle2,
+  Compass,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -269,6 +270,8 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
         (pathname.startsWith('/jobs/') && !pathname.startsWith('/jobs/post'))
       );
     }
+    if (path === '/dashboard/developer') return pathname === '/dashboard/developer';
+    if (path === '/dashboard/developer/career') return pathname.startsWith('/dashboard/developer/career');
     if (path === '/profile') return pathname === '/profile';
     if (path === '/applications') return pathname.startsWith('/applications');
     if (path === '/bookmarks') return pathname.startsWith('/bookmarks');
@@ -488,6 +491,12 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
               path="/dashboard/messages"
               icon={MessageSquare}
               label="Messages"
+            />
+            <Item
+              href="/dashboard/developer/career"
+              path="/dashboard/developer/career"
+              icon={Compass}
+              label="Career Coach"
             />
             <Item
               href="/bookmarks"
