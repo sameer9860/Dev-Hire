@@ -75,6 +75,7 @@ export function useAnalyzeCareer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['career-roadmaps'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
       toast.success('🎯 Your personalized career roadmap is ready!');
     },
     onError: (error: any) => {
@@ -92,9 +93,11 @@ export function useCompleteTask() {
       const { data } = await api.post(`/career/tasks/${taskId}/complete/`);
       return data;
     },
-    onSuccess: (_, { roadmapId }) => {
+    onSuccess: (data, { roadmapId }) => {
       queryClient.invalidateQueries({ queryKey: ['career-roadmap', roadmapId] });
       queryClient.invalidateQueries({ queryKey: ['career-roadmaps'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
+      toast.success(`Milestone completed: ${data.title}`);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Failed to mark task complete.');
@@ -110,9 +113,11 @@ export function useUncompleteTask() {
       const { data } = await api.post(`/career/tasks/${taskId}/uncomplete/`);
       return data;
     },
-    onSuccess: (_, { roadmapId }) => {
+    onSuccess: (data, { roadmapId }) => {
       queryClient.invalidateQueries({ queryKey: ['career-roadmap', roadmapId] });
       queryClient.invalidateQueries({ queryKey: ['career-roadmaps'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
+      toast.info(`Milestone reopened: ${data.title}`);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Failed to unmark task.');
