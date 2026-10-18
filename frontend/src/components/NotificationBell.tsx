@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText } from 'lucide-react';
+import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText, Compass } from 'lucide-react';
 import { useMe } from '@/hooks/useAuth';
 import { useActivityLog, useMarkActivityRead } from '@/hooks/useActivity';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -60,6 +60,7 @@ function notificationHref(item: ActivityLog, role?: string): string | null {
   }
 
   if (role === 'developer') {
+    if (item.category === 'career') return '/dashboard/developer/career';
     if (item.category === 'application') {
       if (jobId) return `/jobs/${jobId}`;
       return '/applications';
@@ -94,6 +95,13 @@ function notificationSubtitle(item: ActivityLog, role?: string, username?: strin
   }
 
   if (role === 'developer') {
+    if (item.category === 'career') {
+      const targetRole = metaString(item, 'target_role');
+      const week = metaNumber(item, 'week');
+      if (item.action === 'week_completed' && week) return `${targetRole || 'Roadmap'} · Week ${week} Complete`;
+      if (item.action === 'roadmap_completed') return `${targetRole || 'Roadmap'} · 100% Completed`;
+      return targetRole ? `Career Coach · ${targetRole}` : 'Career Coach';
+    }
     if (item.category === 'application') {
       return [companyName || jobTitle, status && `Status · ${status}`].filter(Boolean).join(' · ') || 'Application';
     }
@@ -112,6 +120,7 @@ function CategoryIcon({ item }: { item: ActivityLog }) {
   if (item.category === 'security') return <Shield className={className} />;
   if (item.category === 'application') return <FileText className={className} />;
   if (item.category === 'bookmark') return <Briefcase className={className} />;
+  if (item.category === 'career') return <Compass className={className} />;
   return <Bell className={className} />;
 }
 
