@@ -122,6 +122,20 @@ class TestCareerCoachUnit:
         )
         assert len(result_60['tasks']) >= len(result_30['tasks'])
 
+    def test_weeks_are_unique_and_not_repeating(self):
+        result = _build_fallback_roadmap(
+            user_profile={'skills': []},
+            target_role='junior django developer',
+            duration_days=30,  # 4 weeks
+        )
+        tasks = result['tasks']
+        week1_titles = [t['title'] for t in tasks if t['week'] == 1]
+        week4_titles = [t['title'] for t in tasks if t['week'] == 4]
+        assert len(week1_titles) > 0
+        assert len(week4_titles) > 0
+        intersection = set(week1_titles).intersection(set(week4_titles))
+        assert len(intersection) == 0, f"Week 1 and Week 4 have duplicate tasks: {intersection}"
+
     def test_generate_with_gemini_mock(self):
         mock_response = MagicMock()
         mock_response.text = json.dumps({
@@ -158,7 +172,7 @@ class TestCareerCoachUnit:
 
 class TestCareerEndpoints:
 
-    def test_analyze_creates_roadmap(self, dev_client, db):
+    def test_analyze_creates_roadmap(self, dev_client, developer, db):
         response = dev_client.post('/api/career/analyze/', {
             'target_role': 'Junior Django Developer',
             'duration_days': 30,
@@ -171,6 +185,11 @@ class TestCareerEndpoints:
         assert 'skill_gaps' in data
         assert 'completion_percent' in data
         assert data['completion_percent'] == 0
+
+        from accounts.models import ActivityLog
+        log = ActivityLog.objects.filter(user=developer, category='career', action='roadmap_started').first()
+        assert log is not None
+        assert 'Junior Django Developer' in log.message
 
     def test_company_cannot_analyze(self, company_client, db):
         response = company_client.post('/api/career/analyze/', {
@@ -205,7 +224,7 @@ class TestCareerEndpoints:
         assert len(data['tasks']) == 2
         assert data['completion_percent'] == 0
 
-    def test_complete_task(self, dev_client, sample_roadmap):
+    def test_complete_task(self, dev_client, sample_roadmap, developer):
         task = sample_roadmap.tasks.first()
         response = dev_client.post(f'/api/career/tasks/{task.pk}/complete/')
         assert response.status_code == 200
@@ -214,6 +233,10 @@ class TestCareerEndpoints:
         # Check completion_percent updates
         detail = dev_client.get(f'/api/career/roadmaps/{sample_roadmap.pk}/detail/')
         assert detail.json()['completion_percent'] == 50  # 1 of 2 done
+
+        from accounts.models import ActivityLog
+        log = ActivityLog.objects.filter(user=developer, category='career').first()
+        assert log is not None
 
     def test_uncomplete_task(self, dev_client, sample_roadmap):
         task = sample_roadmap.tasks.first()
