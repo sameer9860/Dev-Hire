@@ -27,6 +27,7 @@ import {
   Users,
   CheckCircle2,
   Compass,
+  Sparkles,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/UserAvatar';
 import { NotificationBell } from '@/components/NotificationBell';
@@ -476,6 +477,15 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
               )}
             </div>
           </>
+        )}
+
+        {mounted && user?.role === 'company' && (
+          <Item
+            href="/dashboard/company/copilot"
+            path="/dashboard/company/copilot"
+            icon={Sparkles}
+            label="AI Copilot"
+          />
         )}
 
         {mounted && user?.role === 'developer' && (
