@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'jobs',
     'applications',
     'career',
-    
+    'copilot',
 ]
 
 MIDDLEWARE = [
