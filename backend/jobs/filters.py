@@ -7,7 +7,9 @@ class JobFilter(django_filters.FilterSet):
        is_remote = django_filters.BooleanFilter()
        job_type = django_filters.ChoiceFilter(choices=Job.JOB_TYPE)
        experience_level = django_filters.ChoiceFilter(choices=Job.EXPERIENCE_LEVEL)
+       moderation_status = django_filters.ChoiceFilter(choices=Job.MODERATION_STATUS)
+       is_flagged_for_review = django_filters.BooleanFilter()
 
        class Meta:
            model = Job
-           fields = ['is_remote', 'job_type', 'experience_level', 'salary_min', 'salary_max']
+           fields = ['is_remote', 'job_type', 'experience_level', 'salary_min', 'salary_max', 'moderation_status', 'is_flagged_for_review']
