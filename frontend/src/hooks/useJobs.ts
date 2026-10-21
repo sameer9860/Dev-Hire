@@ -121,3 +121,69 @@ export function useGenerateJobPost() {
     }
   });
 }
+
+export function useAuditJobDraft() {
+  return useMutation<import('@/types/api').JobAuditResult, Error, Partial<JobFormData>>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/jobs/audit-draft/', payload);
+      return data;
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to audit job draft.";
+      toast.error(errMsg);
+    }
+  });
+}
+
+export function useJobRecommendations(limit = 10, enabled = true) {
+  return useQuery<{ results: import('@/types/api').PersonalizedJobRecommendation[]; count: number }>({
+    queryKey: ['job-recommendations', limit],
+    queryFn: async () => {
+      const { data } = await api.get('/jobs/recommendations/', { params: { limit } });
+      return data;
+    },
+    enabled:
+      enabled &&
+      typeof window !== 'undefined' &&
+      !!localStorage.getItem('access_token'),
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useJobModerationQueue(enabled = true) {
+  return useQuery<PaginatedResponse<Job>>({
+    queryKey: ['job-moderation-queue'],
+    queryFn: async () => {
+      const { data } = await api.get('/jobs/moderation-queue/');
+      return data;
+    },
+    enabled:
+      enabled &&
+      typeof window !== 'undefined' &&
+      !!localStorage.getItem('access_token'),
+  });
+}
+
+export function useModerateJob() {
+  const queryClient = useQueryClient();
+  return useMutation<Job, Error, { id: number; action: 'approve' | 'reject'; notes?: string }>({
+    mutationFn: async ({ id, action, notes }) => {
+      const { data } = await api.post(`/jobs/${id}/moderate/`, { action, notes });
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['job-moderation-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-jobs'] });
+      toast.success(
+        variables.action === 'approve'
+          ? `Job "${data.title}" has been approved! ✨`
+          : `Job "${data.title}" has been rejected.`
+      );
+    },
+    onError: (error: any) => {
+      const errMsg = error.response?.data?.detail || error.message || "Failed to moderate job.";
+      toast.error(errMsg);
+    }
+  });
+}
