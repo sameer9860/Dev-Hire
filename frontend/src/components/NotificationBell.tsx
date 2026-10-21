@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText, Compass } from 'lucide-react';
+import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText, Compass, Sparkles } from 'lucide-react';
 import { useMe } from '@/hooks/useAuth';
 import { useActivityLog, useMarkActivityRead } from '@/hooks/useActivity';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -60,6 +60,10 @@ function notificationHref(item: ActivityLog, role?: string): string | null {
   }
 
   if (role === 'developer') {
+    if (item.category === 'job') {
+      if (jobId) return `/jobs/${jobId}`;
+      return '/jobs';
+    }
     if (item.category === 'career') return '/dashboard/developer/career';
     if (item.category === 'application') {
       if (jobId) return `/jobs/${jobId}`;
@@ -95,6 +99,13 @@ function notificationSubtitle(item: ActivityLog, role?: string, username?: strin
   }
 
   if (role === 'developer') {
+    if (item.category === 'job') {
+      const matchScore = metaNumber(item, 'match_score');
+      return [
+        companyName || jobTitle,
+        matchScore ? `${matchScore}% skill match` : 'New match alert',
+      ].filter(Boolean).join(' · ');
+    }
     if (item.category === 'career') {
       const targetRole = metaString(item, 'target_role');
       const week = metaNumber(item, 'week');
@@ -117,6 +128,7 @@ function CategoryIcon({ item }: { item: ActivityLog }) {
   const className = 'h-4 w-4 text-zinc-600';
   if (item.action === 'candidate_applied') return <UserPlus className={className} />;
   if (item.action === 'direct_message_received') return <MessageSquare className={className} />;
+  if (item.category === 'job') return <Sparkles className="h-4 w-4 text-amber-500" />;
   if (item.category === 'security') return <Shield className={className} />;
   if (item.category === 'application') return <FileText className={className} />;
   if (item.category === 'bookmark') return <Briefcase className={className} />;
