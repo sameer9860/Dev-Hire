@@ -78,6 +78,7 @@ class ActivityLog(models.Model):
         ('security', 'Security'),
         ('support', 'Support'),
         ('career', 'Career'),
+        ('job', 'Job Alert'),
     ]
 
     user = models.ForeignKey(
