@@ -1221,12 +1221,21 @@ class AdminJobListView(APIView):
         queryset = Job.objects.all().select_related('company').order_by('-created_at')
         search = request.query_params.get('search')
         is_active = request.query_params.get('is_active')
+        moderation_status = request.query_params.get('moderation_status')
+        is_flagged = request.query_params.get('is_flagged')
 
         if is_active is not None:
             if is_active.lower() == 'true':
                 queryset = queryset.filter(is_active=True)
             elif is_active.lower() == 'false':
                 queryset = queryset.filter(is_active=False)
+        if moderation_status:
+            queryset = queryset.filter(moderation_status=moderation_status)
+        if is_flagged is not None:
+            if is_flagged.lower() == 'true':
+                queryset = queryset.filter(is_flagged_for_review=True)
+            elif is_flagged.lower() == 'false':
+                queryset = queryset.filter(is_flagged_for_review=False)
         if search:
             queryset = queryset.filter(
                 Q(title__icontains=search) |
@@ -1247,9 +1256,24 @@ class AdminJobDetailView(APIView):
 
         job = generics.get_object_or_404(Job, pk=pk)
         is_active = request.data.get('is_active')
+        moderation_status = request.data.get('moderation_status')
+        moderator_notes = request.data.get('moderator_notes')
+
         if is_active is not None:
             job.is_active = bool(is_active)
-            job.save()
+        if moderation_status in ('approved', 'flagged', 'rejected'):
+            job.moderation_status = moderation_status
+            if moderation_status == 'approved':
+                job.is_flagged_for_review = False
+            elif moderation_status == 'rejected':
+                job.is_flagged_for_review = False
+                job.is_active = False
+            elif moderation_status == 'flagged':
+                job.is_flagged_for_review = True
+        if moderator_notes is not None:
+            job.moderator_notes = moderator_notes
+
+        job.save()
 
         serializer = JobSerializer(job)
         return Response(serializer.data)
