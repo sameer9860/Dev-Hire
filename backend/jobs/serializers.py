@@ -33,6 +33,14 @@ class JobCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         exclude = ['company', 'created_at', 'updated_at']
+        read_only_fields = [
+            'moderation_status',
+            'is_flagged_for_review',
+            'quality_score',
+            'quality_feedback',
+            'safety_flags',
+            'moderator_notes',
+        ]
 
 
 class SavedJobSerializer(serializers.ModelSerializer):
