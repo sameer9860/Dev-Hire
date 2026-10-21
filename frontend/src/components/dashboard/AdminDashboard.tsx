@@ -72,9 +72,11 @@ export function AdminDashboard() {
   // Job Management Query & Mutations
   const [jobSearch, setJobSearch] = useState('');
   const [jobStatusFilter, setJobStatusFilter] = useState('');
+  const [jobModerationFilter, setJobModerationFilter] = useState('');
   const { data: jobsData, isLoading: isLoadingJobs } = useAdminJobs({
     search: jobSearch,
     is_active: jobStatusFilter,
+    moderation_status: jobModerationFilter,
   });
   const updateJobMutation = useUpdateAdminJob();
   const deleteJobMutation = useDeleteAdminJob();
@@ -502,6 +504,17 @@ export function AdminDashboard() {
                 <option value="true">Active Only</option>
                 <option value="false">Closed Only</option>
               </select>
+
+              <select
+                value={jobModerationFilter}
+                onChange={(e) => setJobModerationFilter(e.target.value)}
+                className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 outline-none"
+              >
+                <option value="">All Moderation</option>
+                <option value="flagged">⚠️ Flagged for Review</option>
+                <option value="approved">Approved Only</option>
+                <option value="rejected">Rejected Only</option>
+              </select>
             </div>
           </div>
 
@@ -521,7 +534,7 @@ export function AdminDashboard() {
                   className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-bold text-zinc-900">
                         <Link href={`/jobs/${job.id}`} className="hover:underline">
                           {job.title}
@@ -533,6 +546,20 @@ export function AdminDashboard() {
                         }`}
                       >
                         {job.is_active ? 'Active' : 'Closed'}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          job.moderation_status === 'approved'
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : job.moderation_status === 'flagged'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300 font-extrabold'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {job.moderation_status === 'flagged' ? '⚠️ Flagged' : job.moderation_status || 'Approved'}
+                      </span>
+                      <span className="text-[10px] font-bold text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded-full">
+                        Quality: {job.quality_score ?? 100}/100
                       </span>
                     </div>
 
@@ -547,9 +574,58 @@ export function AdminDashboard() {
                       <span>·</span>
                       <span>Posted {new Date(job.created_at).toLocaleDateString()}</span>
                     </div>
+
+                    {job.safety_flags && job.safety_flags.length > 0 && (
+                      <div className="mt-2.5 rounded-xl bg-amber-50 border border-amber-200 p-2 text-xs text-amber-900 space-y-0.5">
+                        <p className="font-bold text-[11px] text-amber-900 flex items-center gap-1">
+                          <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                          Flagged Reasons for Review:
+                        </p>
+                        {job.safety_flags.map((f, i) => (
+                          <p key={i} className="pl-4 text-[11px] text-amber-800">
+                            • <span className="font-semibold capitalize">{f.type.replace('_', ' ')}:</span> {f.message}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    {job.moderation_status === 'flagged' && (
+                      <>
+                        <button
+                          onClick={() =>
+                            updateJobMutation.mutate({
+                              id: job.id,
+                              moderation_status: 'approved',
+                              is_active: true,
+                            })
+                          }
+                          disabled={updateJobMutation.isPending}
+                          className="rounded-xl border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = prompt("Enter rejection reason for company:", "Violates DevHire listing standards");
+                            if (reason !== null) {
+                              updateJobMutation.mutate({
+                                id: job.id,
+                                moderation_status: 'rejected',
+                                is_active: false,
+                                moderator_notes: reason,
+                              });
+                            }
+                          }}
+                          disabled={updateJobMutation.isPending}
+                          className="rounded-xl border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+
                     <button
                       onClick={() =>
                         updateJobMutation.mutate({ id: job.id, is_active: !job.is_active })
