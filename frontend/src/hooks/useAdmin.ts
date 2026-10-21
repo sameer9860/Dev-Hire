@@ -61,7 +61,7 @@ export function useDeleteAdminUser() {
   });
 }
 
-export function useAdminJobs(params?: { search?: string; is_active?: string }) {
+export function useAdminJobs(params?: { search?: string; is_active?: string; moderation_status?: string; is_flagged?: string }) {
   return useQuery<{ results: Job[]; count: number }>({
     queryKey: ['adminJobs', params],
     queryFn: async () => {
@@ -74,8 +74,22 @@ export function useAdminJobs(params?: { search?: string; is_active?: string }) {
 export function useUpdateAdminJob() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, is_active }: { id: number; is_active: boolean }) => {
-      const { data } = await api.patch(`/auth/admin/jobs/${id}/`, { is_active });
+    mutationFn: async ({
+      id,
+      is_active,
+      moderation_status,
+      moderator_notes,
+    }: {
+      id: number;
+      is_active?: boolean;
+      moderation_status?: string;
+      moderator_notes?: string;
+    }) => {
+      const { data } = await api.patch(`/auth/admin/jobs/${id}/`, {
+        is_active,
+        moderation_status,
+        moderator_notes,
+      });
       return data;
     },
     onSuccess: () => {
