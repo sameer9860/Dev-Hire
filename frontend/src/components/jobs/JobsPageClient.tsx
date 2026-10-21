@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useJobs } from '@/hooks/useJobs';
+import { useJobs, useJobRecommendations } from '@/hooks/useJobs';
+import { useMe } from '@/hooks/useAuth';
 import { JobCard } from '@/components/jobs/JobCard';
 import { JobCardSkeleton } from '@/components/jobs/JobCardSkeleton';
 import { JobDetailClient } from '@/components/jobs/JobDetailClient';
@@ -12,7 +13,7 @@ import { JobsPageSkeleton } from '@/components/jobs/JobsPageSkeleton';
 import { JobFiltersPanel } from '@/components/jobs/JobFilters';
 import { Pagination } from '@/components/jobs/Pagination';
 import type { JobFilters, JobType, ExperienceLevel } from '@/types/api';
-import { Search, SlidersHorizontal, RefreshCw, X, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, SlidersHorizontal, RefreshCw, X, ChevronUp, ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -140,7 +141,17 @@ function JobsContent() {
     router.push(pathname, { scroll: false });
   };
 
-  const jobs = data?.results ?? [];
+  const { data: user } = useMe();
+  const isDeveloper = user?.role === 'developer';
+  const [showRecommendedOnly, setShowRecommendedOnly] = useState(false);
+
+  const { data: recsData, isLoading: isLoadingRecs } = useJobRecommendations(15, isDeveloper);
+  const recommendations = recsData?.results ?? [];
+
+  const rawJobs = data?.results ?? [];
+  const jobs = (showRecommendedOnly && isDeveloper) ? recommendations : rawJobs;
+  const activeCount = (showRecommendedOnly && isDeveloper) ? recommendations.length : (data?.count ?? 0);
+  const activeLoading = (showRecommendedOnly && isDeveloper) ? isLoadingRecs : isLoading;
 
   // Master-detail selection state for large screens
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
@@ -229,6 +240,44 @@ function JobsContent() {
               <JobFiltersPanel filters={filters} onChange={handleFilterChange} inline={true} />
             </div>
           </div>
+
+          {/* Discovery View Switcher */}
+          <div className="flex items-center gap-2.5 mt-4 pt-3 border-t border-gray-100">
+            <button
+              onClick={() => setShowRecommendedOnly(false)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                !showRecommendedOnly
+                  ? 'bg-zinc-900 text-white shadow-xs'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200/80'
+              }`}
+            >
+              All Opportunities
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                !showRecommendedOnly ? 'bg-zinc-700 text-zinc-100' : 'bg-zinc-200 text-zinc-700'
+              }`}>
+                {data?.count ?? 0}
+              </span>
+            </button>
+
+            {isDeveloper && (
+              <button
+                onClick={() => setShowRecommendedOnly(true)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                  showRecommendedOnly
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xs'
+                    : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Recommended For You
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  showRecommendedOnly ? 'bg-indigo-800 text-indigo-100' : 'bg-indigo-200 text-indigo-800'
+                }`}>
+                  {recommendations.length}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -239,7 +288,7 @@ function JobsContent() {
           <div className="col-span-1">
             {/* Desktop master-detail list with Up/Down Slider Navigator */}
             <div className="hidden lg:block space-y-3">
-              {isLoading && (
+              {activeLoading && (
                 <>
                   <div className="h-10 rounded-xl bg-zinc-50 border border-zinc-200 animate-pulse" />
                   <div className="space-y-3 max-h-[calc(100vh-230px)] overflow-hidden">
@@ -250,7 +299,18 @@ function JobsContent() {
                 </>
               )}
 
-              {!isLoading && jobs.length > 0 && (
+              {!activeLoading && jobs.length === 0 && (
+                <div className="p-8 text-center bg-zinc-50 border border-zinc-200 rounded-2xl">
+                  <p className="text-sm font-semibold text-zinc-800">No jobs match your criteria</p>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {showRecommendedOnly
+                      ? 'Add skills and location to your profile to get personalized AI matches!'
+                      : 'Try broadening your search or clearing filters.'}
+                  </p>
+                </div>
+              )}
+
+              {!activeLoading && jobs.length > 0 && (
                 <div className="flex items-center justify-between p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs shadow-xs">
                   <span className="font-semibold text-zinc-700">
                     Job {currentIndex >= 0 ? currentIndex + 1 : 0} of {jobs.length}
@@ -276,7 +336,7 @@ function JobsContent() {
                 </div>
               )}
 
-              {!isLoading && (
+              {!activeLoading && (
                 <div className="space-y-3 max-h-[calc(100vh-230px)] overflow-y-auto pr-1 scroll-smooth">
                   {jobs.map((job, index) => (
                     <div
@@ -294,7 +354,7 @@ function JobsContent() {
 
             {/* Mobile: grid of cards as before */}
             <div className="block lg:hidden">
-              {isLoading ? (
+              {activeLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {[...Array(4)].map((_, i) => (
                     <JobCardSkeleton key={i} />
@@ -311,7 +371,7 @@ function JobsContent() {
               )}
             </div>
             {/* Pagination (desktop & mobile) */}
-            {!isLoading && (
+            {!activeLoading && !showRecommendedOnly && (
               <div className="mt-6">
                 <Pagination
                   currentPage={page}
@@ -327,7 +387,7 @@ function JobsContent() {
           <div className="col-span-1 lg:col-span-3">
             <div className="mb-6 flex justify-between items-center">
               <h2 className="text-lg font-bold text-gray-900">
-                {isLoading ? 'Searching...' : `${data?.count ?? 0} Job${data?.count === 1 ? '' : 's'}`}
+                {activeLoading ? 'Searching...' : `${activeCount} Job${activeCount === 1 ? '' : 's'}${showRecommendedOnly ? ' · Recommended For You' : ''}`}
               </h2>
             </div>
 
