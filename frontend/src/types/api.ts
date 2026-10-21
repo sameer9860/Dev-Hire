@@ -112,6 +112,47 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
      deadline: string | null;
      application_count: number;
      is_saved?: boolean;
+     moderation_status?: 'approved' | 'flagged' | 'rejected';
+     is_flagged_for_review?: boolean;
+     quality_score?: number;
+     quality_feedback?: {
+       missing_elements?: string[];
+       suggestions?: string[];
+       ai_enhanced?: boolean;
+     };
+     safety_flags?: Array<{
+       type: string;
+       severity: 'danger' | 'warning' | 'info';
+       message: string;
+       evidence?: string;
+     }>;
+     moderator_notes?: string;
+   }
+
+   export interface JobAuditResult {
+     quality_score: number;
+     moderation_status: 'approved' | 'flagged' | 'rejected';
+     is_flagged_for_review: boolean;
+     missing_elements: string[];
+     suggestions: string[];
+     safety_flags: Array<{
+       type: string;
+       severity: 'danger' | 'warning' | 'info';
+       message: string;
+       evidence?: string;
+     }>;
+     ai_enhanced: boolean;
+   }
+
+   export interface PersonalizedJobRecommendation extends Job {
+     recommendation: {
+       score: number;
+       skill_match_score: number;
+       matching_skills: string[];
+       missing_skills: string[];
+       reasons: string[];
+       badge: string;
+     };
    }
 
    export interface JobFormData {
@@ -156,7 +197,7 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
    }
 
    // ─── Activity ─────────────────────────────────────────────────────
-   export type ActivityCategory = 'application' | 'bookmark' | 'profile' | 'security' | 'support' | 'career';
+   export type ActivityCategory = 'application' | 'bookmark' | 'profile' | 'security' | 'support' | 'career' | 'job';
 
    export interface ActivityLog {
      id: number;
