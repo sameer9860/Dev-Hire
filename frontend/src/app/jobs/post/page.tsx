@@ -4,17 +4,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { jobSchema, type JobFormData } from '@/schemas/jobSchema';
-import { useCreateJob, useGenerateJobPost } from '@/hooks/useJobs';
+import { useCreateJob, useGenerateJobPost, useAuditJobDraft } from '@/hooks/useJobs';
 import { useMe } from '@/hooks/useAuth';
 import { TagInput } from '@/components/jobs/TagInput';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, ShieldCheck, AlertTriangle, CheckCircle2, RefreshCw, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import type { JobAuditResult } from '@/types/api';
+import { useState } from 'react';
 
 export default function PostJobPage() {
   const router = useRouter();
   const { data: user, isLoading: userLoading } = useMe();
   const createJob = useCreateJob();
   const generatePostMutation = useGenerateJobPost();
+  const auditMutation = useAuditJobDraft();
+  const [auditResult, setAuditResult] = useState<JobAuditResult | null>(null);
 
   const {
     register,
@@ -42,6 +46,37 @@ export default function PostJobPage() {
   const techStack = watch('tech_stack');
   const descriptionValue = watch('description');
   const requirementsValue = watch('requirements');
+
+  const handleRunAudit = () => {
+    const title = watch('title')?.trim();
+    if (!title) {
+      toast.info('Please enter a Job Title before running quality check.');
+      return;
+    }
+    auditMutation.mutate(
+      {
+        title,
+        description: watch('description'),
+        requirements: watch('requirements'),
+        tech_stack: watch('tech_stack'),
+        salary_min: watch('salary_min'),
+        salary_max: watch('salary_max'),
+        location: watch('location'),
+      },
+      {
+        onSuccess: (data) => {
+          setAuditResult(data);
+          if (data.quality_score >= 80) {
+            toast.success(`Listing Quality: ${data.quality_score}/100 — Strong listing! 🌟`);
+          } else if (data.quality_score >= 60) {
+            toast.info(`Listing Quality: ${data.quality_score}/100 — Good with suggestions.`);
+          } else {
+            toast.warning(`Listing Quality: ${data.quality_score}/100 — Needs improvement.`);
+          }
+        },
+      }
+    );
+  };
 
   const handleGenerateJobPost = () => {
     const title = watch('title')?.trim();
@@ -317,6 +352,151 @@ export default function PostJobPage() {
                 }`}
               />
               {errors.deadline && <p className="text-red-500 text-xs mt-1">{errors.deadline.message}</p>}
+            </div>
+
+            {/* AI Listing Quality & Safety Pre-Audit Section */}
+            <div className="rounded-2xl border border-zinc-200 bg-gradient-to-br from-zinc-50 via-white to-indigo-50/30 p-5 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                      AI Job Quality & Trust Check
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                        Listing Assistant
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-500">
+                      Detects missing responsibilities, evaluates clarity, and scans for scam/duplicate flags.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRunAudit}
+                  disabled={auditMutation.isPending}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3.5 py-2 text-xs font-semibold text-indigo-700 shadow-2xs hover:bg-indigo-50 transition active:scale-[0.98] disabled:opacity-60"
+                >
+                  {auditMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Analyzing Listing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Analyze Listing Quality
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {auditResult && (
+                <div className="mt-4 pt-4 border-t border-zinc-100 space-y-3.5">
+                  {/* Score & Moderation Status */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white p-3 border border-zinc-100 shadow-2xs">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`flex h-11 w-11 items-center justify-center rounded-xl text-sm font-extrabold text-white ${
+                          auditResult.quality_score >= 80
+                            ? 'bg-emerald-600'
+                            : auditResult.quality_score >= 60
+                            ? 'bg-amber-500'
+                            : 'bg-rose-500'
+                        }`}
+                      >
+                        {auditResult.quality_score}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-zinc-900">
+                          Listing Quality Score: {auditResult.quality_score}/100
+                        </p>
+                        <p className="text-[11px] text-zinc-500">
+                          {auditResult.quality_score >= 80
+                            ? 'High quality · Ready to attract top developers'
+                            : auditResult.quality_score >= 60
+                            ? 'Moderate quality · Consider adding missing details'
+                            : 'Low quality · Requires more description and responsibilities'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        auditResult.moderation_status === 'approved'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-50 text-amber-800 border border-amber-200'
+                      }`}
+                    >
+                      {auditResult.moderation_status === 'approved' ? (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          Approved for Instant Publish
+                        </>
+                      ) : (
+                        <>
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                          Flagged for Review
+                        </>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Safety Flags Warning */}
+                  {auditResult.safety_flags && auditResult.safety_flags.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 space-y-1">
+                      <p className="font-bold flex items-center gap-1.5 text-amber-800">
+                        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                        Warning Signs Detected:
+                      </p>
+                      {auditResult.safety_flags.map((flag, idx) => (
+                        <p key={idx} className="pl-5 text-amber-800 text-[11px]">
+                          • <span className="font-semibold capitalize">{flag.type.replace('_', ' ')}:</span> {flag.message}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Missing Elements */}
+                  {auditResult.missing_elements && auditResult.missing_elements.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
+                        Missing or Incomplete Items
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {auditResult.missing_elements.map((item, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 border border-rose-100"
+                          >
+                            ✕ {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggestions */}
+                  {auditResult.suggestions && auditResult.suggestions.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        Recommendations for Better Candidate Reach
+                      </p>
+                      <ul className="space-y-1 text-xs text-zinc-600">
+                        {auditResult.suggestions.map((sug, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5">
+                            <span className="text-indigo-600 font-bold shrink-0">→</span>
+                            <span>{sug}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Error Message */}
