@@ -15,6 +15,11 @@ class Job(models.Model):
            ('mid', 'Mid'),
            ('senior', 'Senior'),
        ]
+       MODERATION_STATUS = [
+           ('approved', 'Approved'),
+           ('flagged', 'Flagged for Review'),
+           ('rejected', 'Rejected'),
+       ]
        company = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
                                    related_name='posted_jobs')
        title = models.CharField(max_length=200)
@@ -28,6 +33,16 @@ class Job(models.Model):
        salary_min = models.PositiveIntegerField(null=True, blank=True)
        salary_max = models.PositiveIntegerField(null=True, blank=True)
        is_active = models.BooleanField(default=True)
+       moderation_status = models.CharField(
+           max_length=20,
+           choices=MODERATION_STATUS,
+           default='approved',
+       )
+       is_flagged_for_review = models.BooleanField(default=False)
+       quality_score = models.PositiveIntegerField(default=100)
+       quality_feedback = models.JSONField(default=dict, blank=True)
+       safety_flags = models.JSONField(default=list, blank=True)
+       moderator_notes = models.TextField(blank=True, default='')
        created_at = models.DateTimeField(auto_now_add=True)
        updated_at = models.DateTimeField(auto_now=True)
        deadline = models.DateField(null=True, blank=True)
