@@ -10,7 +10,7 @@ import { useToggleBookmark } from '@/hooks/useBookmarks';
 import { ApplyModal } from '@/components/jobs/ApplyModal';
 import { JobDetailSkeleton } from '@/components/jobs/JobDetailSkeleton';
 import { MatchScoreBadge } from '@/components/jobs/MatchScoreBadge';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   'full-time': 'Full Time',
@@ -204,6 +204,41 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left: description & details */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Safety Warning Signs Alert */}
+            {job.safety_flags && job.safety_flags.length > 0 && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-5 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                    <AlertTriangle className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1.5 flex-1">
+                    <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2">
+                      Listing Caution: Potential Warning Signs Detected
+                      <span className="rounded-full bg-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                        Advisory
+                      </span>
+                    </h3>
+                    <p className="text-xs text-amber-800">
+                      DevHire’s AI Job Quality & Safety scanner detected potential flags in this posting:
+                    </p>
+                    <ul className="space-y-1 pt-1 text-xs text-amber-900">
+                      {job.safety_flags.map((flag, idx) => (
+                        <li key={idx} className="flex items-start gap-1.5 font-medium">
+                          <span className="font-bold">•</span>
+                          <span>
+                            <strong className="capitalize">{flag.type.replace(/_/g, ' ')}:</strong> {flag.message}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-[11px] text-amber-700/90 pt-1 italic">
+                      Reminder: Legitimate employers will never ask candidates for equipment fees, wire transfers, or gift cards.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Description - Blue Theme */}
             <section className="bg-blue-50/20 border border-blue-100/50 rounded-2xl p-6 shadow-sm hover:shadow-md hover:bg-blue-50/40 hover:border-blue-200 transition-all duration-300">
               <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wider mb-4">
@@ -288,6 +323,32 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Quality & Safety Verification Badge */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                  Listing Quality Score
+                </span>
+                <span
+                  className={`text-xs font-extrabold rounded-full px-2.5 py-0.5 border ${
+                    (job.quality_score ?? 100) >= 80
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : (job.quality_score ?? 100) >= 60
+                      ? 'bg-amber-50 text-amber-800 border-amber-200'
+                      : 'bg-rose-50 text-rose-700 border-rose-200'
+                  }`}
+                >
+                  {job.quality_score ?? 100} / 100
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {(!job.safety_flags || job.safety_flags.length === 0)
+                  ? '✓ Verified listing. Complies with DevHire job quality and anti-scam posting standards.'
+                  : '⚠️ Contains warning flags flagged for candidate caution.'}
+              </p>
             </div>
 
             {/* Company card - Rose Theme */}
