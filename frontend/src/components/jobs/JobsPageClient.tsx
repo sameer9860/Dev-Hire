@@ -142,7 +142,13 @@ function JobsContent() {
   };
 
   const { data: user } = useMe();
-  const isDeveloper = user?.role === 'developer';
+  // `mounted` prevents the "Recommended For You" button from appearing in SSR
+  // (server has no auth context) and then popping in on the client — which
+  // causes the React hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  const isDeveloper = mounted && user?.role === 'developer';
   const [showRecommendedOnly, setShowRecommendedOnly] = useState(false);
 
   const { data: recsData, isLoading: isLoadingRecs } = useJobRecommendations(15, isDeveloper);
