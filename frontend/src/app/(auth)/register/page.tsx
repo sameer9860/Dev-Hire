@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, Code, User } from 'lucide-react';
+import { Building2, User } from 'lucide-react';
 import { useMe } from '@/hooks/useAuth';
 
 export default function RegisterChoicePage() {
@@ -28,9 +28,9 @@ export default function RegisterChoicePage() {
     <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4 py-8">
       <div className="bg-white border border-zinc-200 rounded-2xl p-8 w-full max-w-[400px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300">
         <div className="text-center mb-7">
-          <div className="w-10 h-10 bg-zinc-50 border border-zinc-200 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <Code className="w-5 h-5 text-zinc-900" />
-          </div>
+          <Link href="/" className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-950 mx-auto mb-4 shadow-sm hover:bg-zinc-800 transition-colors">
+            <span className="text-sm font-bold text-white">DH</span>
+          </Link>
           <h2 className="text-[20px] font-medium text-zinc-900 tracking-tight">Join DevHire</h2>
           <p className="text-[13px] text-zinc-500 mt-1">Choose how you want to register</p>
         </div>
