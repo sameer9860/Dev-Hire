@@ -15,7 +15,6 @@ import {
   CheckCircle,
   LayoutDashboard,
   ChevronDown,
-  Code2,
 } from "lucide-react";
 
 const FEATURES = [
@@ -400,12 +399,12 @@ export default function HomePage() {
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
             {/* Brand / About */}
             <div className="lg:col-span-2">
-              <div className="mb-4 flex items-center gap-2">
+              <Link href="/" className="mb-4 inline-flex items-center gap-2">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white">
-                  <Code2 className="h-5 w-5 text-zinc-950" />
+                  <span className="text-sm font-bold text-zinc-950">DH</span>
                 </div>
                 <span className="text-lg font-bold text-white">DevHire</span>
-              </div>
+              </Link>
               <p className="mb-6 max-w-sm text-sm leading-relaxed text-zinc-400">
                 DevHire connects tech companies with developers. Browse open
                 positions, apply in minutes, and track every application all in
