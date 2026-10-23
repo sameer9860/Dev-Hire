@@ -11,7 +11,7 @@ import {
 } from '@/schemas/authSchema';
 import { useRegister, useMe, useCheckUsername, useCheckEmail } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, User, Lock, Mail, Code, Check, X } from 'lucide-react';
+import { Eye, EyeOff, User, Lock, Mail, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import DeveloperOAuthButtons from '@/components/auth/DeveloperOAuthButtons';
@@ -87,9 +87,9 @@ export default function DeveloperRegisterPage() {
     <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4 py-8">
       <div className="bg-white border border-zinc-200 rounded-2xl p-8 w-full max-w-[400px] shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-300">
         <div className="text-center mb-7">
-          <div className="w-10 h-10 bg-zinc-50 border border-zinc-200 rounded-lg flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <Code className="w-5 h-5 text-zinc-900" />
-          </div>
+          <Link href="/" className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-950 mx-auto mb-4 shadow-sm hover:bg-zinc-800 transition-colors">
+            <span className="text-sm font-bold text-white">DH</span>
+          </Link>
           <h2 className="text-[20px] font-medium text-zinc-900 tracking-tight">Developer signup</h2>
           <p className="text-[13px] text-zinc-500 mt-1">Create your DevHire developer account</p>
         </div>
