@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { usePasswordResetConfirm } from '@/hooks/useAuth';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Lock, Eye, EyeOff, Code, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ALLOWED_PASSWORD_CHARS, PASSWORD_CHARSET_ERROR } from '@/schemas/authSchema';
 
 const schema = z
@@ -190,7 +190,7 @@ export default function ResetPasswordPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
         <Link href="/" className="inline-flex items-center gap-2.5 group mb-4">
           <div className="w-10 h-10 rounded-xl bg-zinc-950 flex items-center justify-center text-white shadow-md group-hover:bg-zinc-800 transition-colors">
-            <Code className="w-5 h-5" />
+            <span className="text-sm font-bold text-white">DH</span>
           </div>
           <span className="font-bold text-xl tracking-tight text-zinc-900">DevHire</span>
         </Link>
