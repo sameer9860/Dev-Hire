@@ -147,6 +147,7 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
    export interface PersonalizedJobRecommendation extends Job {
      recommendation: {
        score: number;
+       composite_score?: number;
        skill_match_score: number;
        matching_skills: string[];
        missing_skills: string[];
