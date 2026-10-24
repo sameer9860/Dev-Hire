@@ -1,5 +1,5 @@
 import type { Job, PersonalizedJobRecommendation } from '@/types/api';
-import { Clock, ArrowRight, Sparkles, ShieldCheck, AlertTriangle, Building2 } from 'lucide-react';
+import { Clock, ArrowRight, Sparkles, Target, ShieldCheck, AlertTriangle, Building2 } from 'lucide-react';
 
 interface JobCardProps {
   job: Job | PersonalizedJobRecommendation;
@@ -34,6 +34,8 @@ function getDaysLeft(deadline?: string | null, createdAt?: string | null): strin
 
 export function JobCard({ job }: JobCardProps) {
   const recData = (job as PersonalizedJobRecommendation).recommendation;
+  const matchScore = recData ? (recData.skill_match_score ?? recData.score) : null;
+  const matchLabel = recData?.badge;
   const hasSafetyFlags = job.safety_flags && job.safety_flags.length > 0;
   const daysLeft = getDaysLeft(job.deadline, job.created_at);
 
@@ -41,14 +43,36 @@ export function JobCard({ job }: JobCardProps) {
   const companyLogo = job.company?.avatar_url;
   const companyInitials = (companyName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 2) || 'CO').toUpperCase();
 
+  const matchBadgeStyle = matchScore !== null
+    ? matchScore >= 80
+      ? 'bg-emerald-50 text-emerald-800 border-emerald-200/80'
+      : matchScore >= 60
+      ? 'bg-blue-50 text-blue-800 border-blue-200/80'
+      : matchScore >= 40
+      ? 'bg-amber-50 text-amber-800 border-amber-200/80'
+      : 'bg-rose-50 text-rose-800 border-rose-200/80'
+    : '';
+
+  const matchDotStyle = matchScore !== null
+    ? matchScore >= 80
+      ? 'bg-emerald-500'
+      : matchScore >= 60
+      ? 'bg-blue-500'
+      : matchScore >= 40
+      ? 'bg-amber-500'
+      : 'bg-rose-500'
+    : '';
+
   return (
     <div className="group rounded-2xl border border-gray-200/90 bg-white p-4.5 sm:p-5 shadow-xs hover:shadow-md hover:border-gray-300 transition-all cursor-pointer relative flex flex-col justify-between">
-      {/* Optional Top Match Header for Personalized Recommendations */}
-      {recData && (
+      {/* Optional Match Header for Personalized Recommendations */}
+      {recData && matchScore !== null && (
         <div className="mb-3 flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
-          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50/90 rounded-md px-2 py-0.5 border border-indigo-100 shadow-2xs">
-            <Sparkles className="h-3 w-3 text-indigo-600" />
-            {recData.score}% Match · {recData.badge}
+          <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-full px-2.5 py-0.5 border shadow-2xs whitespace-nowrap ${matchBadgeStyle}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${matchDotStyle} animate-pulse shrink-0`} />
+            <Target className="h-3 w-3 shrink-0" />
+            <span>{matchScore}% Match</span>
+            {matchLabel && <span className="opacity-75 font-medium hidden sm:inline">· {matchLabel}</span>}
           </span>
           {job.is_remote && (
             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded px-1.5 py-0.5 border border-emerald-100">
