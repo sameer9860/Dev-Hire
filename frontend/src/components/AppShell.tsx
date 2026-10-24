@@ -349,11 +349,17 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
         )}
 
         {mounted && user?.role === 'developer' && (
-          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
+          <>
+            <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
+            <Item href="/profile" path="/profile" icon={User} label="Profile" />
+          </>
         )}
 
         {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) && (
-          <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
+          <>
+            <Item href="/jobs" path="/jobs" icon={Briefcase} label="Find Opportunities" />
+            <Item href="/profile" path="/profile" icon={User} label="Profile" />
+          </>
         )}
 
         {mounted && user?.role === 'company' && (
@@ -401,6 +407,8 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
                 </div>
               )}
             </div>
+
+            <Item href="/profile" path="/profile" icon={User} label="Profile" />
 
             {/* Candidates / Applicants Collapsible */}
             <div className="space-y-1">
@@ -524,10 +532,6 @@ function SidebarNav({ collapsed }: { collapsed: boolean }) {
             icon={MessageSquare}
             label="Messages"
           />
-        )}
-
-        {mounted && user && (
-          <Item href="/profile" path="/profile" icon={User} label="My Profile" />
         )}
 
         {mounted && (user?.role === 'admin' || user?.is_staff || user?.is_superuser) && (
