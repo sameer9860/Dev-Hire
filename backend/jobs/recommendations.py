@@ -128,17 +128,18 @@ def get_personalized_recommendations(developer_user, limit: int = 15) -> List[Di
             "is_saved": is_saved,
             "created_at": job.created_at,
             "recommendation": {
-                "score": composite_score,
+                "score": base_skill_score,
+                "composite_score": composite_score,
                 "skill_match_score": base_skill_score,
                 "matching_skills": match_result.matching_skills,
                 "missing_skills": match_result.missing_skills,
                 "reasons": reasons,
-                "badge": "Top Match" if composite_score >= 80 else "Strong Fit" if composite_score >= 60 else "Good Match",
+                "badge": match_result.label or ("Top Match" if base_skill_score >= 80 else "Strong Fit" if base_skill_score >= 60 else "Good Match"),
             }
         })
 
-    # Sort descending by recommendation score
-    scored_jobs.sort(key=lambda x: x["recommendation"]["score"], reverse=True)
+    # Sort descending by composite recommendation ranking
+    scored_jobs.sort(key=lambda x: x["recommendation"]["composite_score"], reverse=True)
     return scored_jobs[:limit]
 
 
