@@ -202,9 +202,11 @@ function JobsContent() {
               <h1 className="text-3xl font-bold text-gray-900">Tech Jobs</h1>
               <p className="text-gray-600 mt-1">Find your next opportunity</p>
             </div>
-            <Link href="/jobs/post">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">Post a Job</Button>
-            </Link>
+            {!isDeveloper && (
+              <Link href="/jobs/post">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">Post a Job</Button>
+              </Link>
+            )}
           </div>
 
           {/* Search Bar */}
