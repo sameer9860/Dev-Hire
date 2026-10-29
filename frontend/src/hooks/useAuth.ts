@@ -108,12 +108,18 @@ export function useReactivateRequestOTP() {
 
 export function useRegister() {
   const router = useRouter();
-  return useMutation<User, Error, RegisterRequest>({
+  return useMutation<any, Error, RegisterRequest>({
     mutationFn: async (userData) => {
       const { data } = await api.post('/auth/register/', userData);
       return data;
     },
     onSuccess: (data) => {
+      if (data?.otp_required) {
+        // Developer manual registration — redirect to OTP verification
+        const email = encodeURIComponent(data.email || '');
+        router.push(`/register/developer/verify-otp?email=${email}`);
+        return;
+      }
       toast.success(`Account for ${data.username} created successfully!`);
       router.push('/login');
     },
@@ -137,6 +143,40 @@ export function useRegister() {
       }
       toast.error(errMsg);
     }
+  });
+}
+
+export function useVerifyRegistrationOTP() {
+  const router = useRouter();
+  return useMutation<any, Error, { email: string; otp: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/verify-registration-otp/', payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`Welcome to DevHire, ${data.username}! Your account is now active.`);
+      router.push('/login');
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail || 'Verification failed. Please try again.';
+      toast.error(msg);
+    },
+  });
+}
+
+export function useResendRegistrationOTP() {
+  return useMutation<any, Error, { email: string }>({
+    mutationFn: async (payload) => {
+      const { data } = await api.post('/auth/resend-registration-otp/', payload);
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('A new verification code has been sent to your email.');
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail || 'Failed to resend code. Please try again.';
+      toast.error(msg);
+    },
   });
 }
 

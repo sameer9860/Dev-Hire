@@ -154,9 +154,169 @@ class EmailTokenObtainPairView(TokenObtainPairView):
 
 
 class RegisterView(generics.CreateAPIView):
-       queryset = User.objects.all()
-       serializer_class = RegisterSerializer
-       permission_classes = [permissions.AllowAny]
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated = serializer.validated_data
+
+        is_developer_manual = (
+            validated.get('role', 'developer') == 'developer'
+            and not validated.get('oauth_provider')
+        )
+
+        if is_developer_manual:
+            # Create account as inactive; require OTP to activate
+            user = serializer.save()
+            user.is_active = False
+            user.save(update_fields=['is_active'])
+
+            otp_code = f"{random.randint(100000, 999999)}"
+            cache_key = f"registration_otp:{user.email.strip().lower()}"
+            cache.set(
+                cache_key,
+                {'otp': otp_code, 'user_id': user.id, 'attempts': 0},
+                timeout=600,
+            )
+
+            try:
+                send_mail(
+                    subject="Verify your DevHire account",
+                    message=(
+                        f"Hi {user.username},\n\n"
+                        f"Welcome to DevHire! Please verify your email address.\n\n"
+                        f"Your verification code is: {otp_code}\n\n"
+                        f"This code expires in 10 minutes.\n\n"
+                        f"If you did not sign up for DevHire, you can safely ignore this email."
+                    ),
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                    recipient_list=[user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                logger.exception("Failed to send registration OTP email to %s", user.email)
+
+            return Response(
+                {
+                    'otp_required': True,
+                    'email': user.email,
+                    'detail': 'A 6-digit verification code has been sent to your email. Please enter it to activate your account.',
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        # Company / non-developer: activate immediately (existing behaviour)
+        user = serializer.save()
+        return Response(
+            {'id': user.id, 'username': user.username, 'email': user.email, 'role': user.role},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class VerifyRegistrationOTPView(APIView):
+    """POST /api/auth/verify-registration-otp/
+    Accepts { email, otp } — activates the account if the code is correct.
+    Returns the same 201 payload as normal registration on success.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        otp_input = (request.data.get('otp') or '').strip()
+
+        if not email or not otp_input:
+            return Response({'detail': 'Email and OTP are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cache_key = f"registration_otp:{email}"
+        data = cache.get(cache_key)
+
+        if not data:
+            return Response(
+                {'detail': 'Verification code has expired. Please register again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        attempts = data.get('attempts', 0)
+        if attempts >= 5:
+            cache.delete(cache_key)
+            return Response(
+                {'detail': 'Too many incorrect attempts. Please register again.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if data['otp'] != otp_input:
+            data['attempts'] = attempts + 1
+            cache.set(cache_key, data, timeout=600)
+            remaining = 5 - data['attempts']
+            return Response(
+                {'detail': f'Incorrect verification code. {remaining} attempt(s) remaining.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # OTP correct — activate the user
+        try:
+            user = User.objects.get(id=data['user_id'], is_active=False)
+        except User.DoesNotExist:
+            cache.delete(cache_key)
+            return Response(
+                {'detail': 'Account not found or already activated.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.is_active = True
+        user.save(update_fields=['is_active'])
+        cache.delete(cache_key)
+
+        return Response(
+            {'id': user.id, 'username': user.username, 'email': user.email, 'role': user.role},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResendRegistrationOTPView(APIView):
+    """POST /api/auth/resend-registration-otp/
+    Accepts { email } — resends a fresh OTP if the account is still unverified.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        if not email:
+            return Response({'detail': 'Email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email__iexact=email, is_active=False)
+        except User.DoesNotExist:
+            # Don't reveal whether the account exists
+            return Response({'detail': 'If an unverified account exists for this email, a new code has been sent.'})
+
+        otp_code = f"{random.randint(100000, 999999)}"
+        cache_key = f"registration_otp:{email}"
+        cache.set(
+            cache_key,
+            {'otp': otp_code, 'user_id': user.id, 'attempts': 0},
+            timeout=600,
+        )
+
+        try:
+            send_mail(
+                subject="Your new DevHire verification code",
+                message=(
+                    f"Hi {user.username},\n\n"
+                    f"Here is your new verification code: {otp_code}\n\n"
+                    f"This code expires in 10 minutes."
+                ),
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            logger.exception("Failed to resend registration OTP to %s", email)
+
+        return Response({'detail': 'A new verification code has been sent to your email.'})
 
 class MeView(generics.RetrieveUpdateAPIView):
        serializer_class = UserSerializer
