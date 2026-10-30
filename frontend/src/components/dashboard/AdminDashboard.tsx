@@ -62,9 +62,11 @@ export function AdminDashboard() {
   // User Management Query & Mutations
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('');
+  const [userStatusFilter, setUserStatusFilter] = useState('');
   const { data: usersData, isLoading: isLoadingUsers } = useAdminUsers({
     search: userSearch,
     role: userRoleFilter,
+    is_active: userStatusFilter,
   });
   const updateUserMutation = useUpdateAdminUser();
   const deleteUserMutation = useDeleteAdminUser();
@@ -354,6 +356,16 @@ export function AdminDashboard() {
                   <option value="company">Companies</option>
                   <option value="admin">Admins</option>
                 </select>
+
+                <select
+                  value={userStatusFilter}
+                  onChange={(e) => setUserStatusFilter(e.target.value)}
+                  className="h-10 rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 outline-none"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="true">Active</option>
+                  <option value="false">Needs Reactivation</option>
+                </select>
               </div>
             </div>
           </div>
@@ -376,101 +388,161 @@ export function AdminDashboard() {
                       <th className="px-6 py-3.5">User</th>
                       <th className="px-6 py-3.5">Role</th>
                       <th className="px-6 py-3.5">Status</th>
+                      <th className="px-6 py-3.5">Last Logged In</th>
                       <th className="px-6 py-3.5">Joined</th>
                       <th className="px-6 py-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
-                    {usersList.map((user, idx) => (
-                      <tr key={user.id} className="hover:bg-zinc-50/50 transition">
-                        <td className="px-4 py-4 text-center text-xs font-semibold text-zinc-400">
-                          {idx + 1}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <UserAvatar src={user.avatar_url} name={user.username} size="md" />
-                            <div>
-                              <p className="font-bold text-zinc-900">
-                                {user.username}{' '}
-                                {user.role === 'company' && user.company_name && (
-                                  <span className="font-normal text-zinc-500">({user.company_name})</span>
-                                )}
-                              </p>
-                              <p className="text-xs text-zinc-500">{user.email}</p>
+                    {usersList.map((user, idx) => {
+                      const isAdmin = user.role === 'admin' || user.is_staff || user.is_superuser;
+                      return (
+                        <tr key={user.id} className="hover:bg-zinc-50/50 transition">
+                          <td className="px-4 py-4 text-center text-xs font-semibold text-zinc-400">
+                            {idx + 1}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <UserAvatar src={user.avatar_url} name={user.username} size="md" />
+                              <div>
+                                <p className="font-bold text-zinc-900">
+                                  {user.username}{' '}
+                                  {user.role === 'company' && user.company_name && (
+                                    <span className="font-normal text-zinc-500">({user.company_name})</span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-zinc-500">{user.email}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
-                              user.role === 'admin'
-                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                : user.role === 'company'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
-                            }`}
-                          >
-                            {user.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
-                              user.is_active ? 'text-emerald-700' : 'text-red-600'
-                            }`}
-                          >
+                          </td>
+                          <td className="px-6 py-4">
                             <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                user.is_active ? 'bg-emerald-500' : 'bg-red-500'
-                              }`}
-                            />
-                            {user.is_active ? 'Active' : 'Disabled'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-xs text-zinc-500">
-                          {user.date_joined ? new Date(user.date_joined).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() =>
-                                updateUserMutation.mutate({ id: user.id, is_active: !user.is_active })
-                              }
-                              disabled={updateUserMutation.isPending}
-                              className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
-                                user.is_active
-                                  ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                  : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                                isAdmin
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  : user.role === 'company'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
                               }`}
                             >
-                              {user.is_active ? 'Disable' : 'Enable'}
-                            </button>
+                              {user.role}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {isAdmin ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-0.5 text-xs font-semibold text-purple-700">
+                                <span className="h-1.5 w-1.5 rounded-full bg-purple-500" />
+                                Always Active
+                              </span>
+                            ) : user.is_active ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                Needs Reactivation
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-xs">
+                            {user.last_login ? (
+                              <div>
+                                <p className="font-semibold text-zinc-900">
+                                  {new Date(user.last_login).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}
+                                </p>
+                                <p className="text-[11px] text-zinc-500">
+                                  {new Date(user.last_login).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-zinc-400 italic">Never</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-zinc-500">
+                            {user.date_joined ? (
+                              <div>
+                                <p className="font-medium text-zinc-700">
+                                  {new Date(user.date_joined).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}
+                                </p>
+                                <p className="text-[11px] text-zinc-400">
+                                  {new Date(user.date_joined).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </p>
+                              </div>
+                            ) : (
+                              'N/A'
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {isAdmin ? (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50/60 px-2.5 py-1 text-xs font-semibold text-purple-700"
+                                  title="Admin accounts cannot be deactivated and must always remain active"
+                                >
+                                  <Shield className="h-3 w-3" />
+                                  Always Active
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() =>
+                                    updateUserMutation.mutate({ id: user.id, is_active: !user.is_active })
+                                  }
+                                  disabled={updateUserMutation.isPending}
+                                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                                    user.is_active
+                                      ? 'border-red-200 text-red-600 hover:bg-red-50'
+                                      : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+                                  }`}
+                                  title={user.is_active ? 'Disable account' : 'Reactivate account'}
+                                >
+                                  {user.is_active ? 'Disable' : 'Reactivate'}
+                                </button>
+                              )}
 
-                            <button
-                              onClick={() => {
-                                setSelectedRecipientId(user.id);
-                                setActiveTab('messages');
-                              }}
-                              className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                            >
-                              Message
-                            </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedRecipientId(user.id);
+                                  setActiveTab('messages');
+                                }}
+                                className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                              >
+                                Message
+                              </button>
 
-                            <button
-                              onClick={() => {
-                                if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
-                                  deleteUserMutation.mutate(user.id);
-                                }
-                              }}
-                              className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
-                              title="Delete user"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {!isAdmin && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
+                                      deleteUserMutation.mutate(user.id);
+                                    }
+                                  }}
+                                  className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
+                                  title="Delete user"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
