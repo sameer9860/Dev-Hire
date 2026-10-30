@@ -19,8 +19,20 @@ class TestAuthenticationAPI:
         }
         response = api_client.post("/api/auth/register/", data)
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["username"] == "new_dev"
-        assert response.data["role"] == "developer"
+        assert response.data.get("otp_required") is True
+        assert response.data.get("email") == "dev@test.com"
+
+        # Verify OTP activates the developer
+        from django.core.cache import cache
+        otp_data = cache.get("registration_otp:dev@test.com")
+        assert otp_data is not None
+        otp_res = api_client.post("/api/auth/verify-registration-otp/", {
+            "email": "dev@test.com",
+            "otp": otp_data["otp"],
+        })
+        assert otp_res.status_code == status.HTTP_200_OK
+        assert otp_res.data["username"] == "new_dev"
+        assert otp_res.data["role"] == "developer"
 
     def test_register_company(self, api_client):
         data = {
@@ -49,8 +61,9 @@ class TestAuthenticationAPI:
         }
         response = api_client.post("/api/auth/register/", data)
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data["company_website"].startswith("https://")
-        assert "codynn.com.np" in response.data["company_website"]
+        created_user = User.objects.get(username="new_co2")
+        assert created_user.company_website.startswith("https://")
+        assert "codynn.com.np" in created_user.company_website
 
     def test_register_passwords_dont_match(self, api_client):
         data = {
