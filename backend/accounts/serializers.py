@@ -47,8 +47,14 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if user is None or not user.check_password(password):
             raise serializers.ValidationError({'detail': 'No active account found with the given credentials'})
 
-        # Check 30-day inactivity cutoff for non-superusers
-        if not user.is_superuser:
+        # Admin accounts are always kept active.
+        # Company and developer accounts require reactivation after 30 days of inactivity.
+        is_admin_account = (getattr(user, 'role', '') == 'admin' or user.is_staff or user.is_superuser)
+        if is_admin_account:
+            if not user.is_active:
+                user.is_active = True
+                user.save(update_fields=['is_active'])
+        else:
             from datetime import timedelta
             from django.utils import timezone
             cutoff = timezone.now() - timedelta(days=30)
