@@ -197,6 +197,9 @@ def get_or_create_developer_from_oauth(identity: dict):
 
 
 def issue_tokens_for_user(user) -> dict:
+    from django.utils import timezone
+    user.last_login = timezone.now()
+    user.save(update_fields=['last_login'])
     refresh = RefreshToken.for_user(user)
     return {
         'access': str(refresh.access_token),
