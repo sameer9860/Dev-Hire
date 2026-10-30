@@ -1261,6 +1261,7 @@ class AdminStatsView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request):
+        sync_inactive_users()
         from jobs.models import Job
         from applications.models import Application
 
@@ -1300,13 +1301,25 @@ class AdminStatsView(APIView):
 
 
 def sync_inactive_users():
-    """Auto-disable non-superuser accounts inactive for > 30 days based on last_login or date_joined."""
+    """Auto-disable company and developer accounts inactive for > 30 days based on last_login or date_joined.
+    Admin accounts are protected and must always remain active.
+    """
     from datetime import timedelta
     from django.utils import timezone
     cutoff = timezone.now() - timedelta(days=30)
+
+    # 1. Ensure all admin accounts (role='admin', is_staff=True, or is_superuser=True) are ALWAYS active
     User.objects.filter(
-        is_active=True,
-        is_superuser=False
+        Q(role='admin') | Q(is_staff=True) | Q(is_superuser=True),
+        is_active=False
+    ).update(is_active=True)
+
+    # 2. Deactivate company and developer accounts inactive for > 30 days
+    User.objects.filter(
+        role__in=['developer', 'company'],
+        is_staff=False,
+        is_superuser=False,
+        is_active=True
     ).filter(
         Q(last_login__lt=cutoff) | Q(last_login__isnull=True, date_joined__lt=cutoff)
     ).update(is_active=False)
@@ -1350,7 +1363,20 @@ class AdminUserDetailView(APIView):
         role = request.data.get('role')
 
         if is_active is not None:
-            target_user.is_active = bool(is_active)
+            if isinstance(is_active, str):
+                is_active_bool = is_active.lower() in ('true', '1')
+            else:
+                is_active_bool = bool(is_active)
+
+            is_target_admin = (
+                target_user.role == 'admin' or target_user.is_staff or target_user.is_superuser
+            )
+            if is_target_admin and not is_active_bool:
+                return Response(
+                    {'detail': 'Admin accounts must always remain active and cannot be deactivated.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            target_user.is_active = is_active_bool
             if target_user.is_active:
                 from django.utils import timezone
                 target_user.last_login = timezone.now()
@@ -1358,6 +1384,7 @@ class AdminUserDetailView(APIView):
             target_user.role = role
             if role == 'admin':
                 target_user.is_staff = True
+                target_user.is_active = True
 
         target_user.save()
         serializer = UserSerializer(target_user)
