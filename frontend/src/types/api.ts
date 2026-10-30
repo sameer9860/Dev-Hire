@@ -40,6 +40,7 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
      is_superuser?: boolean;
      is_active?: boolean;
      date_joined?: string;
+     last_login?: string | null;
      bio: string;
      avatar_url: string;
      first_name?: string;
