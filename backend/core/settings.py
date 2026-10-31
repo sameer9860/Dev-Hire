@@ -218,7 +218,7 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 # Fail fast instead of hanging until Gunicorn worker timeout (common when
 # EMAIL_HOST is wrong/unreachable on Railway).
-EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=5, cast=int)
 DEFAULT_FROM_EMAIL = config(
     'DEFAULT_FROM_EMAIL',
     default=config('EMAIL_HOST_USER', default='webmaster@localhost') or 'webmaster@localhost',
