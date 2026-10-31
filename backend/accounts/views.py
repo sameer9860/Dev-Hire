@@ -27,6 +27,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.conf import settings
 from django.core.mail import send_mail
+from .email_utils import send_mail_async
 from django.db.models import Q
 from django.core.cache import cache
 import logging
@@ -182,22 +183,19 @@ class RegisterView(generics.CreateAPIView):
                 timeout=600,
             )
 
-            try:
-                send_mail(
-                    subject="Verify your DevHire account",
-                    message=(
-                        f"Hi {user.username},\n\n"
-                        f"Welcome to DevHire! Please verify your email address.\n\n"
-                        f"Your verification code is: {otp_code}\n\n"
-                        f"This code expires in 10 minutes.\n\n"
-                        f"If you did not sign up for DevHire, you can safely ignore this email."
-                    ),
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
-            except Exception:
-                logger.exception("Failed to send registration OTP email to %s", user.email)
+            send_mail_async(
+                subject="Verify your DevHire account",
+                message=(
+                    f"Hi {user.username},\n\n"
+                    f"Welcome to DevHire! Please verify your email address.\n\n"
+                    f"Your verification code is: {otp_code}\n\n"
+                    f"This code expires in 10 minutes.\n\n"
+                    f"If you did not sign up for DevHire, you can safely ignore this email."
+                ),
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
 
             return Response(
                 {
@@ -301,20 +299,17 @@ class ResendRegistrationOTPView(APIView):
             timeout=600,
         )
 
-        try:
-            send_mail(
-                subject="Your new DevHire verification code",
-                message=(
-                    f"Hi {user.username},\n\n"
-                    f"Here is your new verification code: {otp_code}\n\n"
-                    f"This code expires in 10 minutes."
-                ),
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
-                recipient_list=[user.email],
-                fail_silently=True,
-            )
-        except Exception:
-            logger.exception("Failed to resend registration OTP to %s", email)
+        send_mail_async(
+            subject="Your new DevHire verification code",
+            message=(
+                f"Hi {user.username},\n\n"
+                f"Here is your new verification code: {otp_code}\n\n"
+                f"This code expires in 10 minutes."
+            ),
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
 
         return Response({'detail': 'A new verification code has been sent to your email.'})
 
@@ -482,15 +477,7 @@ class ChangeEmailRequestView(APIView):
             f"If you did not request this change, please ignore this email."
         )
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-        try:
-            send_mail(subject, message, from_email, [new_email], fail_silently=False)
-        except Exception:
-            logger.exception('Failed to send email-change verification to %s', new_email)
-            cache.delete(cache_key)
-            return Response(
-                {'detail': 'Could not send verification email. Check email settings and try again.'},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
+        send_mail_async(subject, message, from_email, [new_email], fail_silently=True)
 
         return Response(
             {'detail': 'Verification code sent to your new email. Confirm it before the email is updated.'},
@@ -1046,11 +1033,7 @@ class PasswordResetRequestView(APIView):
                 f"If you did not request this password reset, please ignore this email."
             )
             from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-            try:
-                send_mail(subject, message, from_email, [user.email], fail_silently=False)
-            except Exception:
-                # Keep response enumeration-safe; log so Railway SMTP misconfig is visible.
-                logger.exception('Failed to send password-reset OTP to %s', user.email)
+            send_mail_async(subject, message, from_email, [user.email], fail_silently=True)
 
         PasswordResetRateLimiter.record(email_key)
         PasswordResetRateLimiter.record(ip_key)
@@ -1594,21 +1577,18 @@ class ReactivateRequestOTPView(APIView):
             cache.set(f"reactivate_otp:{user.username.lower()}", otp_payload, timeout=600)
 
         if user.email:
-            try:
-                send_mail(
-                    subject="Reactivate your DevHire Account - Verification Code",
-                    message=(
-                        f"Hello {user.username},\n\n"
-                        f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
-                        f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
-                        f"This code will expire in 10 minutes."
-                    ),
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
-            except Exception:
-                pass
+            send_mail_async(
+                subject="Reactivate your DevHire Account - Verification Code",
+                message=(
+                    f"Hello {user.username},\n\n"
+                    f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
+                    f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
+                    f"This code will expire in 10 minutes."
+                ),
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
 
         return Response({
             'detail': f'A new 6-digit verification code has been sent to {user.email or "your registered email"}.',
