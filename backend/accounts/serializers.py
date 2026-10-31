@@ -66,8 +66,8 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user.is_active:
             import random
             from django.core.cache import cache
-            from django.core.mail import send_mail
             from django.conf import settings
+            from .email_utils import send_mail_async
 
             clean_email = (user.email or '').strip().lower()
             cache_key = f"reactivate_otp:{clean_email}"
@@ -84,21 +84,18 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
                     cache.set(username_cache_key, otp_payload, timeout=600)
 
                 if user.email:
-                    try:
-                        send_mail(
-                            subject="Reactivate your DevHire Account - Verification Code",
-                            message=(
-                                f"Hello {user.username},\n\n"
-                                f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
-                                f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
-                                f"This code will expire in 10 minutes."
-                            ),
-                            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
-                            recipient_list=[user.email],
-                            fail_silently=True,
-                        )
-                    except Exception:
-                        pass
+                    send_mail_async(
+                        subject="Reactivate your DevHire Account - Verification Code",
+                        message=(
+                            f"Hello {user.username},\n\n"
+                            f"Your DevHire account is currently deactivated due to inactivity or account security.\n"
+                            f"Your 6-digit verification code to reactivate your account is: {otp_code}\n\n"
+                            f"This code will expire in 10 minutes."
+                        ),
+                        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@devhire.com'),
+                        recipient_list=[user.email],
+                        fail_silently=True,
+                    )
 
             raise serializers.ValidationError({
                 'detail': 'Your account has been deactivated due to 30 days of inactivity or administrator action. A 6-digit verification code has been sent to your email to reactivate your account.',
