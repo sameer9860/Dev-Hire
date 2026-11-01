@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useMe } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile, useEnhanceBio } from '@/hooks/useProfile';
+import { isDeveloperProfileComplete } from '@/lib/profileCompletion';
 import api from '@/lib/api';
 import {
   developerProfileSchema,
@@ -108,25 +109,101 @@ export default function ProfilePage() {
     return null;
   }
 
+  // Detect first-time onboarding: developer whose profile is not yet complete
+  const isOnboarding =
+    user.role === 'developer' && !isDeveloperProfileComplete(profile);
+
+  // Required fields checklist for onboarding banner
+  const onboardingChecklist = [
+    { label: 'About / Bio', done: !!(profile.bio?.trim()) },
+    {
+      label: 'Address',
+      done: !!(profile.address?.trim() || profile.city?.trim() || profile.province?.trim() || profile.location?.trim()),
+    },
+    {
+      label: 'Social Link',
+      done: !!((
+        Array.isArray(profile.social_links) &&
+        profile.social_links.some((l: any) => l?.url?.trim())
+      ) || profile.github_url?.trim() || profile.portfolio_url?.trim()),
+    },
+    { label: 'Resume / CV', done: !!(profile.resume_url?.trim()) },
+    { label: 'Education', done: Array.isArray(profile.education) && profile.education.length > 0 },
+    { label: 'Skills', done: Array.isArray(profile.skills) && profile.skills.length > 0 },
+    { label: 'Languages', done: Array.isArray(profile.languages) && profile.languages.length > 0 },
+    { label: 'Phone Number', done: !!(profile.phone_number?.trim()) },
+  ];
+  const completedCount = onboardingChecklist.filter((c) => c.done).length;
+
   return (
     <div className="min-h-screen bg-zinc-50/50 py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        {/* Breadcrumb / Back button */}
-        <div className="mb-6 flex items-center justify-between">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-          <Link
-            href={`/profile/${user.username}`}
-            className="text-sm font-medium text-zinc-900 hover:underline"
-          >
-            View Public Profile
-          </Link>
-        </div>
+        {/* Breadcrumb / Back button — hidden during onboarding */}
+        {!isOnboarding && (
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <Link
+              href={`/profile/${user.username}`}
+              className="text-sm font-medium text-zinc-900 hover:underline"
+            >
+              View Public Profile
+            </Link>
+          </div>
+        )}
+
+        {/* ── Onboarding progress banner ──────────────────────────────── */}
+        {isOnboarding && (
+          <div className="mb-6 rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white p-5 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-base font-bold text-zinc-900">👋 Welcome to DevHire!</h2>
+                <p className="mt-0.5 text-sm text-zinc-500">
+                  Complete your profile to unlock the full app — it only takes a few minutes.
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-indigo-100 px-3 py-1 text-sm font-bold text-indigo-700">
+                {completedCount}/8
+              </span>
+            </div>
+            {/* Progress bar */}
+            <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+              <div
+                className="h-full rounded-full bg-indigo-600 transition-all duration-500"
+                style={{ width: `${(completedCount / 8) * 100}%` }}
+              />
+            </div>
+            {/* Checklist */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4">
+              {onboardingChecklist.map((item) => (
+                <div key={item.label} className="flex items-center gap-1.5">
+                  <span
+                    className={[
+                      'inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
+                      item.done
+                        ? 'bg-green-500 text-white'
+                        : 'border border-zinc-300 bg-white text-zinc-300',
+                    ].join(' ')}
+                  >
+                    {item.done ? '✓' : ''}
+                  </span>
+                  <span
+                    className={`text-xs ${
+                      item.done ? 'text-zinc-500 line-through' : 'text-zinc-700 font-medium'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="space-y-6">
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-[0_2px_15px_rgba(0,0,0,0.02)] sm:p-8">
@@ -187,16 +264,28 @@ export default function ProfilePage() {
               profile={profile}
               onSubmit={(data) => {
                 updateProfile.mutate(data, {
-                  onSuccess: () => {
-                    setSuccessMessage('Developer profile updated successfully! Redirecting...');
-                    setTimeout(() => {
-                      setSuccessMessage('');
-                      router.push(`/profile/${profile.username}`);
-                    }, 1500);
+                  onSuccess: (savedProfile) => {
+                    // If this save completes the onboarding, redirect to dashboard
+                    const nowComplete = isDeveloperProfileComplete(savedProfile ?? data);
+                    if (isOnboarding && nowComplete) {
+                      setSuccessMessage(
+                        '🎉 Profile complete! Taking you to your dashboard…'
+                      );
+                      setTimeout(() => {
+                        router.push('/dashboard/developer');
+                      }, 1500);
+                    } else {
+                      setSuccessMessage('Developer profile updated successfully! Redirecting...');
+                      setTimeout(() => {
+                        setSuccessMessage('');
+                        router.push(`/profile/${profile.username}`);
+                      }, 1500);
+                    }
                   },
                 });
               }}
               isSaving={updateProfile.isPending}
+              isOnboarding={isOnboarding}
             />
           )}
         </div>
@@ -212,9 +301,11 @@ interface DeveloperFormProps {
   profile: any;
   onSubmit: (data: DeveloperProfileFormData) => void;
   isSaving: boolean;
+  /** When true the form is in first-time onboarding mode */
+  isOnboarding?: boolean;
 }
 
-function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProps) {
+function DeveloperProfileForm({ profile, onSubmit, isSaving, isOnboarding }: DeveloperFormProps) {
   const {
     register,
     handleSubmit,
@@ -1214,7 +1305,11 @@ function DeveloperProfileForm({ profile, onSubmit, isSaving }: DeveloperFormProp
           disabled={isSaving}
           className="cursor-pointer rounded-xl bg-zinc-950 px-6 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
         >
-          {isSaving ? 'Saving Changes...' : 'Save Profile'}
+          {isSaving
+            ? 'Saving...'
+            : isOnboarding
+            ? 'Save & Continue →'
+            : 'Save Profile'}
         </button>
       </div>
     </form>
