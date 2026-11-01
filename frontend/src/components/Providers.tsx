@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import AppShell from '@/components/AppShell';
+import { OnboardingGuard } from '@/components/OnboardingGuard';
 import { OfflineOverlay } from '@/components/errors/OfflineOverlay';
 import { Toaster, toast } from 'sonner';
 
@@ -66,7 +67,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           {children}
         </>
       ) : (
-        <AppShell>{children}</AppShell>
+        <OnboardingGuard appShell={(content) => <AppShell>{content}</AppShell>}>
+          {children}
+        </OnboardingGuard>
       )}
       {isOffline && <OfflineOverlay onRetry={handleRetry} />}
       <Toaster richColors closeButton position="top-right" />
