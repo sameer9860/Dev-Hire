@@ -5,7 +5,21 @@ import { useRouter } from 'next/navigation';
 import { usePublicProfile } from '@/hooks/useProfile';
 import { useMe } from '@/hooks/useAuth';
 import { ProfileSkeleton } from '@/components/profile/ProfileSkeleton';
-import { GitBranch, Globe, Link as LinkIcon, FileText, ArrowLeft, Building2, Mail } from 'lucide-react';
+import {
+  GitBranch,
+  Globe,
+  Link as LinkIcon,
+  FileText,
+  ArrowLeft,
+  Building2,
+  Mail,
+  MapPin,
+  Phone,
+  Briefcase,
+  UserCheck,
+  Shield,
+  AtSign,
+} from 'lucide-react';
 import Link from 'next/link';
 import { socialPlatformLabel } from '@/lib/profileOptions';
 import type { SocialLink } from '@/types/api';
@@ -106,42 +120,142 @@ export function PublicProfileClient({ username }: { username: string }) {
           </div>
           <div className="relative px-6 pb-8 sm:px-8">
             <div className="relative z-10 -mt-16 mb-4">
-              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-zinc-950 text-4xl font-bold text-white shadow-md">
-                {profile.avatar_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profile.avatar_url} alt={profile.username} className="h-full w-full object-cover" />
-                ) : (
-                  profile.username.substring(0, 2).toUpperCase()
-                )}
+              <div className="relative inline-block">
+                <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-zinc-950 text-4xl font-bold text-white shadow-md">
+                  {profile.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={profile.avatar_url} alt={profile.username} className="h-full w-full object-cover" />
+                  ) : (
+                    profile.username.substring(0, 2).toUpperCase()
+                  )}
+                </div>
+                {/* Role indicator badge on avatar */}
+                <span
+                  className={`absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-sm ${
+                    profile.role === 'company'
+                      ? 'bg-blue-600 text-white'
+                      : profile.role === 'admin'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-emerald-600 text-white'
+                  }`}
+                  title={`${profile.role} profile`}
+                >
+                  {profile.role === 'company' ? (
+                    <Building2 className="h-3.5 w-3.5" />
+                  ) : profile.role === 'admin' ? (
+                    <Shield className="h-3.5 w-3.5" />
+                  ) : (
+                    <UserCheck className="h-3.5 w-3.5" />
+                  )}
+                </span>
               </div>
             </div>
-            <div className="flex flex-wrap items-baseline gap-2">
+
+            {/* Profile Title + Role Pill */}
+            <div className="flex flex-wrap items-baseline gap-2.5">
               <h1 className="text-3xl font-extrabold text-zinc-900">
-                {profile.first_name || profile.last_name
+                {profile.role === 'company'
+                  ? profile.company_name || profile.username
+                  : profile.first_name || profile.last_name
                   ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
                   : profile.username}
               </h1>
-              <span className="inline-flex items-center rounded-full border border-zinc-200/50 bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-800 capitalize">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                  profile.role === 'company'
+                    ? 'border-blue-200 bg-blue-50 text-blue-700'
+                    : profile.role === 'admin'
+                    ? 'border-purple-200 bg-purple-50 text-purple-700'
+                    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                }`}
+              >
+                {profile.role === 'company' ? (
+                  <Building2 className="h-3 w-3" />
+                ) : profile.role === 'admin' ? (
+                  <Shield className="h-3 w-3" />
+                ) : (
+                  <UserCheck className="h-3 w-3" />
+                )}
                 {profile.role}
               </span>
             </div>
-            {profile.headline && (
-              <p className="mt-1 text-sm font-semibold text-blue-600">{profile.headline}</p>
-            )}
-            {profile.location && <p className="mt-0.5 text-xs text-zinc-500">{profile.location}</p>}
-            {profile.role === 'company' && (
-              <div className="mt-1 space-y-0.5">
-                {profile.company_name && (
-                  <p className="flex items-center gap-1.5 text-lg font-medium text-zinc-800">
-                    <Building2 className="h-4 w-4 text-zinc-500" />
-                    {profile.company_name}
-                  </p>
-                )}
-                {profile.contact_person && (
-                  <p className="text-xs text-zinc-500">
-                    Contact Person: <span className="font-semibold text-zinc-700">{profile.contact_person}</span>
-                  </p>
-                )}
+
+            {/* Profile Header Details & Icons Below for All Devs & Companies */}
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-zinc-600">
+              {/* Username tag */}
+              <span className="inline-flex items-center gap-1 font-medium text-zinc-500">
+                <AtSign className="h-3.5 w-3.5 text-zinc-400" />
+                {profile.username}
+              </span>
+
+              {/* Email / Gmail with icon */}
+              {(profile.email || profile.company_email) && (
+                <a
+                  href={`mailto:${profile.email || profile.company_email}`}
+                  className="inline-flex items-center gap-1 font-medium text-zinc-600 hover:text-blue-600 hover:underline transition-colors"
+                  title="Send email"
+                >
+                  <Mail className="h-3.5 w-3.5 text-zinc-400" />
+                  {profile.email || profile.company_email}
+                </a>
+              )}
+
+              {/* Location with icon */}
+              {(profile.location || profile.company_location || profile.company_address || profile.address || profile.city) && (
+                <span className="inline-flex items-center gap-1 font-medium text-zinc-600">
+                  <MapPin className="h-3.5 w-3.5 text-zinc-400" />
+                  {profile.location ||
+                    profile.company_location ||
+                    profile.company_address ||
+                    [profile.city, profile.province].filter(Boolean).join(', ') ||
+                    profile.address}
+                </span>
+              )}
+
+              {/* Developer Headline or Company Category */}
+              {profile.headline && (
+                <span className="inline-flex items-center gap-1 font-medium text-blue-600">
+                  <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                  {profile.headline}
+                </span>
+              )}
+              {profile.role === 'company' && profile.company_category && (
+                <span className="inline-flex items-center gap-1 font-medium text-blue-600">
+                  <Briefcase className="h-3.5 w-3.5 text-blue-500" />
+                  {profile.company_category}
+                </span>
+              )}
+
+              {/* Phone if available */}
+              {(profile.phone_number || profile.company_phone) && (
+                <span className="inline-flex items-center gap-1 font-medium text-zinc-600">
+                  <Phone className="h-3.5 w-3.5 text-zinc-400" />
+                  {profile.phone_number || profile.company_phone}
+                </span>
+              )}
+
+              {/* Company Website */}
+              {profile.role === 'company' && profile.company_website && (
+                <a
+                  href={
+                    profile.company_website.startsWith('http')
+                      ? profile.company_website
+                      : `https://${profile.company_website}`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 font-medium text-blue-600 hover:underline"
+                >
+                  <Globe className="h-3.5 w-3.5 text-blue-500" />
+                  Website
+                </a>
+              )}
+            </div>
+
+            {/* Extra company contact person */}
+            {profile.role === 'company' && profile.contact_person && (
+              <div className="mt-2 text-xs text-zinc-500">
+                Contact Person: <span className="font-semibold text-zinc-700">{profile.contact_person}</span>
               </div>
             )}
           </div>
