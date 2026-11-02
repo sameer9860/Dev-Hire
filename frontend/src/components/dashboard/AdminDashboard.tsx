@@ -385,7 +385,7 @@ export function AdminDashboard() {
                   <thead className="border-b border-zinc-100 bg-zinc-50/80 text-xs font-semibold uppercase text-zinc-500">
                     <tr>
                       <th className="px-4 py-3.5 text-center">S.N</th>
-                      <th className="px-6 py-3.5">User</th>
+                      <th className="px-6 py-3.5">User Profile</th>
                       <th className="px-6 py-3.5">Role</th>
                       <th className="px-6 py-3.5">Status</th>
                       <th className="px-6 py-3.5">Last Logged In</th>
@@ -403,28 +403,97 @@ export function AdminDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <UserAvatar src={user.avatar_url} name={user.username} size="md" />
-                              <div>
-                                <p className="font-bold text-zinc-900">
-                                  {user.username}{' '}
-                                  {user.role === 'company' && user.company_name && (
-                                    <span className="font-normal text-zinc-500">({user.company_name})</span>
+                              {/* Avatar with Role Badge */}
+                              <div className="relative shrink-0">
+                                <UserAvatar src={user.avatar_url} name={user.username} size="md" />
+                                <span
+                                  className={[
+                                    'absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-white',
+                                    isAdmin
+                                      ? 'bg-purple-500'
+                                      : user.role === 'company'
+                                      ? 'bg-blue-500'
+                                      : 'bg-emerald-500',
+                                  ].join(' ')}
+                                  title={isAdmin ? 'Admin' : user.role === 'company' ? 'Company' : 'Developer'}
+                                >
+                                  {isAdmin ? (
+                                    <Shield className="h-2 w-2 text-white" />
+                                  ) : user.role === 'company' ? (
+                                    <Building className="h-2 w-2 text-white" />
+                                  ) : (
+                                    <UserCheck className="h-2 w-2 text-white" />
                                   )}
-                                </p>
-                                <p className="text-xs text-zinc-500">{user.email}</p>
+                                </span>
+                              </div>
+
+                              {/* Name, Icons & Email */}
+                              <div className="min-w-0">
+                                {/* Clickable Username -> Public Profile */}
+                                {!isAdmin ? (
+                                  <Link
+                                    href={`/profile/${user.username}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="group inline-flex items-center gap-1 font-bold text-zinc-900 hover:text-indigo-600 transition-colors"
+                                    title="View public profile"
+                                  >
+                                    <span>{user.username}</span>
+                                    <ExternalLink className="h-3 w-3 shrink-0 text-zinc-400 group-hover:text-indigo-500 transition-colors" />
+                                  </Link>
+                                ) : (
+                                  <p className="font-bold text-zinc-900">{user.username}</p>
+                                )}
+
+                                {/* Profile info line with icons below username */}
+                                <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
+                                  {user.role === 'company' ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600">
+                                      <Building className="h-3 w-3 shrink-0" />
+                                      {user.company_name || 'Company Profile'}
+                                    </span>
+                                  ) : isAdmin ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-600">
+                                      <Shield className="h-3 w-3 shrink-0" />
+                                      Admin
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                                      <UserCheck className="h-3 w-3 shrink-0" />
+                                      Developer Profile
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Email as mailto link with Mail icon */}
+                                <a
+                                  href={`mailto:${user.email}`}
+                                  className="mt-0.5 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-800 hover:underline transition-colors leading-tight"
+                                  title="Send email"
+                                >
+                                  <Mail className="h-3 w-3 shrink-0 text-zinc-400" />
+                                  <span>{user.email}</span>
+                                </a>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
                                 isAdmin
                                   ? 'bg-purple-50 text-purple-700 border border-purple-200'
                                   : user.role === 'company'
                                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                  : 'bg-zinc-100 text-zinc-700 border border-zinc-200'
+                                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               }`}
                             >
+                              {isAdmin ? (
+                                <Shield className="h-3 w-3" />
+                              ) : user.role === 'company' ? (
+                                <Building className="h-3 w-3" />
+                              ) : (
+                                <UserCheck className="h-3 w-3" />
+                              )}
                               {user.role}
                             </span>
                           </td>
