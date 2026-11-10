@@ -1010,36 +1010,41 @@ class PasswordResetRequestView(APIView):
             retry_seconds = max(PasswordResetRateLimiter.seconds_until_reset(email_key), PasswordResetRateLimiter.seconds_until_reset(ip_key))
             return Response({'detail': 'Too many password reset requests. Try again later.', 'retry_after': retry_seconds}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-        if user:
-            # Generate 6-digit numeric OTP code
-            otp_code = f"{random.randint(100000, 999999)}"
-            cache_key = f'pwreset_otp:{email}'
-            cache.set(
-                cache_key,
-                {
-                    'otp': otp_code,
-                    'user_id': user.pk,
-                    'attempts': 0,
-                },
-                timeout=600,  # 10 minutes TTL
+        if not user:
+            return Response(
+                {'detail': 'This email is not registered.'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-            subject = 'Your DevHire Password Reset Verification Code'
-            message = (
-                f"Hi {user.username},\n\n"
-                f"You requested a password reset for your DevHire account.\n"
-                f"Your 6-digit verification code is: {otp_code}\n\n"
-                f"This code will expire in 10 minutes.\n"
-                f"If you did not request this password reset, please ignore this email."
-            )
-            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
-            send_mail_async(subject, message, from_email, [user.email], fail_silently=True)
+        # Generate 6-digit numeric OTP code
+        otp_code = f"{random.randint(100000, 999999)}"
+        cache_key = f'pwreset_otp:{email}'
+        cache.set(
+            cache_key,
+            {
+                'otp': otp_code,
+                'user_id': user.pk,
+                'attempts': 0,
+            },
+            timeout=600,  # 10 minutes TTL
+        )
+
+        subject = 'Your DevHire Password Reset Verification Code'
+        message = (
+            f"Hi {user.username},\n\n"
+            f"You requested a password reset for your DevHire account.\n"
+            f"Your 6-digit verification code is: {otp_code}\n\n"
+            f"This code will expire in 10 minutes.\n"
+            f"If you did not request this password reset, please ignore this email."
+        )
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None)
+        send_mail_async(subject, message, from_email, [user.email], fail_silently=True)
 
         PasswordResetRateLimiter.record(email_key)
         PasswordResetRateLimiter.record(ip_key)
 
         return Response(
-            {'detail': 'If an account with that email exists, a 6-digit verification code has been sent.'},
+            {'detail': 'A 6-digit verification code has been sent to your email.'},
             status=status.HTTP_200_OK,
         )
 
