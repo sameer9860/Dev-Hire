@@ -12,6 +12,15 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
+def test_password_reset_unregistered_email(client, settings):
+    settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
+    resp = client.post('/api/auth/password-reset/', {'email': 'unknown@example.com'}, content_type='application/json')
+    assert resp.status_code == 400
+    assert resp.json().get('detail') == 'This email is not registered.'
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
 def test_password_reset_otp_flow(client, settings):
     settings.EMAIL_BACKEND = 'django.core.mail.backends.locmem.EmailBackend'
 
