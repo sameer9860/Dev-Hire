@@ -245,6 +245,7 @@ export type UserRole = 'developer' | 'company' | 'admin' | 'guest';
    export interface LoginResponse {
      access: string;
      refresh: string;
+     username?: string;
    }
 
    export interface RegisterRequest {
