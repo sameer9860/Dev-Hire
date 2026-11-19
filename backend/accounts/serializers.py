@@ -105,7 +105,9 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             })
 
         attrs['username'] = user.username
-        return super().validate(attrs)
+        data = super().validate(attrs)
+        data['username'] = user.username
+        return data
 
 
 class RegisterSerializer(serializers.ModelSerializer):
