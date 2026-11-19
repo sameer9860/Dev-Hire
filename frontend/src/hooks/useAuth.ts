@@ -40,7 +40,7 @@ export function useLogin() {
       const { data } = await api.post('/auth/login/', credentials);
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
       
@@ -49,7 +49,8 @@ export function useLogin() {
       setCookie('access_token', data.access, MAX_AGE);
       setCookie('refresh_token', data.refresh, MAX_AGE);
       
-      toast.success("Welcome back! Signed in successfully.");
+      const username = data?.username || variables?.username;
+      toast.success(username ? `Welcome back, ${username}! Signed in successfully.` : "Welcome back! Signed in successfully.");
       router.push('/jobs');
     },
     onError: (error: any) => {
