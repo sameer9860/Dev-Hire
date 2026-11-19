@@ -39,7 +39,7 @@ export function LogoutModal({ isOpen, onClose }: LogoutModalProps) {
     deleteCookie('access_token');
     deleteCookie('refresh_token');
     queryClient.clear();
-    toast.success('Logged out successfully.');
+    toast.success('Logged out successfully!');
     onClose();
     router.push('/login');
   };
