@@ -205,7 +205,8 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
           {/* Left: description & details */}
           <div className="lg:col-span-2 space-y-6">
             {/* Safety Warning Signs Alert */}
-            {job.safety_flags && job.safety_flags.length > 0 && (
+            {job.safety_flags &&
+              job.safety_flags.filter((f) => f.type !== 'potential_duplicate').length > 0 && (
               <div className="rounded-2xl border border-amber-200 bg-amber-50/90 p-5 shadow-xs">
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
@@ -222,14 +223,16 @@ export function JobDetailClient({ jobId, showFullPageLink = false }: { jobId: nu
                       DevHire’s AI Job Quality & Safety scanner detected potential flags in this posting:
                     </p>
                     <ul className="space-y-1 pt-1 text-xs text-amber-900">
-                      {job.safety_flags.map((flag, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5 font-medium">
-                          <span className="font-bold">•</span>
-                          <span>
-                            <strong className="capitalize">{flag.type.replace(/_/g, ' ')}:</strong> {flag.message}
-                          </span>
-                        </li>
-                      ))}
+                      {job.safety_flags
+                        .filter((f) => f.type !== 'potential_duplicate')
+                        .map((flag, idx) => (
+                          <li key={idx} className="flex items-start gap-1.5 font-medium">
+                            <span className="font-bold">•</span>
+                            <span>
+                              <strong className="capitalize">{flag.type.replace(/_/g, ' ')}:</strong> {flag.message}
+                            </span>
+                          </li>
+                        ))}
                     </ul>
                     <p className="text-[11px] text-amber-700/90 pt-1 italic">
                       Reminder: Legitimate employers will never ask candidates for equipment fees, wire transfers, or gift cards.
