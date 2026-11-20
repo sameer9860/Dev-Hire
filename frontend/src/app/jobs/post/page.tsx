@@ -445,18 +445,21 @@ export default function PostJobPage() {
                     </span>
                   </div>
 
-                  {/* Safety Flags Warning */}
-                  {auditResult.safety_flags && auditResult.safety_flags.length > 0 && (
+                  {/* Safety Flags Warning (scam/fraud only, duplicates excluded) */}
+                  {auditResult.safety_flags &&
+                    auditResult.safety_flags.filter((f) => f.type !== 'potential_duplicate').length > 0 && (
                     <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-900 space-y-1">
                       <p className="font-bold flex items-center gap-1.5 text-amber-800">
                         <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
                         Warning Signs Detected:
                       </p>
-                      {auditResult.safety_flags.map((flag, idx) => (
-                        <p key={idx} className="pl-5 text-amber-800 text-[11px]">
-                          • <span className="font-semibold capitalize">{flag.type.replace('_', ' ')}:</span> {flag.message}
-                        </p>
-                      ))}
+                      {auditResult.safety_flags
+                        .filter((f) => f.type !== 'potential_duplicate')
+                        .map((flag, idx) => (
+                          <p key={idx} className="pl-5 text-amber-800 text-[11px]">
+                            • <span className="font-semibold capitalize">{flag.type.replace('_', ' ')}:</span> {flag.message}
+                          </p>
+                        ))}
                     </div>
                   )}
 
