@@ -36,7 +36,9 @@ export function JobCard({ job }: JobCardProps) {
   const recData = (job as PersonalizedJobRecommendation).recommendation;
   const matchScore = recData ? (recData.skill_match_score ?? recData.score) : null;
   const matchLabel = recData?.badge;
-  const hasSafetyFlags = job.safety_flags && job.safety_flags.length > 0;
+  const hasSafetyFlags =
+    job.safety_flags &&
+    job.safety_flags.filter((f) => f.type !== 'potential_duplicate').length > 0;
   const daysLeft = getDaysLeft(job.deadline, job.created_at);
 
   const companyName = job.company?.company_name || job.company?.username || 'Company';
