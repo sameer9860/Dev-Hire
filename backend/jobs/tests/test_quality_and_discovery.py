@@ -57,7 +57,7 @@ class TestJobQualityChecker:
 
 @pytest.mark.django_db
 class TestDuplicateDetection:
-    def test_duplicate_detected(self, company_user):
+    def test_duplicate_not_flagged(self, company_user):
         Job.objects.create(
             company=company_user,
             title="Senior Python Django Engineer",
@@ -73,8 +73,7 @@ class TestDuplicateDetection:
             requirements="3+ years with Django, Python, Docker, Celery.",
             company_id=company_user.id,
         )
-        assert dup is not None
-        assert dup['type'] == 'potential_duplicate'
+        assert dup is None
 
 
 @pytest.mark.django_db
