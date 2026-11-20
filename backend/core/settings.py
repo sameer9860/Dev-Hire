@@ -27,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', cast=bool)
+DEBUG = str(config('DEBUG', default='True')).lower() in ('true', '1', 'yes', 't')
 
 # ALLOWED_HOSTS - supports both local dev and Railway production
 # LOCAL: ALLOWED_HOSTS=localhost,127.0.0.1
