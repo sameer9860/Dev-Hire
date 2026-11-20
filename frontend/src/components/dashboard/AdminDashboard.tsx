@@ -716,17 +716,20 @@ export function AdminDashboard() {
                       <span>Posted {new Date(job.created_at).toLocaleDateString()}</span>
                     </div>
 
-                    {job.safety_flags && job.safety_flags.length > 0 && (
+                    {job.safety_flags &&
+                      job.safety_flags.filter((f) => f.type !== 'potential_duplicate').length > 0 && (
                       <div className="mt-2.5 rounded-xl bg-amber-50 border border-amber-200 p-2 text-xs text-amber-900 space-y-0.5">
                         <p className="font-bold text-[11px] text-amber-900 flex items-center gap-1">
                           <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
                           Flagged Reasons for Review:
                         </p>
-                        {job.safety_flags.map((f, i) => (
-                          <p key={i} className="pl-4 text-[11px] text-amber-800">
-                            • <span className="font-semibold capitalize">{f.type.replace('_', ' ')}:</span> {f.message}
-                          </p>
-                        ))}
+                        {job.safety_flags
+                          .filter((f) => f.type !== 'potential_duplicate')
+                          .map((f, i) => (
+                            <p key={i} className="pl-4 text-[11px] text-amber-800">
+                              • <span className="font-semibold capitalize">{f.type.replace('_', ' ')}:</span> {f.message}
+                            </p>
+                          ))}
                       </div>
                     )}
                   </div>
