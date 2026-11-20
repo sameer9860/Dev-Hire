@@ -73,54 +73,9 @@ def check_duplicate_listing(
     exclude_job_id: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
     """
-    Check if this job is an identical or near-duplicate of an existing active job.
+    Duplicate listings are allowed by employers (e.g. multi-headcount hiring)
+    and are not flagged as violations or warnings.
     """
-    from .models import Job
-
-    qs = Job.objects.filter(is_active=True)
-    if exclude_job_id:
-        qs = qs.exclude(id=exclude_job_id)
-
-    # First check jobs by the same company (higher priority match)
-    company_jobs = qs.filter(company_id=company_id) if company_id else qs.none()
-
-    new_title_tokens = _tokenize(title)
-    new_body_tokens = _tokenize(f"{description} {requirements}")
-
-    # Check same company first
-    for candidate in company_jobs[:20]:
-        cand_title_tokens = _tokenize(candidate.title)
-        cand_body_tokens = _tokenize(f"{candidate.description} {candidate.requirements}")
-
-        title_sim = _jaccard_similarity(new_title_tokens, cand_title_tokens)
-        body_sim = _jaccard_similarity(new_body_tokens, cand_body_tokens)
-
-        if (title_sim >= 0.85 and body_sim >= 0.65) or body_sim >= 0.80:
-            return {
-                "type": "potential_duplicate",
-                "severity": "warning",
-                "message": f"This listing is highly similar to your existing active job '{candidate.title}' (ID #{candidate.id}).",
-                "matched_job_id": candidate.id,
-                "similarity_score": round(max(title_sim, body_sim) * 100),
-            }
-
-    # Also check platform-wide for exact clones (potential copied spam)
-    for candidate in qs.exclude(company_id=company_id)[:30]:
-        cand_title_tokens = _tokenize(candidate.title)
-        cand_body_tokens = _tokenize(f"{candidate.description} {candidate.requirements}")
-
-        title_sim = _jaccard_similarity(new_title_tokens, cand_title_tokens)
-        body_sim = _jaccard_similarity(new_body_tokens, cand_body_tokens)
-
-        if title_sim >= 0.90 and body_sim >= 0.85:
-            return {
-                "type": "potential_duplicate",
-                "severity": "warning",
-                "message": f"This listing appears to be an exact duplicate of an existing active posting (ID #{candidate.id}).",
-                "matched_job_id": candidate.id,
-                "similarity_score": round(body_sim * 100),
-            }
-
     return None
 
 
@@ -281,19 +236,11 @@ def audit_job_quality_and_safety(
     """
     combined_text = f"{title}\n\n{description}\n\n{requirements}\n\nLocation: {location or ''}"
 
-    # 1. Duplicate check
-    duplicate_flag = check_duplicate_listing(
-        title=title,
-        description=description,
-        requirements=requirements,
-        company_id=company_id,
-        exclude_job_id=exclude_job_id,
-    )
+    # 1. Duplicate check removed — employers can post similar or multiple positions
+    duplicate_flag = None
 
     # 2. Safety flags
     safety_flags = detect_safety_warning_flags(combined_text)
-    if duplicate_flag:
-        safety_flags.insert(0, duplicate_flag)
 
     # 3. Heuristic quality baseline
     heuristic_res = evaluate_job_quality_heuristic(
