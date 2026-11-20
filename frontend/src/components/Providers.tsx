@@ -72,7 +72,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         </OnboardingGuard>
       )}
       {isOffline && <OfflineOverlay onRetry={handleRetry} />}
-      <Toaster richColors closeButton position="top-right" />
+      <Toaster richColors closeButton position="top-center" />
     </QueryClientProvider>
   );
 }
