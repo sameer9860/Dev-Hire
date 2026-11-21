@@ -28,6 +28,17 @@ PROFILE_FIELD_MESSAGES = {
     'company_name': ('company_name_changed', 'Changed company name'),
     'company_website': ('company_website_changed', 'Changed company website'),
     'company_size': ('company_size_changed', 'Changed company size'),
+    'company_social_links': ('company_social_links_changed', 'Updated company social links'),
+    'company_photos': ('company_gallery_updated', 'Updated company gallery photos'),
+    'contact_person': ('contact_person_changed', 'Updated contact person'),
+    'company_category': ('company_category_changed', 'Updated company category'),
+    'company_founded': ('company_founded_changed', 'Updated company founded year'),
+    'company_province': ('company_province_changed', 'Updated company province'),
+    'company_district': ('company_district_changed', 'Updated company district'),
+    'company_location': ('company_location_changed', 'Updated company location'),
+    'company_address': ('company_address_changed', 'Updated company address'),
+    'company_email': ('company_email_changed', 'Updated company contact email'),
+    'company_phone': ('company_phone_changed', 'Updated company phone number'),
 }
 
 
