@@ -8,6 +8,7 @@ import { useMe } from '@/hooks/useAuth';
 import { useProfile, useUpdateProfile, useEnhanceBio } from '@/hooks/useProfile';
 import { isDeveloperProfileComplete } from '@/lib/profileCompletion';
 import api from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   developerProfileSchema,
   companyProfileSchema,
@@ -246,13 +247,32 @@ export default function ProfilePage() {
               <CompanyProfileForm
                 profile={profile}
                 onSubmit={(data) => {
+                  const hasSocialChanges =
+                    JSON.stringify(profile.company_social_links || []) !==
+                    JSON.stringify(data.company_social_links || []);
+                  const hasPhotoChanges =
+                    JSON.stringify(profile.company_photos || []) !==
+                    JSON.stringify(data.company_photos || []);
+
                   updateProfile.mutate(data, {
                     onSuccess: () => {
+                      if (hasSocialChanges && !hasPhotoChanges) {
+                        toast.success('Company social links updated successfully!');
+                      } else if (hasPhotoChanges && !hasSocialChanges) {
+                        toast.success('Company gallery photos updated successfully!');
+                      } else if (hasSocialChanges && hasPhotoChanges) {
+                        toast.success('Company gallery & social links updated successfully!');
+                      } else {
+                        toast.success('Company profile updated successfully!');
+                      }
                       setSuccessMessage('Company profile updated successfully! Redirecting...');
                       setTimeout(() => {
                         setSuccessMessage('');
                         router.push(`/profile/${profile.username}`);
                       }, 1500);
+                    },
+                    onError: (err) => {
+                      toast.error(err.message || 'Failed to update company profile.');
                     },
                   });
                 }}
@@ -265,6 +285,7 @@ export default function ProfilePage() {
               onSubmit={(data) => {
                 updateProfile.mutate(data, {
                   onSuccess: (savedProfile) => {
+                    toast.success('Developer profile updated successfully!');
                     // If this save completes the onboarding, redirect to dashboard
                     const nowComplete = isDeveloperProfileComplete(savedProfile ?? data);
                     if (isOnboarding && nowComplete) {
@@ -1326,6 +1347,7 @@ interface CompanyFormProps {
 }
 
 function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
+  const queryClient = useQueryClient();
   const {
     register,
     handleSubmit,
@@ -1373,6 +1395,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setValue('avatar_url', data.url, { shouldValidate: true, shouldDirty: true });
+      toast.success('Company logo uploaded. Click "Save Profile" to save changes.');
     } catch (err: any) {
       const message =
         err.response?.data?.detail ||
@@ -1381,6 +1404,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
         err.message ||
         'Failed to upload logo. Please try again.';
       setLogoUploadError(String(message));
+      toast.error(String(message));
     } finally {
       setUploadingLogo(false);
     }
@@ -1394,6 +1418,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       shouldDirty: true,
       shouldValidate: true,
     });
+    toast.info('Photo removed from gallery. Click "Save Profile" to save changes.');
   };
 
   const onCompanyPhotoUpload = async (file: File, index?: number) => {
@@ -1414,7 +1439,11 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       });
       const photos = data.company_photos || [...companyPhotos];
       setValue('company_photos', photos, { shouldDirty: true, shouldValidate: true });
-      toast.success('Photo uploaded successfully.');
+      const isReplace = index !== undefined;
+      toast.success(isReplace ? 'Gallery photo replaced successfully.' : 'Photo added to your company gallery.');
+      queryClient.invalidateQueries({ queryKey: ['activity-log'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     } catch (err: any) {
       const message = err.response?.data?.detail || 'Failed to upload photo. Please try again.';
       toast.error(message);
@@ -1429,6 +1458,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       shouldDirty: true,
       shouldValidate: true,
     });
+    toast.info('Social link added. Enter the URL and save your profile.');
   };
 
   const updateCompanySocialLink = (index: number, field: 'platform' | 'url', value: string) => {
@@ -1443,6 +1473,7 @@ function CompanyProfileForm({ profile, onSubmit, isSaving }: CompanyFormProps) {
       companySocialLinks.filter((_, socialIndex) => socialIndex !== index),
       { shouldDirty: true, shouldValidate: true },
     );
+    toast.info('Social link removed. Click "Save Profile" to save changes.');
   };
 
   return (
