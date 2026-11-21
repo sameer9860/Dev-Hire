@@ -15,6 +15,11 @@ import {
   Loader2,
   AlertCircle,
   Plus,
+  Image as ImageIcon,
+  Globe,
+  Building,
+  UserPlus,
+  Bell,
 } from 'lucide-react';
 import Link from 'next/link';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -271,26 +276,65 @@ export function CompanyDashboard() {
                 </p>
               </div>
             ) : (
-              <ul className="space-y-4">
-                {activities.map((item) => (
-                  <li key={item.id} className="flex gap-3">
-                    <UserAvatar
-                      src={me?.avatar_url}
-                      name={me?.username || 'Company'}
-                      size="md"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium leading-snug text-zinc-900">
-                          {item.message}
-                        </p>
-                        <time className="shrink-0 pt-0.5 text-[11px] text-zinc-400">
-                          {formatRelativeTime(item.created_at)}
-                        </time>
+              <ul className="space-y-2">
+                {activities.map((item) => {
+                  const href =
+                    item.action === 'company_gallery_updated' ||
+                    item.action === 'company_social_links_changed' ||
+                    item.category === 'profile'
+                      ? '/profile'
+                      : item.action === 'candidate_applied' || item.action === 'application_status_updated'
+                      ? '/dashboard/company/applications'
+                      : null;
+
+                  const subtitle =
+                    item.action === 'company_gallery_updated'
+                      ? 'Company gallery'
+                      : item.action === 'company_social_links_changed'
+                      ? 'Social & links'
+                      : item.action === 'candidate_applied'
+                      ? 'Candidate application'
+                      : item.category === 'profile'
+                      ? 'Company profile'
+                      : item.category === 'security'
+                      ? 'Account security'
+                      : item.category;
+
+                  const content = (
+                    <div className="flex items-start gap-3 rounded-xl p-2 -mx-2 transition hover:bg-zinc-50">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600">
+                        {item.action === 'company_gallery_updated' ? (
+                          <ImageIcon className="h-4 w-4 text-emerald-600" />
+                        ) : item.action === 'company_social_links_changed' ? (
+                          <Globe className="h-4 w-4 text-blue-600" />
+                        ) : item.action === 'candidate_applied' ? (
+                          <UserPlus className="h-4 w-4 text-zinc-700" />
+                        ) : item.category === 'profile' ? (
+                          <Building className="h-4 w-4 text-purple-600" />
+                        ) : (
+                          <Bell className="h-4 w-4 text-zinc-600" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-sm font-medium leading-snug text-zinc-900">
+                            {item.message}
+                          </p>
+                          <time className="shrink-0 pt-0.5 text-[11px] text-zinc-400">
+                            {formatRelativeTime(item.created_at)}
+                          </time>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-zinc-500">{subtitle}</p>
                       </div>
                     </div>
-                  </li>
-                ))}
+                  );
+
+                  return (
+                    <li key={item.id}>
+                      {href ? <Link href={href}>{content}</Link> : content}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
