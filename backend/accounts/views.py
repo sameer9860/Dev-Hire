@@ -402,6 +402,18 @@ class CompanyPhotoUploadView(APIView):
 
         request.user.company_photos = photos
         request.user.save(update_fields=['company_photos'])
+        from .activity import log_activity
+        is_replace = replace_index is not None and str(replace_index).isdigit()
+        log_activity(
+            request.user,
+            category='profile',
+            action='company_gallery_updated',
+            message='Replaced company gallery photo' if is_replace else 'Added photo to company gallery',
+            metadata={
+                'photo_count': len(photos),
+                'action_type': 'replace' if is_replace else 'add',
+            },
+        )
         return Response({'url': photo_url, 'company_photos': photos}, status=status.HTTP_201_CREATED)
 
 
