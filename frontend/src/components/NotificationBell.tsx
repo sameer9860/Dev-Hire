@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText, Compass, Sparkles } from 'lucide-react';
+import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText, Compass, Sparkles, Image as ImageIcon, Globe, Building } from 'lucide-react';
 import { useMe } from '@/hooks/useAuth';
 import { useActivityLog, useMarkActivityRead } from '@/hooks/useActivity';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -56,6 +56,7 @@ function notificationHref(item: ActivityLog, role?: string): string | null {
     }
     if (item.action === 'direct_message_received') return '/dashboard/messages';
     if (item.category === 'support') return '/dashboard/company';
+    if (item.category === 'profile') return '/profile';
     return null;
   }
 
@@ -94,6 +95,8 @@ function notificationSubtitle(item: ActivityLog, role?: string, username?: strin
     if (item.action === 'direct_message_received') return 'Direct message';
     if (item.category === 'security') return 'Account security';
     if (item.category === 'support') return 'Support';
+    if (item.action === 'company_gallery_updated' || item.metadata?.field === 'company_photos') return 'Company gallery';
+    if (item.action === 'company_social_links_changed' || item.metadata?.field === 'company_social_links') return 'Social & links';
     if (item.category === 'profile') return 'Company profile';
     return item.category;
   }
@@ -128,6 +131,13 @@ function CategoryIcon({ item }: { item: ActivityLog }) {
   const className = 'h-4 w-4 text-zinc-600';
   if (item.action === 'candidate_applied') return <UserPlus className={className} />;
   if (item.action === 'direct_message_received') return <MessageSquare className={className} />;
+  if (item.action === 'company_gallery_updated' || item.metadata?.field === 'company_photos') {
+    return <ImageIcon className="h-4 w-4 text-emerald-600" />;
+  }
+  if (item.action === 'company_social_links_changed' || item.metadata?.field === 'company_social_links') {
+    return <Globe className="h-4 w-4 text-blue-600" />;
+  }
+  if (item.category === 'profile') return <Building className="h-4 w-4 text-purple-600" />;
   if (item.category === 'job') return <Sparkles className="h-4 w-4 text-amber-500" />;
   if (item.category === 'security') return <Shield className={className} />;
   if (item.category === 'application') return <FileText className={className} />;
@@ -214,20 +224,13 @@ export function NotificationBell() {
   const notifications = useMemo(() => {
     const items = (activityData?.results ?? []).filter((item) => isAllowedByPrefs(item, role, prefs));
     if (role === 'company') {
-      const hiringFirst = [...items].sort((a, b) => {
-        const rank = (item: ActivityLog) => {
-          if (item.action === 'candidate_applied') return 0;
-          if (item.action === 'application_status_updated') return 1;
-          if (item.action === 'direct_message_received') return 2;
-          if (item.category === 'application') return 3;
-          if (item.category === 'security' || item.category === 'support') return 4;
-          return 5;
-        };
-        const byRank = rank(a) - rank(b);
-        if (byRank !== 0) return byRank;
+      const sorted = [...items].sort((a, b) => {
+        if (a.is_read !== b.is_read) {
+          return a.is_read ? 1 : -1;
+        }
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
-      return hiringFirst.slice(0, 10);
+      return sorted.slice(0, 10);
     }
     return items.slice(0, 10);
   }, [activityData?.results, role, prefs]);
