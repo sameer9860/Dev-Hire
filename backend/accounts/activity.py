@@ -54,10 +54,35 @@ def log_activity(user, *, category: str, action: str, message: str, metadata: di
     )
 
 
-def _values_equal(old, new) -> bool:
+def _normalize_social_links(val):
+    if not isinstance(val, list):
+        return []
+    cleaned = []
+    for item in val:
+        if isinstance(item, dict):
+            url = str(item.get('url') or '').strip()
+            if url:
+                cleaned.append({
+                    'platform': str(item.get('platform') or 'website').strip().lower(),
+                    'url': url,
+                })
+    return cleaned
+
+
+def _normalize_photos(val):
+    if not isinstance(val, list):
+        return []
+    return [str(p).strip() for p in val if p and str(p).strip()]
+
+
+def _values_equal(field: str, old, new) -> bool:
+    if field in ('company_social_links', 'social_links'):
+        return _normalize_social_links(old) == _normalize_social_links(new)
+    if field == 'company_photos':
+        return _normalize_photos(old) == _normalize_photos(new)
     if isinstance(old, list) or isinstance(new, list):
         return list(old or []) == list(new or [])
-    return (old or '') == (new or '')
+    return str(old or '').strip() == str(new or '').strip()
 
 
 def log_profile_changes(user, previous: dict, updated: dict):
@@ -65,7 +90,7 @@ def log_profile_changes(user, previous: dict, updated: dict):
     for field, (action, message) in PROFILE_FIELD_MESSAGES.items():
         if field not in updated:
             continue
-        if _values_equal(previous.get(field), updated.get(field)):
+        if _values_equal(field, previous.get(field), updated.get(field)):
             continue
         log_activity(
             user,
