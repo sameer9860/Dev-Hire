@@ -247,24 +247,16 @@ export default function ProfilePage() {
               <CompanyProfileForm
                 profile={profile}
                 onSubmit={(data) => {
-                  const hasSocialChanges =
-                    JSON.stringify(profile.company_social_links || []) !==
-                    JSON.stringify(data.company_social_links || []);
-                  const hasPhotoChanges =
-                    JSON.stringify(profile.company_photos || []) !==
-                    JSON.stringify(data.company_photos || []);
+                  const cleanData = {
+                    ...data,
+                    company_social_links: (data.company_social_links || []).filter(
+                      (l) => l && l.url && l.url.trim()
+                    ),
+                  };
 
-                  updateProfile.mutate(data, {
+                  updateProfile.mutate(cleanData, {
                     onSuccess: () => {
-                      if (hasSocialChanges && !hasPhotoChanges) {
-                        toast.success('Company social links updated successfully!');
-                      } else if (hasPhotoChanges && !hasSocialChanges) {
-                        toast.success('Company gallery photos updated successfully!');
-                      } else if (hasSocialChanges && hasPhotoChanges) {
-                        toast.success('Company gallery & social links updated successfully!');
-                      } else {
-                        toast.success('Company profile updated successfully!');
-                      }
+                      toast.success('Company profile updated successfully!');
                       setSuccessMessage('Company profile updated successfully! Redirecting...');
                       setTimeout(() => {
                         setSuccessMessage('');
