@@ -36,6 +36,7 @@ urlpatterns = [
        path('company-photos/', views.CompanyPhotoUploadView.as_view()),
        path('activity/', views.ActivityLogListView.as_view()),
        path('activity/read-all/', views.MarkActivityReadView.as_view()),
+       path('activity/<int:pk>/read/', views.MarkSingleActivityReadView.as_view()),
        path('contact/', views.ContactCreateView.as_view()),
        path('messages/', views.DirectMessageListView.as_view()),
        path('messages/read/', views.MarkMessagesReadView.as_view()),
