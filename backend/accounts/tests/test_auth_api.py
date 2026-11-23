@@ -381,3 +381,20 @@ class TestAuthenticationAPI:
         user.refresh_from_db()
         assert user.is_active is True
 
+    def test_mark_single_activity_read(self, auth_dev_client, developer_user):
+        from accounts.models import ActivityLog
+        log = ActivityLog.objects.create(
+            user=developer_user,
+            category='job',
+            action='job_alert',
+            message='New matching job found',
+            is_read=False,
+        )
+        assert ActivityLog.objects.filter(user=developer_user, is_read=False).count() >= 1
+
+        response = auth_dev_client.post(f"/api/auth/activity/{log.id}/read/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['updated'] == 1
+        log.refresh_from_db()
+        assert log.is_read is True
+
