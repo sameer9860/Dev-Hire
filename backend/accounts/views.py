@@ -1002,6 +1002,17 @@ class MarkActivityReadView(APIView):
         return Response({'updated': updated}, status=status.HTTP_200_OK)
 
 
+class MarkSingleActivityReadView(APIView):
+    """POST /api/auth/activity/<int:pk>/read/ — mark a single activity item as read."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        from .models import ActivityLog
+        updated = ActivityLog.objects.filter(id=pk, user=request.user, is_read=False).update(is_read=True)
+        unread_count = ActivityLog.objects.filter(user=request.user, is_read=False).count()
+        return Response({'updated': updated, 'unread_count': unread_count}, status=status.HTTP_200_OK)
+
+
 
 class PasswordResetRequestView(APIView):
     """POST /api/auth/password-reset/ — body: { "email": "user@example.com" }"""
