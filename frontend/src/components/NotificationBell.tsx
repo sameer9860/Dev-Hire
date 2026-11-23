@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Bell, Briefcase, MessageSquare, Shield, UserPlus, FileText, Compass, Sparkles, Image as ImageIcon, Globe, Building } from 'lucide-react';
 import { useMe } from '@/hooks/useAuth';
-import { useActivityLog, useMarkActivityRead } from '@/hooks/useActivity';
+import { useActivityLog, useMarkActivityRead, useMarkSingleActivityRead } from '@/hooks/useActivity';
 import { UserAvatar } from '@/components/UserAvatar';
 import type { ActivityLog } from '@/types/api';
 
@@ -209,8 +209,16 @@ export function NotificationBell() {
   const { data: user } = useMe();
   const { data: activityData, isLoading } = useActivityLog();
   const markRead = useMarkActivityRead();
+  const markSingleRead = useMarkSingleActivityRead();
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState(readNotificationPrefs);
+
+  const handleNotificationClick = (item: ActivityLog) => {
+    if (!item.is_read) {
+      markSingleRead.mutate(item.id);
+    }
+    setOpen(false);
+  };
 
   useEffect(() => {
     const sync = () => setPrefs(readNotificationPrefs());
@@ -339,11 +347,13 @@ export function NotificationBell() {
                   return (
                     <li key={item.id} className="border-b border-zinc-100 last:border-0">
                       {href ? (
-                        <Link href={href} onClick={() => setOpen(false)}>
+                        <Link href={href} onClick={() => handleNotificationClick(item)}>
                           {row}
                         </Link>
                       ) : (
-                        row
+                        <div onClick={() => handleNotificationClick(item)} className="cursor-pointer">
+                          {row}
+                        </div>
                       )}
                     </li>
                   );
