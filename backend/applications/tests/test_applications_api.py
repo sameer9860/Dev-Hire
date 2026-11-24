@@ -6,7 +6,10 @@ from applications.models import Application
 @pytest.mark.django_db
 class TestApplicationsAPI:
 
-    def test_developer_can_apply_to_job(self, auth_dev_client, sample_job):
+    def test_developer_can_apply_to_job(self, auth_dev_client, sample_job, developer_user):
+        from django.core import mail
+        mail.outbox = []
+
         data = {
             "job": sample_job.id,
             "cover_letter": "I love Django, let me join!",
@@ -15,6 +18,15 @@ class TestApplicationsAPI:
         response = auth_dev_client.post("/api/applications/", data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["status"] == "pending"
+
+        # Check confirmation email sent to developer
+        assert len(mail.outbox) == 1
+        sent_email = mail.outbox[0]
+        assert developer_user.email in sent_email.to
+        assert f"Application Received: {sample_job.title} — DevHire" == sent_email.subject
+        assert "https://devhire-frontend-gamma.vercel.app/contact" in sent_email.body
+        assert f"ID #{sample_job.id}" not in sent_email.subject
+        assert f"ID-{sample_job.id}" not in sent_email.body
 
     def test_prevent_duplicate_applications(self, auth_dev_client, sample_job):
         data = {
