@@ -55,6 +55,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             },
         )
 
+        from .email_utils import send_application_confirmation_email
+        send_application_confirmation_email(application)
+
     @action(detail=True, methods=['patch'], url_path='status')
     def update_status(self, request, pk=None):
         application = self.get_object()
