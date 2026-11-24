@@ -320,26 +320,55 @@ export function NotificationBell() {
                   const row = (
                     <div
                       className={[
-                        'flex gap-3 px-4 py-3',
-                        item.is_read ? 'bg-white' : 'bg-zinc-50',
-                        href ? 'transition hover:bg-zinc-100/80' : '',
+                        'flex gap-3 px-4 py-3 border-l-4 transition-colors',
+                        item.is_read
+                          ? 'bg-white border-transparent text-zinc-600 hover:bg-zinc-50'
+                          : 'bg-blue-50/80 border-blue-600 text-zinc-900 hover:bg-blue-100/70',
+                        href ? 'cursor-pointer' : '',
                       ].join(' ')}
                     >
                       {showApplicantAvatar ? (
                         <UserAvatar src={undefined} name={developerName || 'Candidate'} size="md" />
                       ) : (
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100">
+                        <div
+                          className={[
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors',
+                            item.is_read ? 'bg-zinc-100' : 'bg-blue-100/80 text-blue-700',
+                          ].join(' ')}
+                        >
                           <CategoryIcon item={item} />
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-medium leading-snug text-zinc-900">{item.message}</p>
-                          <time className="shrink-0 pt-0.5 text-[11px] text-zinc-400">
-                            {formatRelativeTime(item.created_at)}
-                          </time>
+                          <p
+                            className={[
+                              'text-sm leading-snug',
+                              item.is_read ? 'font-medium text-zinc-700' : 'font-semibold text-zinc-950',
+                            ].join(' ')}
+                          >
+                            {item.message}
+                          </p>
+                          <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                            {!item.is_read && (
+                              <span
+                                className="h-2 w-2 rounded-full bg-blue-600 ring-2 ring-blue-100"
+                                title="Unread"
+                              />
+                            )}
+                            <time
+                              className={[
+                                'text-[11px]',
+                                item.is_read ? 'text-zinc-400' : 'font-medium text-blue-600',
+                              ].join(' ')}
+                            >
+                              {formatRelativeTime(item.created_at)}
+                            </time>
+                          </div>
                         </div>
-                        <p className="mt-0.5 truncate text-xs text-zinc-500">{subtitle}</p>
+                        <p className={['mt-0.5 truncate text-xs', item.is_read ? 'text-zinc-500' : 'text-zinc-600'].join(' ')}>
+                          {subtitle}
+                        </p>
                       </div>
                     </div>
                   );
