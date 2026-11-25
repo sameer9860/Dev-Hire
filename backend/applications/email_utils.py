@@ -32,7 +32,7 @@ def send_application_confirmation_email(application):
     dev_name = dev_name.capitalize() if isinstance(dev_name, str) else 'there'
 
     contact_url = "https://devhire-frontend-gamma.vercel.app/contact"
-    subject = f"Application Received: {job_title} — DevHire"
+    subject = f"Job Application - DevHire"
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'noreply@devhire.com'
 
     message = (
@@ -60,8 +60,14 @@ def send_application_confirmation_email(application):
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #18181b; background-color: #f4f4f5; margin: 0; padding: 24px;">
   <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border: 1px solid #e4e4e7; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-    <div style="background-color: #09090b; padding: 20px 28px; text-align: left;">
-      <span style="font-size: 20px; font-weight: bold; color: #ffffff; letter-spacing: -0.5px;">Dev<span style="color: #a1a1aa;">Hire</span></span>
+    <div style="background-color: #ffffff; padding: 24px 28px 18px 28px; border-bottom: 1px solid #f4f4f5; text-align: left;">
+      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0;">
+        <tr>
+          <td align="center" valign="middle" style="width: 40px; height: 40px; background-color: #09090b; border-radius: 8px; text-align: center; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; line-height: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            DH
+          </td>
+        </tr>
+      </table>
     </div>
     <div style="padding: 28px;">
       <p style="margin-top: 0; font-size: 16px; font-weight: 600; color: #09090b;">Dear {dev_name},</p>
