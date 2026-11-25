@@ -32,7 +32,7 @@ def send_application_confirmation_email(application):
     dev_name = dev_name.capitalize() if isinstance(dev_name, str) else 'there'
 
     contact_url = "https://devhire-frontend-gamma.vercel.app/contact"
-    subject = f"Job Application - DevHire"
+    subject = f"Job Application - "
     from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', None) or 'noreply@devhire.com'
 
     message = (
