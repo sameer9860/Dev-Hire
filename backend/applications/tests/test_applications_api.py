@@ -23,7 +23,7 @@ class TestApplicationsAPI:
         assert len(mail.outbox) == 1
         sent_email = mail.outbox[0]
         assert developer_user.email in sent_email.to
-        assert f"Application Received: {sample_job.title} — DevHire" == sent_email.subject
+        assert sent_email.subject == "Job Application - DevHire"
         assert "https://devhire-frontend-gamma.vercel.app/contact" in sent_email.body
         assert f"ID #{sample_job.id}" not in sent_email.subject
         assert f"ID-{sample_job.id}" not in sent_email.body
