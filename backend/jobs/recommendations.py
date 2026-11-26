@@ -14,6 +14,8 @@ alerts when new matching opportunities are published.
 import logging
 from typing import List, Dict, Any, Optional
 from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.utils import timezone
 from .models import Job
 from .match_score import compute_match, _normalize
 
@@ -43,10 +45,12 @@ def get_personalized_recommendations(developer_user, limit: int = 15) -> List[Di
     else:
         dev_level = 'mid'
 
-    # Filter for active jobs that are not rejected by moderation
+    # Filter for active jobs that are not rejected by moderation and not past deadline
+    today = timezone.localdate()
     jobs_qs = (
         Job.objects.filter(is_active=True)
         .exclude(moderation_status='rejected')
+        .filter(Q(deadline__isnull=True) | Q(deadline__gte=today))
         .select_related('company')
         .prefetch_related('saves')
     )
