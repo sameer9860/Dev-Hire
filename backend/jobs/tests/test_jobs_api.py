@@ -63,6 +63,56 @@ class TestJobsAPI:
             assert len(response.data["results"]) >= 1
         else:
             assert len(response.data) >= 1
+
+    def test_closed_deadline_jobs_excluded_from_find_opportunities(self, api_client, auth_dev_client, auth_company_client, company_user):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        today = timezone.localdate()
+        expired_job = Job.objects.create(
+            company=company_user,
+            title="Expired Job",
+            description="Past deadline",
+            requirements="Python",
+            location="Kathmandu",
+            deadline=today - timedelta(days=1),
+            is_active=True,
+        )
+        open_job = Job.objects.create(
+            company=company_user,
+            title="Open Job",
+            description="Future deadline",
+            requirements="Python",
+            location="Kathmandu",
+            deadline=today + timedelta(days=5),
+            is_active=True,
+        )
+        closing_today_job = Job.objects.create(
+            company=company_user,
+            title="Closing Today Job",
+            description="Deadline today",
+            requirements="Python",
+            location="Kathmandu",
+            deadline=today,
+            is_active=True,
+        )
+
+        # Public, developer, and company Find Opportunities list should hide expired_job
+        for client in (api_client, auth_dev_client, auth_company_client):
+            res = client.get("/api/jobs/")
+            assert res.status_code == status.HTTP_200_OK
+            items = res.data["results"] if isinstance(res.data, dict) and "results" in res.data else res.data
+            titles = [item["title"] for item in items]
+            assert expired_job.title not in titles
+            assert open_job.title in titles
+            assert closing_today_job.title in titles
+
+        # Company's own my_jobs dashboard still includes the expired job
+        my_jobs_res = auth_company_client.get("/api/jobs/my_jobs/")
+        assert my_jobs_res.status_code == status.HTTP_200_OK
+        my_items = my_jobs_res.data["results"] if isinstance(my_jobs_res.data, dict) and "results" in my_jobs_res.data else my_jobs_res.data
+        my_titles = [item["title"] for item in my_items]
+        assert expired_job.title in my_titles
             
     def test_developer_cannot_view_company_own_jobs(self, auth_dev_client, sample_job):
         response = auth_dev_client.get("/api/jobs/my_jobs/")
