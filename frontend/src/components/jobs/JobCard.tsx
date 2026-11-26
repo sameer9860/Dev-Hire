@@ -13,11 +13,11 @@ function getDaysLeft(deadline?: string | null, createdAt?: string | null): strin
     // Normalize to end of deadline day
     deadlineDate.setHours(23, 59, 59, 999);
     const diffTime = deadlineDate.getTime() - now.getTime();
+    if (diffTime < 0) return 'Closed';
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     if (diffDays > 1) return `${diffDays} days left`;
     if (diffDays === 1) return '1 day left';
-    if (diffDays === 0) return 'Closing today';
-    return 'Closed';
+    return 'Closing today';
   }
 
   if (createdAt) {
