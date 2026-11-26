@@ -13,6 +13,8 @@ from .quality_checker import audit_job_quality_and_safety
 from .recommendations import get_personalized_recommendations, notify_matching_developers_of_new_job
 from accounts.activity import log_activity
 from django.conf import settings
+from django.db.models import Q
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -41,8 +43,14 @@ class JobViewSet(viewsets.ModelViewSet):
         qs = Job.objects.select_related('company')
         if user.is_authenticated and getattr(user, 'role', '') == 'admin':
             return qs
+        if self.action == 'list':
+            today = timezone.localdate()
+            return (
+                qs.filter(is_active=True)
+                .exclude(moderation_status='rejected')
+                .filter(Q(deadline__isnull=True) | Q(deadline__gte=today))
+            )
         if user.is_authenticated and getattr(user, 'role', '') == 'company':
-            from django.db.models import Q
             return qs.filter(Q(company=user) | (Q(is_active=True) & ~Q(moderation_status='rejected')))
         return qs.filter(is_active=True).exclude(moderation_status='rejected')
 
