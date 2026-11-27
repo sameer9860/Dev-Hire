@@ -370,7 +370,7 @@ export function CompanyApplicationsClient() {
                             isActive ? 'text-zinc-300' : 'text-zinc-500'
                           }`}
                         >
-                          {job.is_active ? 'Active' : 'Inactive'}
+                          <span className="font-mono">Job #{job.id}</span> · {job.is_active ? 'Active' : 'Inactive'}
                         </p>
                       </div>
                       <span
@@ -574,7 +574,15 @@ export function CompanyApplicationsClient() {
                                 {dev?.headline && (
                                   <p className="truncate text-xs text-zinc-500">{dev.headline}</p>
                                 )}
-                                <div className="mt-1 flex flex-wrap gap-1">
+                                <div className="mt-1 flex flex-wrap items-center gap-1">
+                                  <span className="inline-flex rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-zinc-700">
+                                    App #{app.id}
+                                  </span>
+                                  {app.job?.id && (
+                                    <span className="inline-flex rounded-md border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-zinc-700">
+                                      Job #{app.job.id}
+                                    </span>
+                                  )}
                                   {dev?.skills?.slice(0, 3).map((skill) => (
                                     <span
                                       key={skill}
