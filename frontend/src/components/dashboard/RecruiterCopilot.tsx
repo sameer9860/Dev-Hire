@@ -127,10 +127,10 @@ function SearchTab() {
     if (jobId) payload.job_id = Number(jobId);
     const data = await searchMutation.mutateAsync(payload).catch(() => null);
     if (data) {
-      // Normalise: some backend fallback responses may omit matched_candidates
+      const candidatesList = data.matched_candidates ?? (data as { results?: CandidateResult[] }).results ?? [];
       setResult({
         ...data,
-        matched_candidates: data.matched_candidates ?? [],
+        matched_candidates: candidatesList,
       });
     }
   };
@@ -271,9 +271,22 @@ function SearchTab() {
                           </span>
                         )}
                       </div>
-                      {c.match_reason && (
-                        <p className="mt-2 text-xs text-zinc-500 leading-relaxed">{c.match_reason}</p>
+                      {(c.match_reason || c.copilot_summary) && (
+                        <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
+                          {c.match_reason || c.copilot_summary}
+                        </p>
                       )}
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-zinc-500">
+                        <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-zinc-700">
+                          App #{c.id}
+                        </span>
+                        {c.job_id !== undefined && (
+                          <span className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-zinc-700">
+                            Job #{c.job_id}
+                          </span>
+                        )}
+                        {c.job_title && <span className="truncate">· {c.job_title}</span>}
+                      </div>
                       <div className="mt-3 flex items-center justify-between">
                         <StatusBadge status={c.application_status} />
                         <button
