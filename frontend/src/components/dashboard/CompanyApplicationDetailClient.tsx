@@ -163,6 +163,14 @@ export function CompanyApplicationDetailClient({ id }: { id: number }) {
                 <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700">
                   Candidate
                 </span>
+                <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-zinc-700">
+                  App #{application.id}
+                </span>
+                {application.job?.id && (
+                  <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 font-mono text-xs font-semibold text-zinc-700">
+                    Job #{application.job.id}
+                  </span>
+                )}
               </div>
 
               {dev?.headline && <p className="mt-1 text-sm font-medium text-zinc-600">{dev.headline}</p>}
