@@ -13,8 +13,10 @@ export interface CandidateResult {
   skills: string[];
   match_score?: number;
   match_reason?: string;
+  copilot_summary?: string;
   application_status: string;
   applied_at: string;
+  job_id?: number;
   job_title: string;
   avatar_url?: string;
 }
