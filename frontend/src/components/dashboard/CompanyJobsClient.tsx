@@ -311,6 +311,9 @@ export function CompanyJobsClient() {
                             {job.title}
                           </Link>
                           <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="inline-flex rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 font-mono text-[10px] font-semibold text-zinc-700">
+                              Job ID: #{job.id}
+                            </span>
                             <span className="inline-flex rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold capitalize text-zinc-600">
                               {job.job_type}
                             </span>
