@@ -117,9 +117,16 @@ export function CompanyDashboard() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
-            Employer Dashboard
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-400">
+              Employer Dashboard
+            </p>
+            {me?.id && (
+              <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 font-mono text-[11px] font-semibold text-zinc-700">
+                Company ID: #{me.id}
+              </span>
+            )}
+          </div>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-900">
             Company Overview
           </h1>
@@ -230,7 +237,10 @@ export function CompanyDashboard() {
                         {app.developer?.username || 'Applicant'}
                       </p>
                       <p className="truncate text-xs text-zinc-500">
-                        Applied for <span className="font-medium text-zinc-700">{app.job?.title}</span> · {formatRelativeTime(app.applied_at)}
+                        Applied for <span className="font-medium text-zinc-700">{app.job?.title}</span>
+                        {app.job?.id ? <span className="ml-1 font-mono text-zinc-600">(Job #{app.job.id})</span> : null}
+                        {' · '}App <span className="font-mono text-zinc-600">#{app.id}</span>
+                        {' · '}{formatRelativeTime(app.applied_at)}
                       </p>
                     </div>
                   </div>
