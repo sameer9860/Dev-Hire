@@ -87,7 +87,13 @@ def search_candidates(
     Search and rank candidates using natural language.
     """
     if not candidates:
-        return {"results": [], "query": query, "ai_enhanced": False}
+        return {
+            "results": [],
+            "matched_candidates": [],
+            "total_candidates": 0,
+            "query": query,
+            "ai_enhanced": False,
+        }
 
     # Prepare fallback ranking first
     fallback_results = _fallback_search(query, candidates)
@@ -95,6 +101,8 @@ def search_candidates(
     if not api_key:
         return {
             "results": fallback_results,
+            "matched_candidates": fallback_results,
+            "total_candidates": len(candidates),
             "query": query,
             "ai_enhanced": False,
         }
@@ -153,6 +161,7 @@ def search_candidates(
                     "match_score": int(r.get("match_score", 50)),
                     "fit_level": r.get("fit_level", "Medium"),
                     "copilot_summary": r.get("summary", ""),
+                    "match_reason": r.get("summary", ""),
                     "highlights": r.get("highlights", []),
                     "potential_gaps": r.get("potential_gaps", []),
                 })
@@ -162,6 +171,8 @@ def search_candidates(
         if final_results:
             return {
                 "results": final_results,
+                "matched_candidates": final_results,
+                "total_candidates": len(candidates),
                 "query": query,
                 "ai_enhanced": True,
             }
@@ -171,14 +182,24 @@ def search_candidates(
 
     return {
         "results": fallback_results,
+        "matched_candidates": fallback_results,
+        "total_candidates": len(candidates),
         "query": query,
         "ai_enhanced": False,
     }
 
 
+_SEARCH_STOP_WORDS = {
+    "with", "and", "for", "the", "who", "know", "have", "from", "that", "this",
+    "developer", "developers", "engineer", "engineers", "candidate", "candidates",
+    "experience", "years", "year", "looking", "find", "strong", "good",
+}
+
+
 def _fallback_search(query: str, candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Heuristic keyword matching & scoring fallback."""
-    terms = [t.lower().strip() for t in re.split(r'[,;\s]+', query) if len(t.strip()) > 1]
+    raw_terms = [t.lower().strip() for t in re.split(r'[,;\s]+', query) if len(t.strip()) > 1]
+    terms = [t for t in raw_terms if t not in _SEARCH_STOP_WORDS] or raw_terms
     results = []
 
     for c in candidates:
@@ -227,6 +248,7 @@ def _fallback_search(query: str, candidates: List[Dict[str, Any]]) -> List[Dict[
             "match_score": score,
             "fit_level": fit_level,
             "copilot_summary": summary,
+            "match_reason": summary,
             "highlights": highlights,
             "potential_gaps": gaps,
         })
