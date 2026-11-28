@@ -27,7 +27,14 @@ class CopilotInterviewQuestionsSerializer(serializers.Serializer):
 class CopilotDraftMessageSerializer(serializers.Serializer):
     application_id = serializers.IntegerField(required=True)
     message_type = serializers.ChoiceField(
-        choices=['interview_invite', 'technical_screen', 'follow_up', 'rejection_polite'],
+        choices=[
+            'interview_invite',
+            'technical_screen',
+            'follow_up',
+            'rejection_polite',
+            'rejection',
+            'offer',
+        ],
         default='interview_invite',
     )
     extra_details = serializers.CharField(max_length=1000, required=False, allow_blank=True)
