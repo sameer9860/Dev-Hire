@@ -33,7 +33,9 @@ def format_candidate_for_prompt(c: Dict[str, Any]) -> str:
     projects_list = []
     for p in (c.get("projects") or [])[:3]:
         if isinstance(p, dict):
-            projects_list.append(f"{p.get('title', 'Project')}: {p.get('description', '')[:120]}")
+            title = str(p.get('title') or 'Project')
+            desc = str(p.get('description') or '')[:120]
+            projects_list.append(f"{title}: {desc}")
         elif isinstance(p, str):
             projects_list.append(p[:120])
     projects_str = "; ".join(projects_list) if projects_list else "None listed"
@@ -41,17 +43,20 @@ def format_candidate_for_prompt(c: Dict[str, Any]) -> str:
     exp_list = []
     for e in (c.get("experience") or [])[:3]:
         if isinstance(e, dict):
-            exp_list.append(f"{e.get('title') or e.get('role', 'Role')} at {e.get('company', 'Company')} ({e.get('duration', '')})")
+            role = str(e.get('title') or e.get('role') or 'Role')
+            comp = str(e.get('company') or 'Company')
+            dur = str(e.get('duration') or '')
+            exp_list.append(f"{role} at {comp} ({dur})")
         elif isinstance(e, str):
             exp_list.append(e[:100])
     exp_str = "; ".join(exp_list) if exp_list else "None listed"
 
     return (
-        f"ID: {c.get('id')} | Name: {c.get('name', 'Candidate')} | Headline: {c.get('headline', '')}\n"
+        f"ID: {c.get('id')} | Name: {c.get('name', 'Candidate')} | Headline: {c.get('headline') or ''}\n"
         f"Skills: {skills_str}\n"
         f"Experience: {exp_str}\n"
         f"Projects: {projects_str}\n"
-        f"Cover Letter snippet: {str(c.get('cover_letter', ''))[:200]}"
+        f"Cover Letter snippet: {str(c.get('cover_letter') or '')[:200]}"
     )
 
 
@@ -282,8 +287,8 @@ def summarize_candidate(
 
         prompt = (
             f"Job Position: {job_title}\n"
-            f"Required Tech Stack: {', '.join(job_info.get('tech_stack') or [])}\n"
-            f"Job Requirements: {job_info.get('requirements', '')[:400]}\n\n"
+            f"Required Tech Stack: {', '.join(str(s) for s in (job_info.get('tech_stack') or []))}\n"
+            f"Job Requirements: {str(job_info.get('requirements') or '')[:400]}\n\n"
             f"Candidate:\n{format_candidate_for_prompt(candidate)}\n\n"
             f"Write a concise executive recruiter briefing on this applicant for {job_title}. "
             f"Include overall assessment, key strengths, potential gaps, and a suggested recommendation."
@@ -316,8 +321,22 @@ def summarize_candidate(
             raw = raw.strip()
 
         data = json.loads(raw)
-        data["ai_enhanced"] = True
-        return data
+        if isinstance(data, dict):
+            fallback = _fallback_summary(candidate, job_info)
+            gaps = data.get("gaps") or fallback["gaps"]
+            return {
+                "candidate_name": cand_name,
+                "overall_fit_score": fallback["overall_fit_score"],
+                "headline": candidate.get("headline") or data.get("overview") or fallback["headline"],
+                "overview": data.get("overview") or fallback["overview"],
+                "strengths": data.get("strengths") or fallback["strengths"],
+                "gaps": gaps,
+                "concerns": gaps,
+                "standout_skills": fallback["standout_skills"],
+                "recommendation": data.get("recommendation") or fallback["recommendation"],
+                "recommendation_reason": data.get("recommendation_reason") or fallback["recommendation_reason"],
+                "ai_enhanced": True,
+            }
 
     except Exception as exc:
         logger.warning("Gemini candidate summary failed, using fallback: %s", exc)
@@ -349,14 +368,23 @@ def _fallback_summary(candidate: Dict[str, Any], job_info: Dict[str, Any]) -> Di
         gaps.append("Verify depth of practical experience during technical interview")
 
     recommendation = "Proceed to Screen" if len(matching) >= max(len(req_skills) // 2, 1) else "Hold"
+    fit_score = int(round((len(matching) / len(req_skills)) * 100)) if req_skills else 75
+    fit_score = max(25, min(98, fit_score + (10 if candidate.get("projects") else 0)))
+    overview = (
+        f"{cand_name} applied for {job_title} with {len(matching)} matching skills out of "
+        f"{len(req_skills)} requested."
+    )
+    final_gaps = gaps
 
     return {
-        "overview": (
-            f"{cand_name} applied for {job_title} with {len(matching)} matching skills out of "
-            f"{len(req_skills)} requested."
-        ),
+        "candidate_name": cand_name,
+        "overall_fit_score": fit_score,
+        "headline": candidate.get("headline") or overview,
+        "overview": overview,
         "strengths": strengths or ["Solid foundational profile"],
-        "gaps": gaps,
+        "gaps": final_gaps,
+        "concerns": final_gaps,
+        "standout_skills": matching or [str(s) for s in (candidate.get("skills") or [])[:5]],
         "recommendation": recommendation,
         "recommendation_reason": f"Matches {len(matching)} required technologies for {job_title}.",
         "ai_enhanced": False,
@@ -391,8 +419,8 @@ def compare_candidates(
 
         prompt = (
             f"Target Position: {job_info.get('title', 'Role')}\n"
-            f"Job Requirements: {job_info.get('requirements', '')[:400]}\n"
-            f"Required Tech Stack: {', '.join(job_info.get('tech_stack') or [])}\n\n"
+            f"Job Requirements: {str(job_info.get('requirements') or '')[:400]}\n"
+            f"Required Tech Stack: {', '.join(str(s) for s in (job_info.get('tech_stack') or []))}\n\n"
             f"Candidates to compare:\n"
             + "\n===\n".join(cand_blocks)
             + "\n\nProvide an objective side-by-side comparative analysis of these candidates for this role."
@@ -433,8 +461,39 @@ def compare_candidates(
             raw = raw.strip()
 
         data = json.loads(raw)
-        data["ai_enhanced"] = True
-        return data
+        if isinstance(data, dict):
+            fallback = _fallback_compare(candidates, job_info)
+            fallback_by_id = {c["application_id"]: c for c in fallback["candidates"]}
+            ai_rows = data.get("candidates_comparison") or []
+            ai_by_id = {
+                r.get("candidate_id"): r
+                for r in ai_rows
+                if isinstance(r, dict) and r.get("candidate_id") in fallback_by_id
+            }
+
+            merged_candidates = []
+            for cid, fb_cand in fallback_by_id.items():
+                ai_r = ai_by_id.get(cid, {})
+                merged_candidates.append({
+                    **fb_cand,
+                    "verdict": ai_r.get("key_differentiator") or fb_cand["verdict"],
+                })
+
+            top_id = data.get("top_pick_id")
+            top_name = fallback_by_id.get(top_id, {}).get("name") or fallback["recommended_candidate"]
+            top_reason = data.get("top_pick_reason") or data.get("verdict_summary") or fallback["recommendation_reason"]
+
+            return {
+                **fallback,
+                "verdict_summary": data.get("verdict_summary") or fallback["verdict_summary"],
+                "top_pick_id": top_id if top_id in fallback_by_id else fallback["top_pick_id"],
+                "top_pick_reason": top_reason,
+                "candidates_comparison": ai_rows or fallback["candidates_comparison"],
+                "recommended_candidate": top_name,
+                "recommendation_reason": top_reason,
+                "candidates": merged_candidates,
+                "ai_enhanced": True,
+            }
 
     except Exception as exc:
         logger.warning("Gemini candidate comparison failed, using fallback: %s", exc)
@@ -443,36 +502,60 @@ def compare_candidates(
 
 
 def _fallback_compare(candidates: List[Dict[str, Any]], job_info: Dict[str, Any]) -> Dict[str, Any]:
-    req_skills = {str(s).lower() for s in (job_info.get("tech_stack") or [])}
+    req_skills = [str(s) for s in (job_info.get("tech_stack") or []) if str(s).strip()]
+    req_skills_lower = {s.lower() for s in req_skills}
 
     scored = []
     for c in candidates:
-        cand_skills = {str(s).lower() for s in (c.get("skills") or [])}
-        matching = req_skills.intersection(cand_skills)
-        match_count = len(matching)
+        cand_skills_list = [str(s) for s in (c.get("skills") or []) if str(s).strip()]
+        cand_skills_lower = {s.lower() for s in cand_skills_list}
+        matching = [s for s in req_skills if s.lower() in cand_skills_lower]
+        missing = [s for s in req_skills if s.lower() not in cand_skills_lower]
         num_projects = len(c.get("projects") or [])
-        score = (match_count * 20) + (num_projects * 5)
-        scored.append((score, match_count, c))
+        num_exp = len(c.get("experience") or [])
+
+        tech_score = int(round((len(matching) / len(req_skills_lower)) * 100)) if req_skills_lower else min(90, 50 + len(cand_skills_list) * 5)
+        exp_score = min(95, 45 + (num_projects * 12) + (num_exp * 15))
+        overall = int(round((tech_score * 0.65) + (exp_score * 0.35)))
+        scored.append((overall, tech_score, exp_score, matching, missing, c))
 
     scored.sort(key=lambda x: x[0], reverse=True)
-    top_cand = scored[0][2]
+    top_cand = scored[0][5]
+    top_name = top_cand.get("name") or top_cand.get("username") or "Top candidate"
 
     comparisons = []
-    for rank, (score, match_count, c) in enumerate(scored, 1):
-        missing = [s for s in req_skills if s not in {str(k).lower() for k in (c.get("skills") or [])}]
+    frontend_candidates = []
+    for rank, (overall, tech_score, exp_score, matching, missing, c) in enumerate(scored, 1):
+        cand_name = c.get("name") or c.get("username") or f"Candidate #{c['id']}"
+        verdict = f"{len(matching)} direct skill matches with {len(c.get('projects') or [])} projects."
         comparisons.append({
             "candidate_id": c["id"],
             "rank": rank,
-            "key_differentiator": f"{match_count} direct skill matches with {len(c.get('projects') or [])} projects",
+            "key_differentiator": verdict,
             "strongest_fit_area": c.get("headline") or "Software Engineering",
             "biggest_risk": f"Missing direct evidence for: {', '.join(missing[:2])}" if missing else "Needs hands-on coding verification",
             "recommended_action": "Invite to Tech Interview" if rank == 1 else "Review Projects & Hold",
         })
+        frontend_candidates.append({
+            "application_id": c["id"],
+            "name": cand_name,
+            "overall_score": overall,
+            "technical_score": tech_score,
+            "experience_score": exp_score,
+            "skills_matched": matching,
+            "skills_missing": missing,
+            "verdict": verdict,
+        })
 
+    top_reason = f"Demonstrated {len(scored[0][3])} matching tech stack requirements with {overall if False else scored[0][0]}% overall score."
     return {
-        "verdict_summary": f"Based on skill coverage and portfolio depth, {top_cand.get('name', 'Top candidate')} leads the group.",
+        "job_title": job_info.get("title", "Role"),
+        "recommended_candidate": top_name,
+        "recommendation_reason": top_reason,
+        "candidates": frontend_candidates,
+        "verdict_summary": f"Based on skill coverage and portfolio depth, {top_name} leads the group.",
         "top_pick_id": top_cand["id"],
-        "top_pick_reason": f"Demonstrated {scored[0][1]} matching tech stack requirements.",
+        "top_pick_reason": top_reason,
         "candidates_comparison": comparisons,
         "ai_enhanced": False,
     }
@@ -501,8 +584,8 @@ def generate_interview_questions(
 
         prompt = (
             f"Job Title: {job_title}\n"
-            f"Tech Stack: {', '.join(job_info.get('tech_stack') or [])}\n"
-            f"Job Requirements: {job_info.get('requirements', '')[:400]}\n\n"
+            f"Tech Stack: {', '.join(str(s) for s in (job_info.get('tech_stack') or []))}\n"
+            f"Job Requirements: {str(job_info.get('requirements') or '')[:400]}\n\n"
             f"Candidate Profile:\n{format_candidate_for_prompt(candidate)}\n\n"
             f"Generate 5 high-impact, tailored interview questions specifically connecting the candidate's "
             f"actual experience/projects with this job's needs. Include 3 technical questions and 2 behavioral questions."
@@ -540,8 +623,34 @@ def generate_interview_questions(
             raw = raw.strip()
 
         data = json.loads(raw)
-        data["ai_enhanced"] = True
-        return data
+        if isinstance(data, dict) and isinstance(data.get("questions"), list):
+            cand_name = candidate.get("name") or candidate.get("username") or "Candidate"
+            normalized_qs = []
+            for q in data["questions"]:
+                if not isinstance(q, dict):
+                    continue
+                q_type = q.get("type") or q.get("category") or "technical"
+                why = q.get("why_ask") or q.get("rationale") or ""
+                normalized_qs.append({
+                    "type": q_type,
+                    "category": q_type,
+                    "question": q.get("question", ""),
+                    "why_ask": why,
+                    "rationale": why,
+                    "look_for": q.get("look_for", ""),
+                })
+            if normalized_qs:
+                return {
+                    "candidate_name": cand_name,
+                    "job_title": job_title,
+                    "interview_focus": data.get("interview_focus") or f"Assess {cand_name}'s fit for {job_title}.",
+                    "questions": normalized_qs,
+                    "interview_tips": data.get("interview_tips") or [
+                        "Ask follow-up questions about specific architectural tradeoffs in their past work.",
+                        "Listen for concrete examples, ownership, and measurable outcomes.",
+                    ],
+                    "ai_enhanced": True,
+                }
 
     except Exception as exc:
         logger.warning("Gemini interview question generation failed, using fallback: %s", exc)
@@ -550,47 +659,65 @@ def generate_interview_questions(
 
 
 def _fallback_interview_questions(candidate: Dict[str, Any], job_info: Dict[str, Any]) -> Dict[str, Any]:
+    cand_name = candidate.get("name") or candidate.get("username") or "Candidate"
     job_title = job_info.get("title", "Developer")
-    skills = candidate.get("skills") or job_info.get("tech_stack") or ["Software Engineering"]
+    skills = [str(s) for s in (candidate.get("skills") or job_info.get("tech_stack") or ["Software Engineering"]) if str(s).strip()]
     primary_skill = skills[0] if skills else "Python"
     second_skill = skills[1] if len(skills) > 1 else "Database"
 
-    first_proj = (candidate.get("projects") or [{}])[0]
-    proj_title = first_proj.get("title") if isinstance(first_proj, dict) else "your recent project"
+    first_proj = next((p for p in (candidate.get("projects") or []) if isinstance(p, dict)), {})
+    proj_title = first_proj.get("title") or "your recent project"
+
+    raw_questions = [
+        {
+            "type": "technical",
+            "question": f"In {proj_title}, what was the most difficult architectural tradeoff you made, and what would you do differently today?",
+            "why_ask": "Tests real engineering judgment, reflection, and technical maturity rather than textbook answers.",
+            "look_for": "Clear explanation of constraints, alternative approaches considered, and measured outcomes.",
+        },
+        {
+            "type": "technical",
+            "question": f"How do you handle database query optimization and avoid N+1 bottlenecks when building services with {second_skill}?",
+            "why_ask": f"Directly tests production performance awareness for {job_title}.",
+            "look_for": "Mentions of eager loading (select_related/prefetch_related or joins), indexing, and profiling tools.",
+        },
+        {
+            "type": "technical",
+            "question": f"Walk me through how you design and secure an authenticated REST API endpoint in {primary_skill}.",
+            "why_ask": "Verifies end-to-end API design security, validation, and token handling.",
+            "look_for": "Talks about JWT/session authentication, permission checks, rate limiting, and schema validation.",
+        },
+        {
+            "type": "behavioral",
+            "question": "Tell me about a time you received critical code review feedback or had a disagreement with a team member. How did you handle it?",
+            "why_ask": "Evaluates teamwork, communication skills, and ability to collaborate productively.",
+            "look_for": "Humility, focus on team goals, and objective reasoning.",
+        },
+        {
+            "type": "behavioral",
+            "question": f"When faced with an unfamiliar technology required for {job_title}, what is your approach to getting up to speed quickly?",
+            "why_ask": "Assesses growth mindset and independent problem-solving skills.",
+            "look_for": "Structured learning habits, reading docs, building quick spike prototypes.",
+        },
+    ]
+
+    questions = [
+        {
+            **q,
+            "category": q["type"],
+            "rationale": q["why_ask"],
+        }
+        for q in raw_questions
+    ]
 
     return {
-        "interview_focus": f"Evaluate practical depth in {primary_skill} and real-world implementation decisions in {proj_title or 'past projects'}.",
-        "questions": [
-            {
-                "type": "project-deep-dive",
-                "question": f"In {proj_title or 'your recent project'}, what was the most difficult architectural tradeoff you made, and what would you do differently today?",
-                "why_ask": "Tests real engineering judgment, reflection, and technical maturity rather than textbook answers.",
-                "look_for": "Clear explanation of constraints, alternative approaches considered, and measured outcomes.",
-            },
-            {
-                "type": "technical",
-                "question": f"How do you handle database query optimization and avoid N+1 bottlenecks when building services with {second_skill}?",
-                "why_ask": f"Directly tests production performance awareness for {job_title}.",
-                "look_for": "Mentions of eager loading (select_related/prefetch_related or joins), indexing, and profiling tools.",
-            },
-            {
-                "type": "technical",
-                "question": f"Walk me through how you design and secure an authenticated REST API endpoint in {primary_skill}.",
-                "why_ask": "Verifies end-to-end API design security, validation, and token handling.",
-                "look_for": "Talks about JWT/session authentication, permission checks, rate limiting, and schema validation.",
-            },
-            {
-                "type": "behavioral",
-                "question": "Tell me about a time you received critical code review feedback or had a disagreement with a team member. How did you handle it?",
-                "why_ask": "Evaluates teamwork, communication skills, and ability to collaborate productively.",
-                "look_for": "Humility, focus on team goals, and objective reasoning.",
-            },
-            {
-                "type": "behavioral",
-                "question": f"When faced with an unfamiliar technology required for {job_title}, what is your approach to getting up to speed quickly?",
-                "why_ask": "Assesses growth mindset and independent problem-solving skills.",
-                "look_for": "Structured learning habits, reading docs, building quick spike prototypes.",
-            },
+        "candidate_name": cand_name,
+        "job_title": job_title,
+        "interview_focus": f"Evaluate practical depth in {primary_skill} and real-world implementation decisions in {proj_title}.",
+        "questions": questions,
+        "interview_tips": [
+            f"Probe hands-on depth in {primary_skill} and {second_skill} with real production scenarios.",
+            f"Ask {cand_name} to walk through concrete challenges they solved in {proj_title}.",
         ],
         "ai_enhanced": False,
     }
@@ -648,7 +775,20 @@ MESSAGE_TEMPLATES = {
             "The {company_name} Team"
         ),
     },
+    "offer": {
+        "subject": "Job Offer: {job_title} at {company_name}",
+        "body": (
+            "Hi {candidate_name},\n\n"
+            "Congratulations! Following our interviews and review of your background in {highlight}, we are thrilled to extend an offer "
+            "for you to join {company_name} as a {job_title}.\n\n"
+            "{extra_details}\n\n"
+            "Please let us know if you have any questions. We look forward to welcoming you to the team!\n\n"
+            "Warm regards,\n"
+            "The {company_name} Hiring Team"
+        ),
+    },
 }
+MESSAGE_TEMPLATES["rejection"] = MESSAGE_TEMPLATES["rejection_polite"]
 
 def draft_recruiter_message(
     candidate: Dict[str, Any],
@@ -681,7 +821,13 @@ def draft_recruiter_message(
             highlight=highlight,
             extra_details=extra_details.strip() if extra_details else "Let us know a time that works best for you.",
         )
-        return {"subject": subject, "body": body, "ai_enhanced": False}
+        return {
+            "subject": subject,
+            "body": body,
+            "tone": "professional",
+            "message_type": message_type,
+            "ai_enhanced": False,
+        }
 
     try:
         from google import genai  # type: ignore
@@ -723,11 +869,14 @@ def draft_recruiter_message(
             raw = raw.strip()
 
         data = json.loads(raw)
-        return {
-            "subject": data.get("subject", template["subject"].format(job_title=job_title, company_name=company_name)),
-            "body": data.get("body", ""),
-            "ai_enhanced": True,
-        }
+        if isinstance(data, dict):
+            return {
+                "subject": data.get("subject", template["subject"].format(job_title=job_title, company_name=company_name)),
+                "body": data.get("body", ""),
+                "tone": "professional",
+                "message_type": message_type,
+                "ai_enhanced": True,
+            }
 
     except Exception as exc:
         logger.warning("Gemini message drafting failed, using fallback: %s", exc)
@@ -743,4 +892,10 @@ def draft_recruiter_message(
         highlight=highlight,
         extra_details=extra_details.strip() if extra_details else "Let us know a time that works best for you.",
     )
-    return {"subject": subject, "body": body, "ai_enhanced": False}
+    return {
+        "subject": subject,
+        "body": body,
+        "tone": "professional",
+        "message_type": message_type,
+        "ai_enhanced": False,
+    }
