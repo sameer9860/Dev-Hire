@@ -350,7 +350,7 @@ function SearchTab() {
                     Strengths
                   </p>
                   <ul className="space-y-1.5">
-                    {summary.strengths.map((s, i) => (
+                    {(summary.strengths ?? []).map((s, i) => (
                       <li key={i} className="flex items-start gap-2 text-xs text-zinc-700">
                         <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
                         {s}
@@ -363,7 +363,7 @@ function SearchTab() {
                     Concerns
                   </p>
                   <ul className="space-y-1.5">
-                    {summary.concerns.map((c, i) => (
+                    {(summary.concerns ?? []).map((c, i) => (
                       <li key={i} className="flex items-start gap-2 text-xs text-zinc-700">
                         <XCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-red-400" />
                         {c}
@@ -381,7 +381,7 @@ function SearchTab() {
               <div>
                 <p className="mb-2 text-xs font-medium text-zinc-500">Standout Skills</p>
                 <div className="flex flex-wrap gap-2">
-                  {summary.standout_skills.map((s) => (
+                  {(summary.standout_skills ?? []).map((s) => (
                     <span key={s} className="flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700">
                       <Star className="h-3 w-3" />
                       {s}
@@ -486,7 +486,7 @@ function CompareTab() {
 
           {/* Candidate Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {result.candidates.map((c, idx) => (
+            {(result.candidates ?? []).map((c, idx) => (
               <div
                 key={idx}
                 className={`rounded-2xl border p-5 ${
@@ -520,11 +520,11 @@ function CompareTab() {
                 </div>
 
                 <div className="mt-3 space-y-2">
-                  {c.skills_matched.length > 0 && (
+                  {(c.skills_matched ?? []).length > 0 && (
                     <div>
                       <p className="mb-1 text-xs font-medium text-emerald-700">Matched Skills</p>
                       <div className="flex flex-wrap gap-1">
-                        {c.skills_matched.slice(0, 4).map((s) => (
+                        {(c.skills_matched ?? []).slice(0, 4).map((s) => (
                           <span key={s} className="rounded-md bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700">
                             {s}
                           </span>
@@ -532,11 +532,11 @@ function CompareTab() {
                       </div>
                     </div>
                   )}
-                  {c.skills_missing.length > 0 && (
+                  {(c.skills_missing ?? []).length > 0 && (
                     <div>
                       <p className="mb-1 text-xs font-medium text-red-600">Missing Skills</p>
                       <div className="flex flex-wrap gap-1">
-                        {c.skills_missing.slice(0, 3).map((s) => (
+                        {(c.skills_missing ?? []).slice(0, 3).map((s) => (
                           <span key={s} className="rounded-md bg-red-50 border border-red-100 px-1.5 py-0.5 text-xs text-red-600">
                             {s}
                           </span>
@@ -631,7 +631,7 @@ function InterviewTab() {
           </div>
 
           <div className="space-y-3">
-            {result.questions.map((q, i) => (
+            {(result.questions ?? []).map((q, i) => (
               <div key={i} className="rounded-2xl border border-zinc-200 bg-white p-5">
                 <div className="mb-2 flex items-center gap-2">
                   <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${categoryColors[q.category] ?? 'bg-zinc-100 text-zinc-600 border-zinc-200'}`}>
@@ -647,14 +647,14 @@ function InterviewTab() {
             ))}
           </div>
 
-          {result.interview_tips.length > 0 && (
+          {(result.interview_tips ?? []).length > 0 && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
               <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-amber-800">
                 <Zap className="h-4 w-4" />
                 Interview Tips
               </p>
               <ul className="space-y-2">
-                {result.interview_tips.map((tip, i) => (
+                {(result.interview_tips ?? []).map((tip, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-amber-900">
                     <ArrowRight className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
                     {tip}
